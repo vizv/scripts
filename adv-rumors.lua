@@ -129,6 +129,26 @@ function addKeyword(choice, keyword)
     choice.keywords:insert('#', keyword_ptr)
 end
 
+-- Helper function to create new dialog choices
+function new_choice(choice_type, title, keywords)
+    local dialog = df.global.ui_advmode.conversation
+    dialog.choices:insert("#", {new = df.ui_advmode.T_conversation.T_choices,})
+    local choice_idx = #dialog.choices-1
+    local choice = dialog.choices[choice_idx]
+    if choice.choice == nil then
+        choice.choice = df.talk_choice:new()
+    end
+    choice.choice.type = choice_type
+    choice.title:insert("#",df.new("string"))
+    choice.title[0].value=title
+    for i, key in ipairs(keywords) do
+        addKeyword(choice, key)
+    end
+
+    dialog.page_bottom_choices[0] = choice_idx
+end
+
+-- Condense the rumor system choices
 function rumorUpdate()
     for i, choice in ipairs(df.global.ui_advmode.conversation.choices) do
         if choice.choice.type == df.talk_choice_type.SummarizeConflict or
@@ -154,28 +174,41 @@ function rumorUpdate()
     end
 end
 
+-- Optionally add new choices in addition of existing ones
+function choiceUpdate()
+    if df.global.ui_advmode.conversation.activity_event[0].menu == df.conversation_menu.MainMenu then
+        -- Essentially the "weather talking" exploit (as described by Rumrusher) in a single speaking action, put this in more menus to see its awesome potential.
+        new_choice(df.talk_choice_type.AskTargetAction, "Ask what will they do about it", {"initiative", "action", "speak", "opinion"})
+    end
+end
+
+-- Main Loop
 active = active or false
 function rumorloop()
     if active then dfhack.timeout(1, 'frames', check) end
 end
 
-local first_choice = nil
+-- Check if Continue Looping
+local last_menu = nil
 function check()
     if not dfhack.world.isAdventureMode() then
         return
     end
     if df.global.ui_advmode.menu ~= df.ui_advmode_menu.ConversationSpeak then
-        first_choice = nil
+        last_menu = nil
         rumorloop()
         return
     end
-    if df.global.ui_advmode.conversation.choices[0] ~= first_choice then
+    if df.global.ui_advmode.conversation.activity_event[0].menu ~= last_menu then
         rumorUpdate()
-        first_choice = df.global.ui_advmode.conversation.choices[0]
+        -- Experimental "add extra choices" system, disabled by default. Uncomment the line below to test it out!
+        -- choiceUpdate()
+        last_menu = df.global.ui_advmode.conversation.activity_event[0].menu
     end
     rumorloop()
 end
 
+-- onStateChange listener to start/stop looping in relevant context
 function dfhack.onStateChange.advRumorConversation (code)
     if code == SC_VIEWSCREEN_CHANGED and dfhack.isWorldLoaded() then
         local scr = dfhack.gui.getCurViewscreen()
@@ -183,6 +216,7 @@ function dfhack.onStateChange.advRumorConversation (code)
     end
 end
 
+-- Toggle Loop on/off
 function set_listener_active(tog)
     active = tog
     if active then
