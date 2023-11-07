@@ -16,106 +16,106 @@ local quickfort_orders = reqscript('internal/quickfort/orders')
 QuantumUI = defclass(QuantumUI, gui.ZScreen)
 QuantumUI.ATTRS {
     focus_path='quantum',
-	pass_movement_keys=true,
-	pass_mouse_clicks=false
+    pass_movement_keys=true,
+    pass_mouse_clicks=false
 }
 
 QuantumWin = defclass(QuantumWin, widgets.Window)
 QuantumWin.ATTRS {
-	frame_title = 'Quantum Stockpile',
-	frame = { w=60, h=26 },
-	resizable = true,
-	autoarrange_subviews=true
+    frame_title = 'Quantum Stockpile',
+    frame = { w=60, h=26 },
+    resizable = true,
+    autoarrange_subviews=true
 }
 
 function QuantumWin:init()
     cart_count = #assign_minecarts.get_free_vehicles()
-	
+
     self:addviews{
         widgets.Label{
-			text='Quantum'
-		},
+            text='Quantum'
+        },
         widgets.WrappedLabel{
             text_to_wrap=self:callback('get_help_text'),
             text_pen=COLOR_GREY
-		},
-		widgets.HotkeyLabel{
+        },
+        widgets.HotkeyLabel{
             key='CUSTOM_Q',
             label='Place QSP under cursor',
             on_activate=self:callback('commit')
-		},
-        widgets.Panel{autoarrange_subviews=true, 
-			frame = { w=75, h=5 },
-			resizable = true,
-			subviews={
-				widgets.EditField{
-					view_id='name',
-					key='CUSTOM_N',
-					on_char=self:callback('on_name_char'),
-					text=''
-				},
-				widgets.TooltipLabel{
-					text_to_wrap='Give the quantum stockpile a custom name.',
-					show_tooltip=true
-				}
-			}
-		},
+        },
+        widgets.Panel{autoarrange_subviews=true,
+            frame = { w=75, h=5 },
+            resizable = true,
+            subviews={
+                widgets.EditField{
+                    view_id='name',
+                    key='CUSTOM_N',
+                    on_char=self:callback('on_name_char'),
+                    text=''
+                },
+                widgets.TooltipLabel{
+                    text_to_wrap='Give the quantum stockpile a custom name.',
+                    show_tooltip=true
+                }
+            }
+        },
         widgets.Panel{
-			autoarrange_subviews=true, 
-			frame = { w=75, h=5 },
-			resizable = true,
-			subviews={
-				widgets.CycleHotkeyLabel{
-					view_id='dir',
-					key='CUSTOM_D',
-					options={
-						{label='North', value={y=-1}},
+            autoarrange_subviews=true,
+            frame = { w=75, h=5 },
+            resizable = true,
+            subviews={
+                widgets.CycleHotkeyLabel{
+                    view_id='dir',
+                    key='CUSTOM_D',
+                    options={
+                        {label='North', value={y=-1}},
                         {label='South', value={y=1}},
                         {label='East', value={x=1}},
                         {label='West', value={x=-1}}
-					}
-				},
-				widgets.TooltipLabel{
-					text_to_wrap='Set the dump direction of the quantum stop.',
-					show_tooltip=true
-				}
-			}
-		},
+                    }
+                },
+                widgets.TooltipLabel{
+                    text_to_wrap='Set the dump direction of the quantum stop.',
+                    show_tooltip=true
+                }
+            }
+        },
         widgets.Panel{
-			autoarrange_subviews=true, 
-			frame = { w=75, h=5 },
-			resizable = true,
-			subviews={
-				widgets.ToggleHotkeyLabel{
-					view_id='refuse',
-					key='CUSTOM_R',
-					label='Allow refuse/corpses',
-					initial_option=false
-				},
-				widgets.TooltipLabel{
-					text_to_wrap='Note that enabling refuse will cause clothes' ..
+            autoarrange_subviews=true,
+            frame = { w=75, h=5 },
+            resizable = true,
+            subviews={
+                widgets.ToggleHotkeyLabel{
+                    view_id='refuse',
+                    key='CUSTOM_R',
+                    label='Allow refuse/corpses',
+                    initial_option=false
+                },
+                widgets.TooltipLabel{
+                    text_to_wrap='Note that enabling refuse will cause clothes' ..
                     ' and armor in this stockpile to quickly rot away.',
-					show_tooltip=true
-				}
-			}
-		},
+                    show_tooltip=true
+                }
+            }
+        },
         widgets.WrappedLabel{
             text_to_wrap=('%d minecart%s available: %s %s'):format(
                 cart_count, cart_count == 1 and '' or 's',
                 cart_count == 1 and 'it' or 'one',
                 cart_count > 0 and 'will be automatically assigned to the quantum route'
                     or 'will be ordered for you to assign later')
-		},
+        },
         widgets.HotkeyLabel{
             key='LEAVESCREEN',
             label=self:callback('get_back_text'),
             on_activate=self:callback('on_back')
-		}
+        }
     }
 end
 
 function QuantumUI:init()
-	self:addviews{QuantumWin{}}
+    self:addviews{QuantumWin{}}
 end
 
 -- UI Functions
@@ -128,11 +128,11 @@ function QuantumWin:get_help_text()
 end
 
 function QuantumWin:get_back_text()
-    if 
-		self.feeder 
-	then
+    if
+        self.feeder
+    then
         return 'Cancel selection'
-	end
+    end
     return 'Back'
 end
 
@@ -150,79 +150,79 @@ end
 
 --UI Data Tables
 qspOutputHor = {
-	["North"]=0,
-	["East"]=1,
-	["South"]=0,
-	["West"]=-1
+    ["North"]=0,
+    ["East"]=1,
+    ["South"]=0,
+    ["West"]=-1
 }
 
 qspOutputVert = {
-	["North"]=-1,
-	["East"]=0,
-	["South"]=1,
-	["West"]=0
+    ["North"]=-1,
+    ["East"]=0,
+    ["South"]=1,
+    ["West"]=0
 }
 
 qspTrackstopDir = {
-	["North"]='trackstopN',
-	["East"]='trackstopE',
-	["South"]='trackstopS',
-	["West"]='trackstopW'
+    ["North"]='trackstopN',
+    ["East"]='trackstopE',
+    ["South"]='trackstopS',
+    ["West"]='trackstopW'
 }
 
 qspOutputType = {
-	[true]='ry',
-	[false]='c'
+    [true]='ry',
+    [false]='c'
 }
 
 
 
 --Actually making the QSP
 function QuantumWin:commit()
-	name = self.subviews.name.text
+    name = self.subviews.name.text
     dump_dir = self.subviews.dir:getOptionLabel()
     allow_refuse = self.subviews.refuse:getOptionValue()
-	input_id = dfhack.gui.getSelectedStockpile().id
-	output_hor = qspOutputHor[dump_dir]
-	output_vert = qspOutputVert[dump_dir]
-	output_type = qspOutputType[allow_refuse]
-	trackstop_dir = qspTrackstopDir[dump_dir]
-	if
-		name == ''
-	then
-		name = 'Unnamed QSP'
-	end
-	placed_output = output_type..'{name="'..name..'" quantum=true}:+all'
-	placed_trackstop = trackstop_dir..'{name="'..name..'" take_from='..input_id..'}'
-	
-	quickfort.apply_blueprint{
-		mode='place',
-		pos=dfhack.gui.getMousePos(), 
-		data={
-			[0]={
-				[output_vert]={[output_hor]=placed_output}
-			}
-		}
-	}
-	
-	quickfort.apply_blueprint{
-		mode='build',
-		pos=dfhack.gui.getMousePos(), 
-		data={
-			[0]={
-				[0]={[0]=placed_trackstop}
-			}
-		}
-	}
-	
-	if
-		cart_count == 0
-	then
-		dfhack.run_command('workorder "{\"amount_left\":1,\"amount_total\":1,\"frequency\":\"OneTime\",\"id\":6,\"is_active\":false,\"is_validated\":true,\"item_subtype\":\"ITEM_TOOL_MINECART\",\"job\":\"MakeTool\",\"material_category\":[\"wood\"]}"')
-	end
-	
-	dfhack.run_command('assign-minecarts all')
-	self:updateLayout()
+    input_id = dfhack.gui.getSelectedStockpile().id
+    output_hor = qspOutputHor[dump_dir]
+    output_vert = qspOutputVert[dump_dir]
+    output_type = qspOutputType[allow_refuse]
+    trackstop_dir = qspTrackstopDir[dump_dir]
+    if
+        name == ''
+    then
+        name = 'Unnamed QSP'
+    end
+    placed_output = output_type..'{name="'..name..'" quantum=true}:+all'
+    placed_trackstop = trackstop_dir..'{name="'..name..'" take_from='..input_id..'}'
+
+    quickfort.apply_blueprint{
+        mode='place',
+        pos=dfhack.gui.getMousePos(),
+        data={
+            [0]={
+                [output_vert]={[output_hor]=placed_output}
+            }
+        }
+    }
+
+    quickfort.apply_blueprint{
+        mode='build',
+        pos=dfhack.gui.getMousePos(),
+        data={
+            [0]={
+                [0]={[0]=placed_trackstop}
+            }
+        }
+    }
+
+    if
+        cart_count == 0
+    then
+        dfhack.run_command('workorder "{\"amount_left\":1,\"amount_total\":1,\"frequency\":\"OneTime\",\"id\":6,\"is_active\":false,\"is_validated\":true,\"item_subtype\":\"ITEM_TOOL_MINECART\",\"job\":\"MakeTool\",\"material_category\":[\"wood\"]}"')
+    end
+
+    dfhack.run_command('assign-minecarts all')
+    self:updateLayout()
 end
 
 local function order_minecart(pos)
@@ -233,30 +233,30 @@ local function order_minecart(pos)
 end
 --Key Input
 function QuantumWin:onInput(keys)
-	pos = dfhack.gui.getSelectedStockpile()
-	
-    if 
-		QuantumWin.super.onInput(self, keys) 
-	then
-		return true 
-	end
+    pos = dfhack.gui.getSelectedStockpile()
+
+    if
+        QuantumWin.super.onInput(self, keys)
+    then
+        return true
+    end
 
     local pos = nil
-	if
-		keys.CUSTOM_Q
-	then
-		self:commit()
-    elseif 
-		keys._MOUSE_L_DOWN and not self:getMouseFramePos() 
-	then
+    if
+        keys.CUSTOM_Q
+    then
         self:commit()
-    elseif 
-		keys.SELECT 
-	then
+    elseif
+        keys._MOUSE_L_DOWN and not self:getMouseFramePos()
+    then
+        self:commit()
+    elseif
+        keys.SELECT
+    then
         pos = guidm.getCursorPos()
     end
 
-   
+
 end
 
 function QuantumUI:onDismiss()
