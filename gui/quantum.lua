@@ -16,20 +16,22 @@ local quickfort_orders = reqscript('internal/quickfort/orders')
 QuantumUI = defclass(QuantumUI, gui.ZScreen)
 QuantumUI.ATTRS {
     focus_path='quantum',
-	defocusable=true
+	pass_movement_keys=true,
+	pass_mouse_clicks=false
 }
 
-function QuantumUI:init()
-    local cart_count = #assign_minecarts.get_free_vehicles()
+QuantumWin = defclass(QuantumWin, widgets.Window)
+QuantumWin.ATTRS {
+	frame_title = 'Quantum Stockpile',
+	frame = { w=60, h=26 },
+	resizable = true,
+	autoarrange_subviews=true
+}
 
-    local main_panel = widgets.Window{
-		frame_title = 'Quantum Stockpile',
-		frame = { w=60, h=26 },
-		resizable = true,
-		autoarrange_subviews=true
-	}
+function QuantumWin:init()
+    cart_count = #assign_minecarts.get_free_vehicles()
 	
-    main_panel:addviews{
+    self:addviews{
         widgets.Label{
 			text='Quantum'
 		},
@@ -102,7 +104,7 @@ function QuantumUI:init()
                 cart_count, cart_count == 1 and '' or 's',
                 cart_count == 1 and 'it' or 'one',
                 cart_count > 0 and 'will be automatically assigned to the quantum route'
-                    or 'will need to be ordered for you to assign later')
+                    or 'will be ordered for you to assign later')
 		},
         widgets.HotkeyLabel{
             key='LEAVESCREEN',
@@ -110,20 +112,22 @@ function QuantumUI:init()
             on_activate=self:callback('on_back')
 		}
     }
+end
 
-    self:addviews{main_panel}
+function QuantumUI:init()
+	self:addviews{QuantumWin{}}
 end
 
 -- UI Functions
-function QuantumUI:get_help_text()
+function QuantumWin:get_help_text()
     if not dfhack.gui.getSelectedStockpile() then
-        return 'Please select the feeder stockpile with the cursor or mouse.'
+        return 'Please select the feeder stockpile with the mouse.'
     end
     return 'Please select the location of the new quantum stockpile with the' ..
-            ' cursor or mouse, then press "q"'
+            '  mouse, then press "q" or left click'
 end
 
-function QuantumUI:get_back_text()
+function QuantumWin:get_back_text()
     if 
 		self.feeder 
 	then
@@ -132,18 +136,15 @@ function QuantumUI:get_back_text()
     return 'Back'
 end
 
-function QuantumUI:on_back()
-    if 
-		self.feeder 
-	then
-        self.feeder = nil
-        self:updateLayout()
-    else
-        self:dismiss()
-	end
+function QuantumWin:on_back()
+    self:dismiss()
 end
 
-function QuantumUI:on_name_char(char, text)
+function QuantumUI:on_back()
+    self:dismiss()
+end
+
+function QuantumWin:on_name_char(char, text)
     return #text < 12
 end
 
@@ -170,14 +171,14 @@ qspTrackstopDir = {
 }
 
 qspOutputType = {
-	[true]='afunswebhlzSgpdyr',
-	[false]='afunswebhlzSgpd'
+	[true]='ry',
+	[false]='c'
 }
 
 
 
 --Actually making the QSP
-function QuantumUI:commit()
+function QuantumWin:commit()
 	name = self.subviews.name.text
     dump_dir = self.subviews.dir:getOptionLabel()
     allow_refuse = self.subviews.refuse:getOptionValue()
@@ -191,8 +192,8 @@ function QuantumUI:commit()
 	then
 		name = 'Unnamed QSP'
 	end
-	placed_output = output_type..'{quantum=true}'
-	placed_trackstop = trackstop_dir..'{take_from='..input_id..' route="'..name..'"}'
+	placed_output = output_type..'{name="'..name..'" quantum=true}:+all'
+	placed_trackstop = trackstop_dir..'{name="'..name..'" take_from='..input_id..'}'
 	
 	quickfort.apply_blueprint{
 		mode='place',
@@ -213,10 +214,15 @@ function QuantumUI:commit()
 			}
 		}
 	}
+	
+	if
+		cart_count == 0
+	then
+		dfhack.run_command('workorder "{\"amount_left\":1,\"amount_total\":1,\"frequency\":\"OneTime\",\"id\":6,\"is_active\":false,\"is_validated\":true,\"item_subtype\":\"ITEM_TOOL_MINECART\",\"job\":\"MakeTool\",\"material_category\":[\"wood\"]}"')
+	end
+	
 	dfhack.run_command('assign-minecarts all')
 	self:updateLayout()
-	message= 'QSP Placed!'
-	dialogs.MessageBox{text=message:wrap(70)}:show()
 end
 
 local function order_minecart(pos)
@@ -226,39 +232,24 @@ local function order_minecart(pos)
     quickfort_orders.create_orders(quickfort_ctx)
 end
 --Key Input
-function QuantumUI:onInput(keys)
+function QuantumWin:onInput(keys)
 	pos = dfhack.gui.getSelectedStockpile()
 	
     if 
-		QuantumUI.super.onInput(self, keys) 
-	then 
-		message="burp"
-		dialogs.MessageBox{text=message:wrap(70)}:show()
+		QuantumWin.super.onInput(self, keys) 
+	then
 		return true 
 	end
 
-    self:propagateMoveKeys(keys)
-
     local pos = nil
 	if
-		keys.CUSTOM_H
+		keys.CUSTOM_Q
 	then
-		message="burp"
-		dialogs.MessageBox{text=message:wrap(70)}:show()
+		self:commit()
     elseif 
 		keys._MOUSE_L_DOWN and not self:getMouseFramePos() 
 	then
-		message="burp"
-		dialogs.MessageBox{text=message:wrap(70)}:show()
-        quickfort.apply_blueprint{
-			mode='place',
-			pos=dfhack.gui.getMousePos(), 
-			data={
-				[0]={
-					[0]={[0]="c"}
-				}
-	}
-}
+        self:commit()
     elseif 
 		keys.SELECT 
 	then
