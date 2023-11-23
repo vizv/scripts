@@ -1,42 +1,42 @@
--- Save selected unit/item' description in markdown (e.g., for reddit)
+-- Save description of selected units or items in markdown format
 -- This script extracts descriptions of selected units or items and saves them in markdown format.
 -- This is a derivatiwe work based upon scripts/forum-dwarves.lua by Caldfir and expwnent
 -- Adapted for markdown by Mchl https://github.com/Mchl
--- Updated to work with Steam version by Glotov4 https://github.com/glotov4
 
 local utils = require('utils')
 local gui = require('gui')
+local argparse = require('argparse')
+
+-- Get world name for default filename
 local worldName = dfhack.df2utf(dfhack.TranslateName(df.global.world.world_data.name)):gsub(" ", "_")
 
--- Argument processing
-local args = {...}
-local writemode = 'a' -- default to append mode
-local overwriteFlag = '-o'
-local filename
-local userProvidedNameParts = {}
+local help, overwrite, filenameArg = false, false, nil
+local positionals = argparse.processArgsGetopt({ ... }, {
+    { 'o', 'overwrite', hasArg = false, handler = function() overwrite = true end },
+    { 'h', 'help',      hasArg = false, handler = function() help = true end }
+})
 
--- Check for the overwrite flag and remove it from the arguments if found
-for i = #args, 1, -1 do
-    if args[i] == overwriteFlag then
-        writemode = 'w' -- set to overwrite mode
-        table.remove(args, i) -- remove the overwrite flag from the arguments
-        break -- remove only the first occurrence of the overwrite flag
-    end
+-- Extract non-option arguments (filename)
+filenameArg = positionals[1]
+
+if help then
+    print(dfhack.script_help())
+    return
 end
 
--- Join remaining arguments with underscores to create the user-provided filename
-if #args > 0 then
-    local userProvidedName = table.concat(args, "_")
-    filename = 'markdown_' .. userProvidedName .. '.md'
-else
-    filename = 'markdown_' .. worldName .. '_export.md'
-end
+-- Determine write mode and filename
+local writemode = overwrite and 'w' or 'a'
+local filename = 'markdown_' .. (filenameArg or worldName) .. '.md'
 
 -- Utility functions
 local function getFileHandle()
-    return assert(io.open(filename, writemode), "Error opening file: " .. filename)
+    local handle, error = io.open(filename, writemode)
+    if not handle then
+        dfhack.printerr("Error opening file: " .. filename .. ". " .. error)
+        return nil
+    end
+    return handle
 end
-
 
 local function closeFileHandle(handle)
     handle:write('\n---\n\n')
@@ -54,15 +54,16 @@ local function reformat(str)
     -- [P] tags seem to be redundant
     -- [C] tags indicate color. Remove all color information
     return str:gsub('%[B%]', '\n\n')
-              :gsub('%[R%]', '\n\n')
-              :gsub('%[P%]', '')
-              :gsub('%[C:%d+:%d+:%d+%]', '')
-              :gsub('\n\n+', '\n\n')
+        :gsub('%[R%]', '\n\n')
+        :gsub('%[P%]', '')
+        :gsub('%[C:%d+:%d+:%d+%]', '')
+        :gsub('\n\n+', '\n\n')
 end
 
 local function getNameRaceAgeProf(unit)
     --%s is a placeholder for a string, and %d is a placeholder for a number.
-    return string.format("%s, %d years old %s.", dfhack.units.getReadableName(unit), df.global.cur_year - unit.birth_year, dfhack.units.getProfessionName(unit))
+    return string.format("%s, %d years old %s.", dfhack.units.getReadableName(unit), df.global.cur_year - unit
+        .birth_year, dfhack.units.getProfessionName(unit))
 end
 
 -- Main logic for item and unit processing
@@ -70,7 +71,7 @@ local item = dfhack.gui.getSelectedItem(true)
 local unit = dfhack.gui.getSelectedUnit(true)
 
 if not item and not unit then
-    print([[
+    dfhack.printerr([[
 Error: No unit or item is currently selected.
 - To select a unit, click on it.
 - For items that are installed as buildings (like statues or beds),
@@ -86,9 +87,9 @@ if item then
     -- Item processing
     local itemRawName = dfhack.items.getDescription(item, 0, true)
     local itemRawDescription = df.global.game.main_interface.view_sheets.raw_description
-    log:write('### ' .. dfhack.df2utf(itemRawName) .. '\n\n#### Description: \n' .. reformat(dfhack.df2utf(itemRawDescription)) .. '\n')
+    log:write('### ' ..
+        dfhack.df2utf(itemRawName) .. '\n\n#### Description: \n' .. reformat(dfhack.df2utf(itemRawDescription)) .. '\n')
     print('Exporting description of the ' .. itemRawName)
-
 elseif unit then
     -- Unit processing
     -- Simulate UI interactions to load data into memory (click through tabs). Note: Constant might change with DF updates/patches
@@ -125,10 +126,13 @@ elseif unit then
     local unit_description_raw = df.global.game.main_interface.view_sheets.unit_health_raw_str[0].value
     local unit_personality_raw = df.global.game.main_interface.view_sheets.personality_raw_str
 
-    log:write('### ' .. dfhack.df2utf(getNameRaceAgeProf(unit)) .. '\n\n#### Description: \n' .. reformat(dfhack.df2utf(unit_description_raw)) .. '\n\n#### Personality: \n')
+    log:write('### ' ..
+        dfhack.df2utf(getNameRaceAgeProf(unit)) ..
+        '\n\n#### Description: \n' .. reformat(dfhack.df2utf(unit_description_raw)) .. '\n\n#### Personality: \n')
     for _, unit_personality in ipairs(unit_personality_raw) do
         log:write(reformat(dfhack.df2utf(unit_personality.value)) .. '\n')
     end
     print('Exporting Health/Description & Personality/Traits data for: \n' .. dfhack.df2console(getNameRaceAgeProf(unit)))
-else end
+else
+end
 closeFileHandle(log)

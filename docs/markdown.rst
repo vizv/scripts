@@ -1,18 +1,18 @@
 ========
 
 .. dfhack-tool::
-    :summary: Save descriptions of selected units/items in markdown format (e.g., for Reddit).
-    :tags: fort | inspection | units
+    :summary: Save description of selected unit/item in markdown
+    :tags: dfhack | items | units
 
-Saves descriptions of selected units or items to a markdown file.
+Saves description of selected unit or item to a markdown file encoded with UTF-8.
 
 
 For units, the script retrieves:
 #. Name, race, age, profession
 #. Description from the Unit/Health/Description screen
 #. Traits from the Unit/Personality/Traits screen
-The script works for all units with text in the Description &/or Personality/Traits tabs,
-such as dwarves, dogs, elves, goblins, and beasts.
+The script tested on dwarves, dogs, elves, goblins, beasts,
+and is expected to work with all units
 
 For items, it retrieves:
 #. Decorated name (e.g., "☼«☼Chalk Statue of Dakas☼»☼")
@@ -26,10 +26,8 @@ for easy sharing, e.g., on Reddit.
 By default, entries are appended, not overwritten, allowing the ``markdown`` command
 to compile descriptions of multiple items & units in a single document.
 
-By default, data is stored in markdown_{YourWorldName}_export.md.
-
-See `forum-dwarves` for BBCode export (e.g., for the Bay12 Forums).
-
+By default, data is stored in the `Dwarf Fortress/markdown_{YourWorldName}.md`
+file in the root game directory.
 
 Usage
 -----
@@ -39,7 +37,7 @@ Usage
     markdown [-o] [<filename>]
 
 Appends the description of the selected unit/item
-to ``markdown_{world_name}_export.md`` file by default.
+to ``markdown_{world_name}.md`` file by default.
 Specifying a filename will append to ``markdown_{filename}.md`` instead,
 which is useful for organizing data by category or topic.
 The [-o] argument tells the script to overwrite the output file.
@@ -47,10 +45,8 @@ The [-o] argument tells the script to overwrite the output file.
 Options
 -------
 
-``-o``
+``-o``, ``--overwrite``
     Overwrite the output file, deleting previous entries.
-``help``
-    Show help.
 
 Examples
 --------
@@ -59,7 +55,7 @@ Examples
 
     markdown
 
-Example output for a selected chalk statue in the world "Orid Tamun", appended to the default ``markdown_Orid_Tamun_export.md`` file:
+Example output for a selected chalk statue in the world "Orid Tamun", appended to the default ``markdown_Orid_Tamun.md`` file:
 
     [...previous entries...]
 
