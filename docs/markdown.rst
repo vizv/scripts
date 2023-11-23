@@ -1,11 +1,14 @@
+markdown
 ========
 
 .. dfhack-tool::
     :summary: Save description of selected unit/item in markdown
     :tags: dfhack | items | units
 
-Saves description of selected unit or item to a markdown file encoded with UTF-8.
+Saves the description of a selected unit or item to a Markdown file encoded in UTF-8.
 
+By default, data is stored in the `Dwarf Fortress/markdown_{YourWorldName}.md`
+file in the root game directory.
 
 For units, the script retrieves:
 #. Name, race, age, profession
@@ -20,14 +23,8 @@ For items, it retrieves:
 The script works for most items with in-game descriptions and names, including those in storage,
 on the ground, installed as a building, or worn/carried by units.
 
-The script appends a markdown-formatted version of the text to a target file
-for easy sharing, e.g., on Reddit.
-
 By default, entries are appended, not overwritten, allowing the ``markdown`` command
 to compile descriptions of multiple items & units in a single document.
-
-By default, data is stored in the `Dwarf Fortress/markdown_{YourWorldName}.md`
-file in the root game directory.
 
 Usage
 -----

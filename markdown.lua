@@ -1,5 +1,6 @@
--- Save description of selected units or items in markdown format
--- This script extracts descriptions of selected units or items and saves them in markdown format.
+-- Save the description of a selected unit or item in Markdown format
+-- This script extracts the description of a selected unit or item and saves it 
+-- as a Markdown file encoded in UTF-8 in the root game directory.
 -- This is a derivatiwe work based upon scripts/forum-dwarves.lua by Caldfir and expwnent
 -- Adapted for markdown by Mchl https://github.com/Mchl
 
