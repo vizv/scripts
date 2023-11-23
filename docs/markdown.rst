@@ -2,7 +2,7 @@ markdown
 ========
 
 .. dfhack-tool::
-    :summary: Save description of selected unit/item in markdown
+    :summary: Save description of selected unit/item in Markdown file
     :tags: dfhack | items | units
 
 Saves the description of a selected unit or item to a Markdown file encoded in UTF-8.
@@ -31,7 +31,7 @@ Usage
 
 ::
 
-    markdown [-o] [<filename>]
+    markdown [-o | --overwrite] [<filename>]
 
 Appends the description of the selected unit/item
 to ``markdown_{world_name}.md`` file by default.

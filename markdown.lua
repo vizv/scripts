@@ -1,8 +1,6 @@
--- Save the description of a selected unit or item in Markdown format
+-- Save the description of a selected unit or item in Markdown file in UTF-8
 -- This script extracts the description of a selected unit or item and saves it
 -- as a Markdown file encoded in UTF-8 in the root game directory.
--- This is a derivatiwe work based upon scripts/forum-dwarves.lua by Caldfir and expwnent
--- Adapted for markdown by Mchl https://github.com/Mchl
 
 local utils = require('utils')
 local gui = require('gui')
@@ -43,9 +41,9 @@ local function closeFileHandle(handle)
     handle:write('\n---\n\n')
     handle:close()
     if writemode == 'a' then
-        print('\nData appended to "' .. filename .. '"')
+        print('\nData appended to "' .. 'Dwarf Fortress/' .. filename .. '"')
     elseif writemode == 'w' then
-        print('\nData overwritten in "' .. filename .. '"')
+        print('\nData overwritten in "' .. 'Dwarf Fortress/' .. filename .. '"')
     end
 end
 
