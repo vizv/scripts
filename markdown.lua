@@ -2,7 +2,7 @@
 -- This script extracts descriptions of selected units or items and saves them in markdown format.
 -- This is a derivatiwe work based upon scripts/forum-dwarves.lua by Caldfir and expwnent
 -- Adapted for markdown by Mchl https://github.com/Mchl
--- Updated to work with Steam version by Glotov4 https://github.com/glotov4 
+-- Updated to work with Steam version by Glotov4 https://github.com/glotov4
 
 local utils = require('utils')
 local gui = require('gui')
@@ -73,7 +73,7 @@ if not item and not unit then
     print([[
 Error: No unit or item is currently selected.
 - To select a unit, click on it.
-- For items that are installed as buildings (like statues or beds), 
+- For items that are installed as buildings (like statues or beds),
 open the building's interface and click the magnifying glass icon.
 Please select a valid target and try running the script again.]])
     -- Early return to avoid proceeding further if no unit or item is selected
@@ -89,7 +89,7 @@ if item then
     log:write('### ' .. dfhack.df2utf(itemRawName) .. '\n\n#### Description: \n' .. reformat(dfhack.df2utf(itemRawDescription)) .. '\n')
     print('Exporting description of the ' .. itemRawName)
 
-elseif unit then   
+elseif unit then
     -- Unit processing
     -- Simulate UI interactions to load data into memory (click through tabs). Note: Constant might change with DF updates/patches
     local screen = dfhack.gui.getDFViewscreen()
