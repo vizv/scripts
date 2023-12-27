@@ -2,7 +2,7 @@ markdown
 ========
 
 .. dfhack-tool::
-    :summary: Save description of selected unit/item in Markdown file
+    :summary: Export displayed text to a Markdown file.
     :tags: dfhack | items | units
 
 Saves the description of a selected unit or item to a Markdown file encoded in UTF-8.
