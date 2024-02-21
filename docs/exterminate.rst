@@ -30,6 +30,10 @@ Examples
     Kill the ravens flying around the map (but only the male ones).
 ``exterminate GOBLIN --method magma --only-visible``
     Kill all visible, hostile goblins on the map by boiling them in magma.
+``exterminate all``
+    Kill all wild creatures.
+``exterminate all:FEMALE``
+    Kill all wild female creatures.
 
 Options
 -------
