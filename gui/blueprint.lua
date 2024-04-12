@@ -241,7 +241,7 @@ function StartPosPanel:init()
     self:addviews{
         widgets.CycleHotkeyLabel{
             view_id='startpos',
-            key='CUSTOM_P',
+            key='CUSTOM_O',
             label='playback start',
             options={'Unset', 'Setting', 'Set'},
             initial_option=self.start_pos and 'Set' or 'Unset',

@@ -15,15 +15,6 @@ function getItemsAtPosition(pos_x, pos_y, pos_z, item_type)
     return items
 end
 
--- Finds a unit with the given id or nil if no unit is found
-function findUnit(unit_id)
-    if not unit_id or unit_id == -1 then
-        return nil
-    end
-
-    return utils.binsearch(df.global.world.units.all, unit_id, 'id')
-end
-
 -- Find a histfig with the given id or nil if no unit is found
 function findHistFig(histfig_id)
     if not histfig_id or histfig_id == -1 then
@@ -133,7 +124,7 @@ function getDeathEventForHistFig(histfig_id)
 end
 
 function displayDeathHistFig(histfig)
-    local histfig_unit = findUnit(histfig.unit_id)
+    local histfig_unit = df.unit.find(histfig.unit_id)
     if not histfig_unit then
         qerror(("Failed to retrieve unit for histfig [histfig_id: %d, histfig_unit_id: %d"):format(
                 histfig.id,
@@ -178,7 +169,7 @@ if not hist_figure_id then
     qerror("Failed to find hist_figure_id. This is not user error")
 elseif hist_figure_id == -1 then
     if not selected_unit then
-        selected_unit = findUnit(selected_item.unit_id)
+        selected_unit = df.unit.find(selected_item.unit_id)
         if not selected_unit then
             qerror("Not a historical figure, cannot find death info")
         end

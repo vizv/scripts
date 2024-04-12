@@ -230,10 +230,8 @@ local function get_dump_pos(bld)
     if dump_pos then
         return dump_pos
     end
-    for _,unit in ipairs(df.global.world.units.active) do
-        if dfhack.units.isCitizen(unit) then
-            return unit.pos
-        end
+    for _,unit in ipairs(dfhack.units.getCitizens(true)) do
+        return unit.pos
     end
     -- fall back to position of first active unit
     return df.global.world.units.active[0].pos
@@ -261,42 +259,6 @@ local function get_items(job)
     return items
 end
 
--- disconnect item from the workshop that it is cluttering, if any
-local function disconnect_clutter(item)
-    local bld = dfhack.items.getHolderBuilding(item)
-    if not bld then return true end
-    -- remove from contained items list, fail if not found
-    local found = false
-    for i,contained_item in ipairs(bld.contained_items) do
-        if contained_item.item == item then
-            bld.contained_items:erase(i)
-            found = true
-            break
-        end
-    end
-    if not found then
-        dfhack.printerr('failed to find clutter item in expected building')
-        return false
-    end
-    -- remove building ref from item and move item into containing map block
-    -- we do this manually instead of calling dfhack.items.moveToGround()
-    -- because that function will cowardly refuse to work with items with
-    -- BUILDING_HOLDER references (because it could crash the game). However,
-    -- we know that this particular setup is safe to work with.
-    for i,ref in ipairs(item.general_refs) do
-        if ref:getType() == df.general_ref_type.BUILDING_HOLDER then
-            item.general_refs:erase(i)
-            -- this call can return failure, but it always succeeds in setting
-            -- the required item flags and adding the item to the map block,
-            -- which is all we care about here. dfhack.items.moveToBuilding()
-            -- will fix things up later.
-            item:moveToGround(item.pos.x, item.pos.y, item.pos.z)
-            return true
-        end
-    end
-    return false
-end
-
 -- teleport any items that are not already part of the building to the building
 -- center and mark them as part of the building. this handles both partially-
 -- built buildings and items that are being carried to the building correctly.
@@ -304,9 +266,6 @@ local function attach_items(bld, items)
     for _,item in ipairs(items) do
         -- skip items that have already been brought to the building
         if item.flags.in_building then goto continue end
-        -- ensure we have no more holder building references so moveToBuilding
-        -- can succeed
-        if not disconnect_clutter(item) then return false end
         -- 2 means "make part of bld" (which causes constructions to crash on
         -- deconstruct)
         local use = bld:getType() == df.building_type.Construction and 0 or 2
@@ -388,9 +347,7 @@ for _,job in ipairs(get_jobs(opts)) do
         goto continue
     end
 
-    -- remove job data and clean up ref links. we do this first because
-    -- dfhack.items.moveToBuilding() refuses to work with items that already
-    -- hold references to buildings.
+    -- remove job data and attach items to building.
     if not dfhack.job.removeJob(job) then
         throw(bld, 'failed to remove job; job state may be inconsistent')
     end

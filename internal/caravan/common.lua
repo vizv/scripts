@@ -109,8 +109,14 @@ local function get_artifact_name(item)
     return ('%s (%s)'):format(name, get_item_type_str(item))
 end
 
+local function get_book_title(item)
+    local title = dfhack.items.getBookTitle(item)
+    return #title > 0 and title or nil
+end
+
 function get_item_description(item)
     local desc = item.flags.artifact and get_artifact_name(item) or
+        get_book_title(item) or
         dfhack.items.getDescription(item, 0, true)
     local wear_level = item:getWear()
     if wear_level == 1 then desc = ('x%sx'):format(desc)
@@ -388,7 +394,7 @@ end
 
 local function get_mandate_noble_roles()
     local roles = {}
-    for _, link in ipairs(df.global.world.world_data.active_site[0].entity_links) do
+    for _, link in ipairs(dfhack.world.getCurrentSite().entity_links) do
         local he = df.historical_entity.find(link.entity_id);
         if not he or
             (he.type ~= df.historical_entity_type.SiteGovernment and

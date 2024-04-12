@@ -3,9 +3,7 @@
 --@enable = true
 
 local argparse = require('argparse')
-local json = require('json')
 local eventful = require('plugins.eventful')
-local persist = require('persist-table')
 local utils = require('utils')
 
 local GLOBAL_KEY = 'prioritize' -- used for state change hooks and persistence
@@ -23,13 +21,13 @@ local DEFAULT_JOB_TYPES = {
     'SeekInfant', 'SetBone', 'Surgery', 'Suture',
     -- ensure prisoners and animals are tended to quickly
     -- (Animal/prisoner storage already covered by 'StoreItemInStockpile' above)
-    'SlaughterAnimal', 'PenLargeAnimal', 'LoadCageTrap',
+    'SlaughterAnimal', 'PenLargeAnimal', 'ChainAnimal', 'LoadCageTrap',
     -- ensure noble tasks never get starved
     'InterrogateSubject', 'ManageWorkOrders', 'ReportCrime', 'TradeAtDepot',
     -- get tasks done quickly that might block the player from getting on to
     -- the next thing they want to do
     'BringItemToDepot', 'DestroyBuilding', 'DumpItem', 'FellTree',
-    'RemoveConstruction', 'PullLever'
+    'RemoveConstruction', 'PullLever', 'FillPond'
 }
 
 -- set of job types that we are watching. maps job_type (as a number) to
@@ -54,7 +52,12 @@ function isEnabled()
 end
 
 local function persist_state()
-    persist.GlobalTable[GLOBAL_KEY] = json.encode(get_watched_job_matchers())
+    local data_to_persist = {}
+    -- convert enum keys into strings so json doesn't get confused and think the map is a list
+    for k, v in pairs(get_watched_job_matchers()) do
+        data_to_persist[tostring(k)] = v
+    end
+    dfhack.persistent.saveSiteData(GLOBAL_KEY, data_to_persist)
 end
 
 local function make_matcher_map(keys)
@@ -131,17 +134,17 @@ local function update_handlers()
     end
 end
 
-local function get_annotation_str(annotation)
-    return (' (%s)'):format(annotation)
-end
-
 local function get_unit_labor_str(unit_labor)
     local labor_str = df.unit_labor[unit_labor]
     return ('%s%s'):format(labor_str:sub(6,6), labor_str:sub(7):lower())
 end
 
 local function get_unit_labor_annotation_str(unit_labor)
-    return get_annotation_str(get_unit_labor_str(unit_labor))
+    return (' --haul-labor %s'):format(get_unit_labor_str(unit_labor))
+end
+
+local function get_reaction_annotation_str(reaction)
+    return (' --reaction-name %s'):format(reaction)
 end
 
 local function print_status_line(num_jobs, job_type, annotation)
@@ -163,7 +166,7 @@ local function status()
             end
         elseif v.reaction_matchers then
             for rk,rv in pairs(v.reaction_matchers) do
-                print_status_line(rv, k, get_annotation_str(rk))
+                print_status_line(rv, k, get_reaction_annotation_str(rk))
             end
         else
             print_status_line(v.num_prioritized, k)
@@ -305,7 +308,7 @@ local function boost_and_watch(job_matchers, opts)
             boost_and_watch_special(job_type, job_matcher,
                 function(jm) return jm.reaction_matchers end,
                 function(jm) jm.reaction_matchers = nil end,
-                get_annotation_str, quiet)
+                get_reaction_annotation_str, quiet)
         elseif JOB_TYPES_DENYLIST[job_type] then
             for _,msg in ipairs(DIG_SMOOTH_WARNING) do
                 dfhack.printerr(msg)
@@ -410,7 +413,7 @@ local function remove_watch(job_matchers, opts)
                     end
                     return jm.reaction_matchers
                 end,
-                get_annotation_str, quiet)
+                get_reaction_annotation_str, quiet)
         else
             error('unhandled case') -- should not ever happen
         end
@@ -426,7 +429,7 @@ local function get_job_type_str(job)
                                get_unit_labor_annotation_str(job.item_subtype))
     elseif job_type == df.job_type.CustomReaction then
         return ('%s%s'):format(job_type_str,
-                               get_annotation_str(job.reaction_name))
+                               get_reaction_annotation_str(job.reaction_name))
     else
         return job_type_str
     end
@@ -613,8 +616,8 @@ dfhack.onStateChange[GLOBAL_KEY] = function(sc)
     if sc ~= SC_MAP_LOADED or df.global.gamemode ~= df.game_mode.DWARF then
         return
     end
-    local persisted_data = json.decode(persist.GlobalTable[GLOBAL_KEY] or '') or {}
-    -- sometimes the keys come back as strings; fix that up
+    local persisted_data = dfhack.persistent.getSiteData(GLOBAL_KEY, {})
+    -- convert the string keys back into enum values
     for k,v in pairs(persisted_data) do
         if type(k) == 'string' then
             persisted_data[tonumber(k)] = v

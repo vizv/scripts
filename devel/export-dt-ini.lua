@@ -1,11 +1,5 @@
 -- Exports an ini file for Dwarf Therapist.
---[====[
-devel/export-dt-ini
-===================
-Exports an ini file containing memory addresses for Dwarf Therapist.
-]====]
 
-local utils = require 'utils'
 local ms = require 'memscan'
 
 -- Utility functions
@@ -406,13 +400,13 @@ address('focus_level',df.unit_personality.T_needs,'focus_level')
 address('need_level',df.unit_personality.T_needs,'need_level')
 
 header('emotion_offsets')
-address('emotion_type',df.unit_personality.T_emotions,'type')
-address('strength',df.unit_personality.T_emotions,'strength')
-address('thought_id',df.unit_personality.T_emotions,'thought')
-address('sub_id',df.unit_personality.T_emotions,'subthought')
-address('level',df.unit_personality.T_emotions,'severity')
-address('year',df.unit_personality.T_emotions,'year')
-address('year_tick',df.unit_personality.T_emotions,'year_tick')
+address('emotion_type',df.personality_moodst,'type')
+address('strength',df.personality_moodst,'relative_strength')
+address('thought_id',df.personality_moodst,'thought')
+address('sub_id',df.personality_moodst,'subthought')
+address('level',df.personality_moodst,'severity')
+address('year',df.personality_moodst,'year')
+address('year_tick',df.personality_moodst,'year_tick')
 
 header('job_details')
 address('id',df.job,'job_type')

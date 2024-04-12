@@ -6,9 +6,7 @@ buildings (e.g. beds have to be inside, doors have to be adjacent to a wall,
 etc.). A notable exception is that we allow constructions and machine components
 to be designated regardless of whether they are reachable or currently
 supported. This allows the user to designate an entire floor of an above-ground
-building or an entire power system without micromanagement. We also don't
-enforce that materials are accessible from the designation location. That is
-something that the player can manage.
+building or an entire power system without micromanagement.
 ]]
 
 if not dfhack_flags.module then
@@ -16,7 +14,7 @@ if not dfhack_flags.module then
 end
 
 local argparse = require('argparse')
-local utils = require('utils')
+local orders = require('plugins.orders')
 local quickfort_common = reqscript('internal/quickfort/common')
 local quickfort_building = reqscript('internal/quickfort/building')
 local quickfort_orders = reqscript('internal/quickfort/orders')
@@ -24,6 +22,7 @@ local quickfort_parse = reqscript('internal/quickfort/parse')
 local quickfort_place = reqscript('internal/quickfort/place')
 local quickfort_transform = reqscript('internal/quickfort/transform')
 local stockpiles = require('plugins.stockpiles')
+local utils = require('utils')
 
 local ok, buildingplan = pcall(require, 'plugins.buildingplan')
 if not ok then
@@ -39,7 +38,12 @@ local log = quickfort_common.log
 local function is_valid_tile_base(pos)
     local flags, occupancy = dfhack.maps.getTileFlags(pos)
     if not flags then return false end
-    return not flags.hidden and occupancy.building == 0
+    if (flags.liquid_type == true or flags.liquid_type == df.tile_liquid.Magma) and
+        flags.flow_size >= 1
+    then
+        return false
+    end
+    return not flags.hidden and flags.flow_size <= 1 and occupancy.building == 0
 end
 
 local function is_valid_tile_generic(pos)
@@ -235,6 +239,50 @@ local function do_farm_props(db_entry, props)
     end
 end
 
+local LABOR_MAP = {}
+for idx, name in ipairs(df.unit_labor) do
+    local caption = df.unit_labor.attrs[idx].caption
+    if caption then
+        LABOR_MAP[name:lower()] = idx
+        LABOR_MAP[caption:lower()] = idx
+    end
+end
+
+local RATING_MAP = {}
+for idx, name in ipairs(df.skill_rating) do
+    local caption = df.skill_rating.attrs[idx].caption
+    if caption then
+        RATING_MAP[name:lower()] = idx
+        RATING_MAP[caption:lower()] = idx
+    end
+end
+
+local function parse_profile_prop(map, prop)
+    return map[prop:lower()]
+end
+
+local function parse_labor_prop(prop)
+    local ret = {}
+    for _, spec in ipairs(argparse.stringList(prop)) do
+        local val = parse_profile_prop(LABOR_MAP, spec)
+        if val then
+            ret[val] = true
+        else
+            dfhack.printerr(('unknown labor type: "%s"'):format(spec))
+        end
+    end
+    return ret
+end
+
+local function make_labor_profile(db_entry, labors, is_mask)
+    local blocked_labors = {resize=false}
+    for _, name in ipairs(orders.get_profile_labors(db_entry.type, db_entry.subtype)) do
+        local is_specified = labors[df.unit_labor[name]]
+        blocked_labors[name] = (is_specified and is_mask) or (not is_specified and not is_mask)
+    end
+    return blocked_labors
+end
+
 local function do_workshop_furnace_props(db_entry, props)
     if props.take_from then
         db_entry.links.take_from = argparse.stringList(props.take_from)
@@ -247,6 +295,32 @@ local function do_workshop_furnace_props(db_entry, props)
     if props.max_general_orders and tonumber(props.max_general_orders) then
         ensure_key(db_entry.props, 'profile').max_general_orders = math.max(0, math.min(10, tonumber(props.max_general_orders)))
         props.max_general_orders = nil
+    end
+    if props.labor_mask then
+        local labors = parse_labor_prop(props.labor_mask)
+        ensure_key(db_entry.props, 'profile').blocked_labors = make_labor_profile(db_entry, labors, true)
+        props.labor_mask = nil
+    end
+    if props.labor then
+        local labors = parse_labor_prop(props.labor)
+        ensure_key(db_entry.props, 'profile').blocked_labors = make_labor_profile(db_entry, labors, false)
+        props.labor = nil
+    end
+    if props.min_skill then
+        local val = parse_profile_prop(RATING_MAP, props.min_skill)
+        ensure_key(db_entry.props, 'profile').min_level = val
+        props.min_skill = nil
+    end
+    if props.max_skill then
+        local val = parse_profile_prop(RATING_MAP, props.max_skill)
+        local profile = ensure_key(db_entry.props, 'profile')
+        profile.max_level = val
+        if profile.max_level and profile.min_level then
+            if profile.max_level < profile.min_level then
+                profile.max_level = profile.min_level
+            end
+        end
+        props.max_skill = nil
     end
 end
 

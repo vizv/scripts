@@ -6,6 +6,7 @@ local widgets = require('gui.widgets')
 
 StartDwarfOverlay = defclass(StartDwarfOverlay, overlay.OverlayWidget)
 StartDwarfOverlay.ATTRS{
+    desc='Adds a scrollbar (if necessary) to the list of starting dwarves.',
     default_pos={x=5, y=9},
     default_enabled=true,
     viewscreens='setupdwarfgame/Dwarves',

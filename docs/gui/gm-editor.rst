@@ -20,12 +20,20 @@ If you just want to browse without fear of accidentally changing anything, hit
 automatically pick up changes to game data in realtime, hit :kbd:`Alt`:kbd:`A`
 to switch to auto update mode.
 
+.. warning::
+
+    Note that data structures can be created and deleted while the game is
+    running. If you happen to be inspecting a dynamically allocated data
+    structure when it is deleted by the game, the game may crash. Please save
+    your game before poking around in `gui/gm-editor`, especially if you are
+    examining data while the game is unpaused.
+
 Usage
 -----
 
 ``gui/gm-editor [-f]``
-    Open the editor on whatever is selected or viewed (e.g. unit/item
-    description screen)
+    Open the editor on whatever is selected or viewed (e.g. unit/item/building/
+    engraving/etc.)
 ``gui/gm-editor [-f] <lua expression>``
     Evaluate a lua expression and opens the editor on its results. Field
     prefixes of ``df.global`` can be omitted.

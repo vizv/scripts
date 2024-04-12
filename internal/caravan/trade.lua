@@ -719,6 +719,7 @@ end
 
 TradeOverlay = defclass(TradeOverlay, overlay.OverlayWidget)
 TradeOverlay.ATTRS{
+    desc='Adds convenience functions for working with bins to the trade screen.',
     default_pos={x=-3,y=-12},
     default_enabled=true,
     viewscreens='dwarfmode/Trade/Default',
@@ -803,6 +804,7 @@ end
 
 TradeBannerOverlay = defclass(TradeBannerOverlay, overlay.OverlayWidget)
 TradeBannerOverlay.ATTRS{
+    desc='Adds link to the trade screen to launch the DFHack trade UI.',
     default_pos={x=-31,y=-7},
     default_enabled=true,
     viewscreens='dwarfmode/Trade/Default',

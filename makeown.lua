@@ -57,7 +57,7 @@ local function fix_clothing_ownership(unit)
                     unit.military.uniforms[0]:insert('#',item.id)    --insert_into_vector(unit->military.uniforms[0], item->id);
                     fixcount = fixcount + 1    --fixcount++;
                 else
-                    dfhack.printerr("makeown: could not change ownership for an item!")
+                    dfhack.printerr("could not change ownership for an item!")
                 end
             end
         end
@@ -66,7 +66,7 @@ local function fix_clothing_ownership(unit)
     -- dirty?
     unit.military.uniform_drop:resize(0)    --unit->military.uniform_drop.clear();
     ----out << "ownership for " << fixcount << " clothes fixed" << endl;
-    print("makeown: claimed ownership for "..tostring(fixcount).." worn items")
+    print("claimed ownership for "..tostring(fixcount).." worn items")
 end
 
 local function entity_link(hf, eid, do_event, add, replace_idx)
@@ -104,8 +104,8 @@ local function entity_link(hf, eid, do_event, add, replace_idx)
 end
 
 local function change_state(hf, site_id, pos)
-    hf.info.whereabouts.whereabouts_type = 1    -- state? arrived?
-    hf.info.whereabouts.site = site_id
+    hf.info.whereabouts.state = df.whereabouts_type.settler
+    hf.info.whereabouts.site_id = site_id
     local event = df.history_event_change_hf_statest:new()
     event.year = df.global.cur_year
     event.seconds = df.global.cur_year_tick
@@ -167,13 +167,8 @@ function make_citizen(unit)
         entity_link(hf, civ_id, false) -- so lets skip event here
         entity_link(hf, group_id)
 
-        hf.info = df.historical_figure_info:new()
-        hf.info.whereabouts = df.historical_figure_info.T_whereabouts:new()
-        hf.info.whereabouts.region_id = -1;
-        hf.info.whereabouts.underground_region_id = -1;
-        hf.info.whereabouts.army_id = -1;
-        hf.info.whereabouts.unk_1 = -1;
-        hf.info.whereabouts.unk_2 = -1;
+        hf.info = {new=true}
+        hf.info.whereabouts = {new=true}
         change_state(hf, df.global.plotinfo.site_id, region_pos)
 
 
@@ -194,7 +189,7 @@ function make_citizen(unit)
         unit.flags2.important_historical_figure = true
         unit.hist_figure_id = hf.id
         unit.hist_figure_id2 = hf.id
-        print("makeown: created historical figure: "..tostring(hf.id))
+        print("created historical figure: "..tostring(hf.id))
     else
         -- only insert into civ/fort if not already there
         -- Migrants change previous histfig_entity_link_memberst to histfig_entity_link_former_memberst
@@ -237,7 +232,7 @@ function make_citizen(unit)
             fortent.histfig_ids:insert('#', hf.id)
             fortent.hist_figures:insert('#', hf)
         end
-        print("makeown: migrated historical figure")
+        print("migrated historical figure")
     end    -- hf
 
     local nemesis = dfhack.units.getNemesis(unit)
@@ -247,7 +242,7 @@ function make_citizen(unit)
         nemesis.unit = unit
         nemesis.unit_id = unit.id
         nemesis.save_file_id = civent.save_file_id
-        nemesis.unk10, nemesis.unk11, nemesis.unk12 = -1, -1, -1
+        nemesis.activeplotindex, nemesis.travel_link_nemid, nemesis.ideal_item_container_id = -1, -1, -1
         --group_leader_id = -1
         nemesis.id = df.global.nemesis_next_id
         nemesis.member_idx = civent.next_member_idx
@@ -265,7 +260,7 @@ function make_citizen(unit)
         fortent.nemesis:insert('#', nemesis)
         civent.nemesis_ids:insert('#', nemesis.id)
         civent.nemesis:insert('#', nemesis)
-        print("makeown: created nemesis entry")
+        print("created nemesis entry")
     else-- only insert into civ/fort if not already there
         local found = false
         for _,v in ipairs(civent.nemesis_ids) do
@@ -283,7 +278,7 @@ function make_citizen(unit)
             fortent.nemesis_ids:insert('#', nemesis.id)
             fortent.nemesis:insert('#', nemesis)
         end
-        print("makeown: migrated nemesis entry")
+        print("migrated nemesis entry")
     end -- nemesis
 
     -- generate a name for the unit if it doesn't already have one

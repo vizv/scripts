@@ -21,7 +21,7 @@ Target options
 --------------
 
 ``--citizens``
-    All (sane) citizens of your fort will be affected. Will do nothing in
+    All citizens and residents of your fort will be affected. Will do nothing in
     adventure mode.
 ``--unit <UNIT ID>``
     The given unit will be affected.

@@ -1,11 +1,5 @@
---Allow stressed dwarves to emigrate from the fortress
--- For 34.11 by IndigoFenix; update and cleanup by PeridexisErrant
--- old version:  http://dffd.bay12games.com/file.php?id=8404
 --@module = true
 --@enable = true
-
-local json = require('json')
-local persist = require('persist-table')
 
 local GLOBAL_KEY = 'emigration' -- used for state change hooks and persistence
 
@@ -16,7 +10,7 @@ function isEnabled()
 end
 
 local function persist_state()
-    persist.GlobalTable[GLOBAL_KEY] = json.encode({enabled=enabled})
+    dfhack.persistent.saveSiteData(GLOBAL_KEY, {enabled=enabled})
 end
 
 function desireToStay(unit,method,civ_id)
@@ -82,6 +76,11 @@ function desert(u,method,civ)
                 break
             end
         end
+    end
+
+    -- unburrow
+    for _, burrow in ipairs(df.global.plotinfo.burrows.list) do
+        dfhack.burrows.setAssignedUnit(burrow, u, false)
     end
 
     -- erase the unit from the fortress entity
@@ -162,7 +161,6 @@ function canLeave(unit)
            not unit.flags1.chained and
            dfhack.units.getNoblePositions(unit) == nil and
            unit.military.squad_id == -1 and
-           dfhack.units.isSane(unit) and
            not dfhack.units.isBaby(unit) and
            not dfhack.units.isChild(unit)
 end
@@ -215,8 +213,8 @@ dfhack.onStateChange[GLOBAL_KEY] = function(sc)
         return
     end
 
-    local persisted_data = json.decode(persist.GlobalTable[GLOBAL_KEY] or '')
-    enabled = (persisted_data or {enabled=false})['enabled']
+    local persisted_data = dfhack.persistent.getSiteData(GLOBAL_KEY, {enabled=false})
+    enabled = persisted_data.enabled
     event_loop()
 end
 

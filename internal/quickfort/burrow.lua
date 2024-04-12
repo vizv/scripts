@@ -13,7 +13,6 @@ local quickfort_preview = reqscript('internal/quickfort/preview')
 local utils = require('utils')
 
 local log = quickfort_common.log
-local logfn = quickfort_common.logfn
 
 local burrow_db = {
     a={label='Add', add=true},

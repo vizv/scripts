@@ -1247,9 +1247,6 @@ function Design:onRenderFrame(dc, rect)
         self.marks[self.placing_mark.index] = mouse_pos
     end
 
-    -- Set main points
-    local points = copyall(self.marks)
-
     -- Set the pos of the currently moving extra point
     if self.placing_extra.active then
         self.extra_points[self.placing_extra.index] = mouse_pos
@@ -1288,6 +1285,9 @@ function Design:onRenderFrame(dc, rect)
 
         self.prev_center = mouse_pos
     end
+
+    -- Set main points
+    local points = copyall(self.marks)
 
     if self.mirror_point then
         points = self:get_mirrored_points(points)
@@ -1475,6 +1475,27 @@ function Design:onInput(keys)
             self.placing_mirror = false
             self.needs_update = true
         else
+            -- Clicking center point
+            if #self.marks > 0 then
+                local center = self.shape:get_center()
+                if pos == center and not self.prev_center then
+                    self.start_center = pos
+                    self.prev_center = pos
+                    return true
+                elseif self.prev_center then
+                    --If there was no movement presume user wanted to click the mark underneath instead and let the flow through.
+                    if pos == self.start_center then
+                        self.start_center = nil
+                        self.prev_center = nil
+                    else
+                    -- Since it moved let's just drop the shape here.
+                        self.start_center = nil
+                        self.prev_center = nil
+                        return true
+                    end
+                end
+            end
+
             if self.shape.basic_shape and #self.marks == self.shape.max_points then
                 -- Clicking a corner of a basic shape
                 local shape_top_left, shape_bot_right = self.shape:get_point_dims()
@@ -1510,20 +1531,6 @@ function Design:onInput(keys)
                 if pos == self.extra_points[i] then
                     self.placing_extra = { active = true, index = i }
                     self.needs_update = true
-                    return true
-                end
-            end
-
-            -- Clicking center point
-            if #self.marks > 0 then
-                local center = self.shape:get_center()
-                if pos == center and not self.prev_center then
-                    self.start_center = pos
-                    self.prev_center = pos
-                    return true
-                elseif self.prev_center then
-                    self.start_center = nil
-                    self.prev_center = nil
                     return true
                 end
             end
@@ -1784,6 +1791,7 @@ local DIMENSION_TOOLTIP_Y_OFFSET = 3
 
 DimensionsOverlay = defclass(DimensionsOverlay, overlay.OverlayWidget)
 DimensionsOverlay.ATTRS{
+    desc='Adds a tooltip that shows the selected dimensions when drawing boxes.',
     default_pos={x=1,y=1},
     default_enabled=true,
     overlay_only=true, -- not player-repositionable
@@ -1798,12 +1806,12 @@ DimensionsOverlay.ATTRS{
 local selection_rect = df.global.selection_rect
 
 local function is_choosing_area()
-    return selection_rect.start_z >= 0 and dfhack.gui.getMousePos(true)
+    return selection_rect.start_x >= 0 and dfhack.gui.getMousePos(true)
 end
 
 local function get_cur_area_dims()
     local pos1 = dfhack.gui.getMousePos(true)
-    if not pos1 or selection_rect.start_z < 0 then return 1, 1, 1 end
+    if not pos1 or selection_rect.start_x < 0 then return 1, 1, 1 end
 
     -- clamp to map edges (since you can start selection out of bounds)
     pos1 = xyz2pos(
@@ -1852,7 +1860,9 @@ end
 -- don't imply that stockpiles will be 3d
 local main_interface = df.global.game.main_interface
 local function check_stockpile_dims()
-    if main_interface.bottom_mode_selected == df.main_bottom_mode_type.STOCKPILE_PAINT then
+    if main_interface.bottom_mode_selected == df.main_bottom_mode_type.STOCKPILE_PAINT and
+        selection_rect.start_x > 0
+    then
         selection_rect.start_z = df.global.window_z
     end
 end

@@ -58,6 +58,18 @@ function getTargetFromScreens()
             or dfhack.gui.getSelectedJob(true) or dfhack.gui.getSelectedBuilding(true)
             or dfhack.gui.getSelectedStockpile(true) or dfhack.gui.getSelectedCivZone(true)
     if not my_trg then
+        if dfhack.gui.matchFocusString('dwarfmode/ViewSheets/ENGRAVING', dfhack.gui.getDFViewscreen(true)) then
+            local sheet = df.global.game.main_interface.view_sheets
+            local pos = xyz2pos(sheet.viewing_x, sheet.viewing_y, sheet.viewing_z)
+            for _, engraving in ipairs(df.global.world.engravings) do
+                if same_xyz(engraving.pos, pos) then
+                    my_trg = engraving
+                    break
+                end
+            end
+        end
+    end
+    if not my_trg then
         qerror("No valid target found")
     end
     return my_trg

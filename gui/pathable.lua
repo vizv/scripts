@@ -8,6 +8,7 @@ local widgets = require('gui.widgets')
 Pathable = defclass(Pathable, gui.ZScreen)
 Pathable.ATTRS{
     focus_path='pathable',
+    pass_movement_keys=true,
 }
 
 function Pathable:init()

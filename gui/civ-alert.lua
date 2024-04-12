@@ -111,6 +111,7 @@ end
 
 CivalertOverlay = defclass(CivalertOverlay, overlay.OverlayWidget)
 CivalertOverlay.ATTRS{
+    desc='Adds a button for activating a civilian alert when the squads panel is open.',
     default_pos={x=-15,y=-1},
     default_enabled=true,
     viewscreens='dwarfmode',
