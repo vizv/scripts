@@ -31,8 +31,7 @@ local filename = 'markdown_' .. (filenameArg or worldName) .. '.md'
 local function getFileHandle()
     local handle, error = io.open(filename, writemode)
     if not handle then
-        dfhack.printerr("Error opening file: " .. filename .. ". " .. error)
-        return nil
+        qerror("Error opening file: " .. filename .. ". " .. error)
     end
     return handle
 end
@@ -132,6 +131,5 @@ elseif unit then
         log:write(reformat(dfhack.df2utf(unit_personality.value)) .. '\n')
     end
     print('Exporting Health/Description & Personality/Traits data for: \n' .. dfhack.df2console(getNameRaceAgeProf(unit)))
-else
 end
 closeFileHandle(log)
