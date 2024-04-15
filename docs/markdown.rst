@@ -36,6 +36,9 @@ Specifying a filename will append to ``markdown_{filename}.md`` instead,
 which is useful for organizing data by category or topic.
 The [-o] argument tells the script to overwrite the output file.
 
+You can call the ``markdown`` with the default hotkey Shift+R (R-ecord).
+It will save the description to the ``markdown_{world_name}.md`` file.
+
 Options
 -------
 
