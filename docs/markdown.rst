@@ -35,7 +35,7 @@ to ``markdown_{world_name}.md`` file by default.
 
 Specifying a filename will append to ``markdown_{filename}.md`` instead,
 which is useful for organizing data by category or topic.
-To include whitespace, quote the ``<filename>`` in double quotes ``"``.  
+To include whitespace, quote the ``<filename>`` in double quotes ``"``.
 
 The [-o] argument tells the script to overwrite the output file.
 
@@ -57,8 +57,8 @@ Go to call the tool with Ctrl-Shift-A, then Add command:
     markdown -o descriptions
 
 
-If "markdown -o descriptions" is the first entry in the list of hotkeys, 
-then clicking ``a`` while the ``gui/quickcmd`` (Ctrl-Shift-A) is open 
+If "markdown -o descriptions" is the first entry in the list of hotkeys,
+then clicking ``a`` while the ``gui/quickcmd`` (Ctrl-Shift-A) is open
 will overwrite the description to the "markdown_descriptions" file.
 
 - With the ``keybinding`` tool:
@@ -69,7 +69,7 @@ will overwrite the description to the "markdown_descriptions" file.
 
 
 Specify the ``[hotkey]``, which is a case-sensitive combination of keys,
-and ``[arguments]``, which are your regular markdown arguments. 
+and ``[arguments]``, which are your regular markdown arguments.
 You have to put ``markdown`` and its arguments into double quotes for
 arguments to be processed.
 
