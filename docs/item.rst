@@ -32,9 +32,9 @@ and "cave spider silk cloth". Use ``^pattern$`` to match the entire description.
 Examples
 --------
 
-``item count steel``
+``item count steel -v``
     Scan your stocks for (unowned) items that contain the word "steel" and
-    print out the total count.
+    print out the counts for each steel item found.
 
 ``item count --verbose --by-type steel``
     Scan your stocks for (unowned) items that contain the word "steel" and
@@ -60,7 +60,7 @@ Examples
 Options
 -------
 
-``-n, --dry-run``
+``-n``, ``--dry-run``
     Get a count of the items that would be modified by an operation, which will
     be the number returned by the ``count`` action minus the number of items
     with the desired property already set.
@@ -69,52 +69,52 @@ Options
     Only applies to the ``count`` action. Outputs, in addition to the total
     count, a table of item counts grouped by item type.
 
-``-a, --include-artifacts``
+``-a``, ``--include-artifacts``
     Include artifacts in the item list. Regardless of this setting, artifacts
     are never dumped or melted.
 
 ``--include-owned``
     Include items owned by units (e.g., your dwarves or visitors)
 
-``-i, --inside <burrow>``
+``-i``, ``--inside <burrow>``
     Only include items inside the given burrow.
 
-``-o, --outside <burrow>``
+``-o``, ``--outside <burrow>``
     Only include items outside the given burrow.
 
-``-r, --reachable``
+``-r``, ``--reachable``
     Only include items reachable by one of your citizens.
 
-``-u, --unreachable``
+``-u``, ``--unreachable``
     Only include items not reachable by any of your citizens.
 
-``-t, --type <string>``
+``-t``, ``--type <string>``
     Filter by item type (e.g., BOULDER, CORPSE, ...). Also accepts lower case
     spelling (e.g. "corpse"). Use ``:lua @df.item_type`` to get the list of all
     item types.
 
-``-m, --material <string>``
+``-m``, ``--material <string>``
     Filter by material the item is made out of (e.g., "iron").
 
-``-c, --mat-category <string>``
+``-c``, ``--mat-category <string>``
     Filter by material category of the material item is made out of (e.g.,
     "metal"). Use ``:lua @df.dfhack_material_category`` to get a list of all
     material categories.
 
-``-w, --min-wear <integer>``
+``-w``, ``--min-wear <integer>``
     Only include items whose wear/damage level is at least ``integer``. Useful
     values are 0 (pristine) to 3 (XX).
 
-``-W, --max-wear <integer>``
+``-W``, ``--max-wear <integer>``
     Only include items whose wear/damage level is at most ``integer``. Useful
     values are 0 (pristine) to 3 (XX).
 
-``-q, --min-quality <integer>``
+``-q``, ``--min-quality <integer>``
     Only include items whose quality level is at least ``integer``. Useful
     values are 0 (ordinary) to 5 (masterwork). Use ``:lua @df.item_quality`` to
     get the mapping between numbers and adjectives.
 
-``-Q, --max-quality <integer>``
+``-Q``, ``--max-quality <integer>``
     Only include items whose quality level is at most ``integer``. Useful
     values are 0 (ordinary) to 5 (masterwork).
 
@@ -136,6 +136,9 @@ Options
 
 ``--visible``
     Same as ``--not-marked=hidden``
+
+``-v``, ``--verbose``
+    Print out a description of each matched item.
 
 API
 ---
