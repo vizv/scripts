@@ -28,6 +28,7 @@ Template for new versions:
 
 ## New Tools
 - `gui/unit-info-viewer`: (reinstated) give detailed information on a unit, such as egg laying behavior, body size, birth date, age, and information about their afterlife behavior (if a ghost)
+- `gui/quantum`: (reinstated) point and click interface for creating quantum stockpiles or quantum dumps
 
 ## New Features
 
