@@ -10,51 +10,6 @@ local quickfort = reqscript('quickfort')
 local quickfort_command = reqscript('internal/quickfort/command')
 local quickfort_orders = reqscript('internal/quickfort/orders')
 
-local QuantumUI = {}
-
-local function is_in_extents(bld, x, y)
-    local extents = bld.room.extents
-    if not extents then return true end -- building is solid
-    local yoff = (y - bld.y1) * (bld.x2 - bld.x1 + 1)
-    local xoff = x - bld.x1
-    return extents[yoff+xoff] == 1
-end
-
-function QuantumUI:select_stockpile(pos)
-    local flags, occupancy = dfhack.maps.getTileFlags(pos)
-    if not flags or occupancy.building == 0 then return end
-    local bld = dfhack.buildings.findAtTile(pos)
-    if not bld or bld:getType() ~= df.building_type.Stockpile then return end
-
-    local tiles = {}
-
-    for x=bld.x1,bld.x2 do
-        for y=bld.y1,bld.y2 do
-            if is_in_extents(bld, x, y) then
-                ensure_key(ensure_key(tiles, bld.z), y)[x] = true
-            end
-        end
-    end
-
-    self.feeder = bld
-    self.feeder_tiles = tiles
-
-    self:updateLayout()
-end
-
-function QuantumUI:render_feeder_overlay()
-    if not gui.blink_visible(1000) then return end
-
-    local zlevel = self.feeder_tiles[df.global.window_z]
-    if not zlevel then return end
-
-    local function get_feeder_overlay_char(pos)
-        return safe_index(zlevel, pos.y, pos.x) and 'X'
-    end
-
-    self:renderMapOverlay(get_feeder_overlay_char, self.feeder)
-end
-
 local function get_qsp_pos(cursor, offset)
     return {
         x=cursor.x+(offset.x or 0),
@@ -73,26 +28,6 @@ local function is_valid_pos(cursor, qsp_pos)
     return stats.place_designated.value > 0
 end
 
-function QuantumUI:render_destination_overlay()
-    local cursor = guidm.getCursorPos()
-    local qsp_pos = self:get_qsp_pos(cursor)
-    local bounds = {x1=qsp_pos.x, x2=qsp_pos.x, y1=qsp_pos.y, y2=qsp_pos.y}
-
-    local ok = is_valid_pos(cursor, qsp_pos)
-
-    local function get_dest_overlay_char()
-        return 'X', ok and COLOR_GREEN or COLOR_RED
-    end
-
-    self:renderMapOverlay(get_dest_overlay_char, bounds)
-end
-
-function QuantumUI:onRenderBody()
-    if not self.feeder then return end
-
-    self:render_feeder_overlay()
-    self:render_destination_overlay()
-end
 
 local function get_quantumstop_data(feeder, name, trackstop_dir)
     local stop_name, route_name
@@ -117,13 +52,6 @@ local function get_quantumsp_data(name)
     return ('ry{name="%s" quantum=true}'):format(name)
 end
 
-local function order_minecart(pos)
-    local quickfort_ctx = quickfort_command.init_ctx{
-            command='orders', blueprint_name='gui/quantum', cursor=pos}
-    quickfort_orders.enqueue_additional_order(quickfort_ctx, 'wooden minecart')
-    quickfort_orders.create_orders(quickfort_ctx)
-end
-
 -- this function assumes that is_valid_pos() has already validated the positions
 local function create_quantum(pos, qsp_pos, feeder, name, trackstop_dir)
     local data = get_quantumstop_data(feeder, name, trackstop_dir)
@@ -139,6 +67,13 @@ local function create_quantum(pos, qsp_pos, feeder, name, trackstop_dir)
         error(('failed to place stockpile at (%d, %d, %d)')
               :format(qsp_pos.x, qsp_pos.y, qsp_pos.z))
     end
+end
+
+local function order_minecart(pos)
+    local quickfort_ctx = quickfort_command.init_ctx{
+            command='orders', blueprint_name='gui/quantum', cursor=pos}
+    quickfort_orders.enqueue_additional_order(quickfort_ctx, 'wooden minecart')
+    quickfort_orders.create_orders(quickfort_ctx)
 end
 
 if dfhack.internal.IN_TEST then
@@ -220,16 +155,75 @@ local function get_hover_stockpile(pos)
     return bld
 end
 
+function Quantum:get_pos_qsp_pos()
+    local pos = dfhack.gui.getMousePos()
+    if not pos then return end
+    local qsp_pos = self.subviews.create_sp:getOptionValue() and
+        get_qsp_pos(pos, self.subviews.dump_dir:getOptionValue())
+    return pos, qsp_pos
+end
+
+local to_pen = dfhack.pen.parse
+local SELECTED_SP_PEN = to_pen{ch='=', fg=COLOR_LIGHTGREEN,
+                               tile=dfhack.screen.findGraphicsTile('ACTIVITY_ZONES', 3, 15)}
+local HOVERED_SP_PEN = to_pen{ch='=', fg=COLOR_GREEN,
+                              tile=dfhack.screen.findGraphicsTile('ACTIVITY_ZONES', 2, 15)}
+
+function Quantum:render_sp_overlay(sp, pen)
+    if not sp then return end
+
+    local function get_overlay_char(pos)
+        if dfhack.buildings.containsTile(sp, pos.x, pos.y) then return pen end
+    end
+
+    guidm.renderMapOverlay(get_overlay_char, sp)
+end
+
+local CURSOR_PEN = to_pen{ch='o', fg=COLOR_BLUE,
+                          tile=dfhack.screen.findGraphicsTile('CURSORS', 5, 22)}
+local GOOD_PEN = to_pen{ch='x', fg=COLOR_GREEN,
+                        tile=dfhack.screen.findGraphicsTile('CURSORS', 1, 2)}
+local BAD_PEN = to_pen{ch='X', fg=COLOR_RED,
+                       tile=dfhack.screen.findGraphicsTile('CURSORS', 3, 0)}
+
+function Quantum:render_placement_overlay()
+    if not self.feeder then return end
+    local stop_pos, qsp_pos = self:get_pos_qsp_pos()
+
+    if not stop_pos then return end
+
+    local bounds = {
+        x1=stop_pos.x,
+        x2=stop_pos.x,
+        y1=stop_pos.y,
+        y2=stop_pos.y,
+    }
+    if qsp_pos then
+        bounds.x1 = math.min(bounds.x1, qsp_pos.x)
+        bounds.x2 = math.max(bounds.x2, qsp_pos.x)
+        bounds.y1 = math.min(bounds.y1, qsp_pos.y)
+        bounds.y2 = math.max(bounds.y2, qsp_pos.y)
+    end
+
+    local ok = is_valid_pos(stop_pos, qsp_pos)
+
+    local function get_overlay_char(pos)
+        if not ok then return BAD_PEN end
+        return same_xy(pos, stop_pos) and CURSOR_PEN or GOOD_PEN
+    end
+
+    guidm.renderMapOverlay(get_overlay_char, bounds)
+end
+
 function Quantum:render(dc)
-    -- TODO: highlight feeder stockpile and stockpile under mouse cursor
-    local hover_sp = get_hover_stockpile()
+    self:render_sp_overlay(get_hover_stockpile(), HOVERED_SP_PEN)
+    self:render_sp_overlay(self.feeder, SELECTED_SP_PEN)
+    self:render_placement_overlay()
     Quantum.super.render(self, dc)
 end
 
 function Quantum:try_commit()
-    local pos = dfhack.gui.getMousePos()
-    local qsp_pos = self.subviews.create_sp:getOptionValue() and
-        get_qsp_pos(pos, self.subviews.dump_dir:getOptionValue())
+    local pos, qsp_pos = self:get_pos_qsp_pos()
     if not is_valid_pos(pos, qsp_pos) then
         return
     end
