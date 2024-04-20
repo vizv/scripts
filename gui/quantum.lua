@@ -29,7 +29,7 @@ local function is_valid_pos(cursor, qsp_pos)
 end
 
 
-local function get_quantumstop_data(feeder, name, trackstop_dir)
+local function get_quantumstop_data(feeder_id, name, trackstop_dir)
     local stop_name, route_name
     if name == '' then
         local next_route_id = df.global.plotinfo.hauling.next_id
@@ -41,7 +41,7 @@ local function get_quantumstop_data(feeder, name, trackstop_dir)
     end
 
     return ('trackstop%s{name="%s" take_from=%d route="%s"}')
-           :format(trackstop_dir, stop_name, feeder.id, route_name)
+           :format(trackstop_dir, stop_name, feeder_id, route_name)
 end
 
 local function get_quantumsp_data(name)
@@ -53,8 +53,8 @@ local function get_quantumsp_data(name)
 end
 
 -- this function assumes that is_valid_pos() has already validated the positions
-local function create_quantum(pos, qsp_pos, feeder, name, trackstop_dir)
-    local data = get_quantumstop_data(feeder, name, trackstop_dir)
+local function create_quantum(pos, qsp_pos, feeder_id, name, trackstop_dir)
+    local data = get_quantumstop_data(feeder_id, name, trackstop_dir)
     local stats = quickfort.apply_blueprint{mode='build', pos=pos, data=data}
     if stats.build_designated.value == 0 then
         error(('failed to build trackstop at (%d, %d, %d)')
@@ -78,7 +78,6 @@ end
 
 if dfhack.internal.IN_TEST then
     unit_test_hooks = {
-        is_in_extents=is_in_extents,
         is_valid_pos=is_valid_pos,
         create_quantum=create_quantum,
     }
@@ -228,7 +227,7 @@ function Quantum:try_commit()
         return
     end
 
-    create_quantum(pos, qsp_pos, self.feeder, self.subviews.name.text,
+    create_quantum(pos, qsp_pos, self.feeder.id, self.subviews.name.text,
         self.subviews.dump_dir:getOptionLabel():sub(1,1))
 
     local message = nil
