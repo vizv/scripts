@@ -34,6 +34,8 @@ Template for new versions:
 
 ## Fixes
 - `open-legends`: don't interfere with the dragging of vanilla list scrollbars
+- `gui/create-item`: properly restrict bags to bag materials by default
+- `gui/create-item`: allow gloves and shoees to be made out of textiles by default
 
 ## Misc Improvements
 - `open-legends`: allow player to cancel the "DF will now exit" dialog and continue browsing

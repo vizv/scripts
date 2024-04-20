@@ -99,12 +99,20 @@ local function getRestrictiveMatFilter(itemType, opts)
         BLOCKS = function(mat, parent, typ, idx)
             return mat.flags.IS_STONE or mat.flags.IS_METAL or mat.flags.IS_GLASS or mat.flags.WOOD
         end,
+        BAG = function(mat, parent, typ, idx)
+            return mat.flags.SILK or mat.flags.THREAD_PLANT or mat.flags.YARN
+        end,
     }
     for k, v in ipairs { 'GOBLET', 'FLASK', 'TOY', 'RING', 'CROWN', 'SCEPTER', 'FIGURINE', 'TOOL' } do
         itemTypes[v] = itemTypes.INSTRUMENT
     end
-    for k, v in ipairs { 'SHOES', 'SHIELD', 'HELM', 'GLOVES' } do
+    for k, v in ipairs { 'SHIELD', 'HELM' } do
         itemTypes[v] = itemTypes.ARMOR
+    end
+    for k, v in ipairs { 'SHOES', 'GLOVES' } do
+        itemTypes[v] = function(mat, parent, typ, idx)
+            return itemTypes.ARMOR(mat, parent, typ, idx) or itemTypes.BAG(mat, parent, typ, idx)
+        end
     end
     for k, v in ipairs { 'EARRING', 'BRACELET' } do
         itemTypes[v] = itemTypes.AMULET
