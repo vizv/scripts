@@ -241,7 +241,7 @@ end
 local function createItem(mat, itemType, quality, creator, description, amount)
     local item = df.item.find(dfhack.items.createItem(itemType[1], itemType[2], mat[1], mat[2], creator))
     local item2 = nil
-    assert(item, 'failed to create item')
+    assert(item, ('failed to create item: item_type: %s, item_subtype: %s, mat_type: %s, mat_index: %s, unit: %s'):format(itemType[1], itemType[2], mat[1], mat[2], creator and creator.id or 'nil'))
     local mat_token = dfhack.matinfo.decode(item):getToken()
     quality = math.max(0, math.min(5, quality - 1))
     item:setQuality(quality)
