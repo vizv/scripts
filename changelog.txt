@@ -39,6 +39,7 @@ Template for new versions:
 
 ## Misc Improvements
 - `open-legends`: allow player to cancel the "DF will now exit" dialog and continue browsing
+- `gui/gm-unit`: changes to a units appearance will now immediately be reflected in the unit portrait
 
 ## Removed
 
