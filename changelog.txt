@@ -27,10 +27,20 @@ Template for new versions:
 # Future
 
 ## New Tools
-- `gui/unit-info-viewer`: (reinstated) give detailed information on a unit, such as egg laying behavior, body size, birth date, age, and information about their afterlife behavior (if a ghost)
-- `gui/quantum`: (reinstated) point and click interface for creating quantum stockpiles or quantum dumps
 
 ## New Features
+
+## Fixes
+
+## Misc Improvements
+
+## Removed
+
+# 50.13-r1
+
+## New Tools
+- `gui/unit-info-viewer`: (reinstated) give detailed information on a unit, such as egg laying behavior, body size, birth date, age, and information about their afterlife behavior (if a ghost)
+- `gui/quantum`: (reinstated) point and click interface for creating quantum stockpiles or quantum dumps
 
 ## Fixes
 - `open-legends`: don't interfere with the dragging of vanilla list scrollbars
@@ -40,9 +50,7 @@ Template for new versions:
 
 ## Misc Improvements
 - `open-legends`: allow player to cancel the "DF will now exit" dialog and continue browsing
-- `gui/gm-unit`: changes to a units appearance will now immediately be reflected in the unit portrait
-
-## Removed
+- `gui/gm-unit`: changes to unit appearance will now immediately be reflected in the unit portrait
 
 # 50.12-r3
 
