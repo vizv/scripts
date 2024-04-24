@@ -15,11 +15,9 @@ TradeAgreementOverlay.ATTRS {
     frame_background = gui.CLEAR_PEN,
 }
 local diplomacy = df.global.game.main_interface.diplomacy
-local civilization = df.historical_entity.find(diplomacy.actor.civ_id)
-local resources = civilization.resources
 local lasttab, lastresult = -1, nil
 
-local function TabCtor(pages, labelSingular, labelPlural, getCivResourceList, funcGetValue)
+local function tabsdef(pages, labelSingular, labelPlural, getCivResourceList, funcGetValue)
     return {
         pages = pages,
         labelSingular = labelSingular,
@@ -42,20 +40,20 @@ local function DecodeMatInfoFromSquash(mat)
     return dfhack.matinfo.decode(mat.type, mat.index).material.material_value
 end
 
-table.insert(Tabs, TabCtor({ 6, 7 }, "gem", "gems",
-    function() return resources.gems end,
+table.insert(Tabs, tabsdef({ 6, 7 }, "gem", "gems",
+    function(resources) return resources.gems end,
     function(id) return dfhack.matinfo.decode(0, id).material.material_value end)
 )
-table.insert(Tabs, TabCtor({ 0 }, "leather", "leathers",
-    function() return SquashMatIndexType(resources.organic.leather) end,
+table.insert(Tabs, tabsdef({ 0 }, "leather", "leathers",
+    function(resources) return SquashMatIndexType(resources.organic.leather) end,
     DecodeMatInfoFromSquash)
 )
-table.insert(Tabs, TabCtor({ 29 }, "meat", "meats",
-    function() return SquashMatIndexType(resources.misc_mat.meat) end,
+table.insert(Tabs, tabsdef({ 29 }, "meat", "meats",
+    function(resources) return SquashMatIndexType(resources.misc_mat.meat) end,
     DecodeMatInfoFromSquash)
 )
-table.insert(Tabs, TabCtor({ 62 }, "parchment", "parchments",
-    function() return SquashMatIndexType(resources.organic.parchment) end,
+table.insert(Tabs, tabsdef({ 62 }, "parchment", "parchments",
+    function(resources) return SquashMatIndexType(resources.organic.parchment) end,
     DecodeMatInfoFromSquash)
 )
 
@@ -100,7 +98,7 @@ local function OrderGemWithMinValue(matPrices, val)
 end
 
 local function GetCivMatPrices(tabSelected)
-    local resource = tabSelected.getCivResourceList()
+    local resource = tabSelected.getCivResourceList(df.historical_entity.find(diplomacy.actor.civ_id).resources)
     local matPrices = {}
     local matValuesUnique = {}
     local filter = {}
@@ -125,7 +123,7 @@ local function ValueSelector()
     local list = {}
     for index, value in ipairs(matValuesUnique) do
         list[index] = tostring(value.value) ..
-        " - " .. tostring(value.count) .. " " .. (value.count == 1 and currTab.labelSingular or currTab.labelPlural)
+            " - " .. tostring(value.count) .. " " .. (value.count == 1 and currTab.labelSingular or currTab.labelPlural)
     end
     dlg.showListPrompt(
         "Select materials with base value", "",
