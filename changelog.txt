@@ -31,6 +31,7 @@ Template for new versions:
 ## New Features
 
 ## Fixes
+- `gui/quantum`: accept all item types in the output stockpile as intended
 
 ## Misc Improvements
 

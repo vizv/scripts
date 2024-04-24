@@ -49,7 +49,7 @@ local function get_quantumsp_data(name)
         local next_route_id = df.global.plotinfo.hauling.next_id
         name = ('Quantum %d'):format(next_route_id-1)
     end
-    return ('ry{name="%s" quantum=true}'):format(name)
+    return ('ry{name="%s" quantum=true}:+all'):format(name)
 end
 
 -- this function assumes that is_valid_pos() has already validated the positions
