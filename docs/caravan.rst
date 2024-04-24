@@ -92,8 +92,9 @@ selected, then the range of items will be selected.
 Trade agreement
 ```````````````
 
-A small panel is shown with a hotkey (``Ctrl-A``) for selecting all/none in the
-currently shown category.
+A small panel is shown with a hotkeys:
+(``Ctrl-A``) for selecting all/none in the currently shown category.
+(``Ctrl-M``) for selecting items with specific base material price.
 
 Display furniture
 `````````````````
