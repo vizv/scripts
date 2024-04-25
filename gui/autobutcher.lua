@@ -529,16 +529,16 @@ function WatchList:refresh(sort_widget, sort_fn)
 
     local choices = {}
 
-    -- first two rows are for "edit all races" and "edit new races"
     local settings = plugin.autobutcher_getSettings()
 
     self.subviews.disabled_warning.visible = not plugin.isEnabled()
 
     if not plugin.isEnabled() then
-        self.subviews.list:setChoices(table)
+        self.subviews.list:setChoices(choices)
         return
     end
-
+    
+    -- first two rows are for "edit all races" and "edit new races"
     table.insert(choices, {
         text=make_row_text('!! ALL RACES PLUS NEW', settings),
         race=1,
