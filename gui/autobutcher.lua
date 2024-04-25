@@ -152,7 +152,7 @@ function WatchList:init()
 
     local window = widgets.Window{
         frame_title='Autobutcher',
-        frame={w=97, h=30},
+        frame={w=97, h=31},
         resizable=true,
         subviews={
             widgets.CycleHotkeyLabel{
@@ -306,6 +306,18 @@ function WatchList:init()
                         frame={t=1, l=82},
                         text='ordered'
                     },
+                    widgets.Panel{
+                        view_id='disabled_warning',
+                        frame={t=3, h=1},
+                        visible=not plugin.isEnabled,
+                        subviews={
+                            widgets.Label{
+                                frame={l=8},
+                                text={"Enable autobutcher to change settings"},
+                                text_pen=COLOR_YELLOW
+                            }
+                        }
+                    },
                     widgets.List{
                         view_id='list',
                         frame={t=3, b=0},
@@ -316,7 +328,7 @@ function WatchList:init()
             },
             widgets.Panel{
                 view_id='footer',
-                frame={l=0, r=0, b=0, h=6},
+                frame={l=0, r=0, b=0, h=7},
                 subviews={
                     widgets.Label{
                         frame={t=0, l=0},
@@ -402,9 +414,25 @@ function WatchList:init()
                         auto_width=true,
                         on_activate=self:callback('onSetRow'),
                     },
+                    widgets.HotkeyLabel{
+                        view_id='butcher_all',
+                        frame={t=5, l=0},
+                        key='CUSTOM_E',
+                        label='Butcher all',
+                        auto_width=true,
+                        on_activate=self:callback('onButcherAll'),
+                    },
+                    widgets.HotkeyLabel{
+                        view_id='unbutcher_all',
+                        frame={t=5, l=16},
+                        key='CUSTOM_SHIFT_E',
+                        label='Unbutcher all',
+                        auto_width=true,
+                        on_activate=self:callback('onUnbutcherAll'),
+                    },
                     widgets.ToggleHotkeyLabel{
                         view_id='enable_toggle',
-                        frame={t=5, l=0, w=26},
+                        frame={t=6, l=0, w=26},
                         label='Autobutcher is',
                         key='CUSTOM_SHIFT_A',
                         options={{value=true, label='Enabled', pen=COLOR_GREEN},
@@ -416,7 +444,7 @@ function WatchList:init()
                     },
                     widgets.ToggleHotkeyLabel{
                         view_id='autowatch_toggle',
-                        frame={t=5, l=43, w=24},
+                        frame={t=6, l=43, w=24},
                         label='Autowatch is',
                         key='CUSTOM_SHIFT_W',
                         options={{value=true, label='Enabled', pen=COLOR_GREEN},
@@ -508,6 +536,14 @@ function WatchList:refresh(sort_widget, sort_fn)
 
     -- first two rows are for "edit all races" and "edit new races"
     local settings = plugin.autobutcher_getSettings()
+
+    self.subviews.disabled_warning.visible = not plugin.isEnabled()
+
+    if not plugin.isEnabled() then
+        self.subviews.list:setChoices(table)
+        return
+    end
+
     table.insert(choices, {
         text=make_row_text('!! ALL RACES PLUS NEW', settings),
         race=1,
@@ -707,6 +743,29 @@ function WatchList:onButcherRace()
     end
     plugin.autobutcher_butcherRace(choice.data.id)
     self:refresh()
+end
+
+function WatchList:onUnbutcherAll()
+    for _, data in ipairs(plugin.autobutcher_getWatchList()) do
+        plugin.autobutcher_unbutcherRace(data.id)
+    end
+
+    self:refresh()
+end
+
+function WatchList:onButcherAll()
+    dlg.showYesNoPrompt(
+        'Butcher all animals',
+        'Warning! This will mark ALL animals for butchering.'..NEWLINE..'Proceed with caution.',
+        COLOR_YELLOW,
+        function()
+            for _, data in ipairs(plugin.autobutcher_getWatchList()) do
+                plugin.autobutcher_butcherRace(data.id)
+            end
+            
+            self:refresh()
+        end
+    )
 end
 
 function WatchList:onDismiss()
