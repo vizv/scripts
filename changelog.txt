@@ -36,16 +36,19 @@ Template for new versions:
 
 ## Removed
 
-# 50.13-r1.1
+# 50.13-r2
+
 ## New Features
 - `gui/autobutcher`: add functionality to butcher and unbutcher all animals
+
+## Misc Improvements
+- `gui/autobutcher`: add warning if autobutcher is disabled
+
+# 50.13-r1.1
 
 ## Fixes
 - `gui/quantum`: accept all item types in the output stockpile as intended
 - `deathcause`: fix error on run
-
-## Misc Improvements
-- `gui/autobutcher`: add warning if autobutcher is disabled
 
 # 50.13-r1
 
