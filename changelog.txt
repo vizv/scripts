@@ -31,12 +31,16 @@ Template for new versions:
 ## New Features
 
 ## Fixes
-- `gui/quantum`: accept all item types in the output stockpile as intended
-- `deathcause`: fix error on run
 
 ## Misc Improvements
 
 ## Removed
+
+# 50.13-r1.1
+
+## Fixes
+- `gui/quantum`: accept all item types in the output stockpile as intended
+- `deathcause`: fix error on run
 
 # 50.13-r1
 
