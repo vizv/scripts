@@ -33,6 +33,8 @@ Template for new versions:
 ## Fixes
 
 ## Misc Improvements
+- `gui/autobutcher`: add functionality to butcher and unbutcher all animals
+- `gui/autobutcher`: add warning if autobutcher is disabled
 - `combine`: respect container limits
 - `combine`: reduce combined drink sizes to 25
 
