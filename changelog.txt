@@ -32,6 +32,7 @@ Template for new versions:
 
 ## Fixes
 - `gui/quantum`: accept all item types in the output stockpile as intended
+- `deathcause`: fix error on run
 
 ## Misc Improvements
 
