@@ -33,6 +33,8 @@ Template for new versions:
 ## Fixes
 
 ## Misc Improvements
+- `combine`: respect container limits
+- `combine`: reduce combined drink sizes to 25
 
 ## Removed
 
