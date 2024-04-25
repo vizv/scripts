@@ -433,6 +433,7 @@ function WatchList:init()
 
     self:addviews{window}
     self:refresh()
+    self.subviews.list:setSelected(#self.subviews.list:getChoices() > 2 and 3 or 2)
 end
 
 function WatchList:onRenderFrame(dc, rect)
