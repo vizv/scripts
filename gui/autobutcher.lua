@@ -537,7 +537,7 @@ function WatchList:refresh(sort_widget, sort_fn)
         self.subviews.list:setChoices(choices)
         return
     end
-    
+
     -- first two rows are for "edit all races" and "edit new races"
     table.insert(choices, {
         text=make_row_text('!! ALL RACES PLUS NEW', settings),
@@ -757,7 +757,7 @@ function WatchList:onButcherAll()
             for _, data in ipairs(plugin.autobutcher_getWatchList()) do
                 plugin.autobutcher_butcherRace(data.id)
             end
-            
+
             self:refresh()
         end
     )
