@@ -15,9 +15,9 @@ design, lets your dwarves be more efficient, and increases FPS.
 Quantum stockpiles work by linking a "feeder" stockpile to a one-tile minecart
 hauling route. As soon as an item from the feeder stockpile is placed in the
 minecart, the minecart is tipped and all items land on an adjacent tile. The
-single-tile stockpile in that adjacent tile will holds all the items and is your
+single-tile stockpile in that adjacent tile holds all the items and is your
 quantum stockpile. You can also choose to not have a receiving stockpile and
-instead have the minecart dump into a pit (perhaps filled with magma).
+instead have the minecart dump into a pit (perhaps a pit filled with magma).
 
 Before you run this tool, create and configure your "feeder" stockpile. The
 size of the stockpile determines how many dwarves can be tasked with bringing
