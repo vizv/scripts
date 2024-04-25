@@ -33,16 +33,10 @@ Template for new versions:
 ## Fixes
 
 ## Misc Improvements
+- `gui/autobutcher`: add functionality to butcher and unbutcher all animals
+- `gui/autobutcher`: add warning if autobutcher is disabled
 
 ## Removed
-
-# 50.13-r2
-
-## New Features
-- `gui/autobutcher`: add functionality to butcher and unbutcher all animals
-
-## Misc Improvements
-- `gui/autobutcher`: add warning if autobutcher is disabled
 
 # 50.13-r1.1
 
