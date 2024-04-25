@@ -306,17 +306,12 @@ function WatchList:init()
                         frame={t=1, l=82},
                         text='ordered'
                     },
-                    widgets.Panel{
+                    widgets.Label{
                         view_id='disabled_warning',
-                        frame={t=3, h=1},
                         visible=not plugin.isEnabled,
-                        subviews={
-                            widgets.Label{
-                                frame={l=8},
-                                text={"Enable autobutcher to change settings"},
-                                text_pen=COLOR_YELLOW
-                            }
-                        }
+                        frame={t=3, l=8, h=1},
+                        text={"Enable autobutcher to change settings"},
+                        text_pen=COLOR_YELLOW
                     },
                     widgets.List{
                         view_id='list',
