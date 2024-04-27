@@ -29,7 +29,7 @@ function make_container_search_key(item, desc)
     local words = {}
     add_words(words, desc)
     for _, contained_item in ipairs(dfhack.items.getContainedItems(item)) do
-        add_words(words, get_item_description(contained_item))
+        add_words(words, dfhack.items.getReadableDescription(contained_item))
     end
     return table.concat(words, ' ')
 end
@@ -83,47 +83,6 @@ function obfuscate_value(value)
     if value <= threshold*3 then return ('~%d'):format(estimate(value, 50, 100)) end
     if value <= threshold*30 then return ('~%d'):format(estimate(value, 500, 1000)) end
     return ('%d?'):format(estimate(threshold*30, 999, 1000))
-end
-
-local function to_title_case(str)
-    str = str:gsub('(%a)([%w_]*)',
-        function (first, rest) return first:upper()..rest:lower() end)
-    str = str:gsub('_', ' ')
-    return str
-end
-
-local function get_item_type_str(item)
-    local str = to_title_case(df.item_type[item:getType()])
-    if str == 'Trapparts' then
-        str = 'Mechanism'
-    end
-    return str
-end
-
-local function get_artifact_name(item)
-    local gref = dfhack.items.getGeneralRef(item, df.general_ref_type.IS_ARTIFACT)
-    if not gref then return end
-    local artifact = df.artifact_record.find(gref.artifact_id)
-    if not artifact then return end
-    local name = dfhack.TranslateName(artifact.name)
-    return ('%s (%s)'):format(name, get_item_type_str(item))
-end
-
-local function get_book_title(item)
-    local title = dfhack.items.getBookTitle(item)
-    return #title > 0 and title or nil
-end
-
-function get_item_description(item)
-    local desc = item.flags.artifact and get_artifact_name(item) or
-        get_book_title(item) or
-        dfhack.items.getDescription(item, 0, true)
-    local wear_level = item:getWear()
-    if wear_level == 1 then desc = ('x%sx'):format(desc)
-    elseif wear_level == 2 then desc = ('X%sX'):format(desc)
-    elseif wear_level == 3 then desc = ('XX%sXX'):format(desc)
-    end
-    return desc
 end
 
 -- takes into account trade agreements
