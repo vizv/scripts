@@ -22,15 +22,14 @@ local function checkUnit(unit)
 end
 
 local function isUnitFriendly(unit)
-    return dfhack.units.isCitizen(unit) or
-        dfhack.units.isOwnCiv(unit) or
+    if dfhack.units.isDanger(unit) then
+        return false
+    end
+    return dfhack.units.isOwnCiv(unit) or
         dfhack.units.isOwnGroup(unit) or
         dfhack.units.isVisiting(unit) or
         dfhack.units.isTame(unit) or
-        dfhack.units.isDomesticated(unit) or
-        dfhack.units.isVisitor(unit) or
-        dfhack.units.isDiplomat(unit) or
-        dfhack.units.isMerchant(unit)
+        dfhack.units.isDomesticated(unit)
 end
 
 killMethod = {

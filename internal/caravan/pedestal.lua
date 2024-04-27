@@ -477,7 +477,7 @@ local function make_container_search_key(item, desc)
     local words = {}
     common.add_words(words, desc)
     for _, contained_item in ipairs(dfhack.items.getContainedItems(item)) do
-        common.add_words(words, common.get_item_description(contained_item))
+        common.add_words(words, dfhack.items.getReadableDescription(contained_item))
     end
     return table.concat(words, ' ')
 end
@@ -501,7 +501,7 @@ function AssignItems:cache_choices(inside_containers, display_bld)
             goto continue
         end
         local value = common.get_perceived_value(item)
-        local desc = common.get_item_description(item)
+        local desc = dfhack.items.getReadableDescription(item)
         local status = get_status(item, self.bld)
         local reachable = dfhack.maps.canWalkBetween(xyz2pos(dfhack.items.getPosition(item)),
                 xyz2pos(display_bld.centerx, display_bld.centery, display_bld.z))

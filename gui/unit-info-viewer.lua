@@ -1,3 +1,5 @@
+--@module = true
+
 local gui = require('gui')
 local widgets = require('gui.widgets')
 
@@ -488,6 +490,10 @@ end
 
 function UnitInfoScreen:onDismiss()
     view = nil
+end
+
+if dfhack_flags.module then
+    return
 end
 
 view = view and view:raise() or UnitInfoScreen{}:show()

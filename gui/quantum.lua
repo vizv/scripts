@@ -49,7 +49,7 @@ local function get_quantumsp_data(name)
         local next_route_id = df.global.plotinfo.hauling.next_id
         name = ('Quantum %d'):format(next_route_id-1)
     end
-    return ('ry{name="%s" quantum=true}'):format(name)
+    return ('ry{name="%s" quantum=true}:+all'):format(name)
 end
 
 -- this function assumes that is_valid_pos() has already validated the positions
@@ -169,7 +169,7 @@ local HOVERED_SP_PEN = to_pen{ch='=', fg=COLOR_GREEN,
                               tile=dfhack.screen.findGraphicsTile('ACTIVITY_ZONES', 2, 15)}
 
 function Quantum:render_sp_overlay(sp, pen)
-    if not sp then return end
+    if not sp or sp.z ~= df.global.window_z then return end
 
     local function get_overlay_char(pos)
         if dfhack.buildings.containsTile(sp, pos.x, pos.y) then return pen end
