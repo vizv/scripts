@@ -652,13 +652,45 @@ function HelpPanel:init()
             get_cur_page=function() return self.subviews.pages:getSelected() end,
         },
         widgets.HotkeyLabel{
-            frame={t=1, r=3},
+            frame={t=0, r=1},
             label='Clear output',
             text_pen=COLOR_YELLOW,
             auto_width=true,
             on_activate=function() self:add_output('', true) end,
             visible=function() return self.subviews.pages:getSelected() == 2 end,
             enabled=function() return #self.subviews.output_label.text_to_wrap > 0 end,
+        },
+        widgets.HotkeyLabel{
+            view_id='copy',
+            frame={t=1, r=1},
+            label='Copy output to clipboard',
+            text_pen=COLOR_YELLOW,
+            auto_width=true,
+            on_activate=function()
+                dfhack.internal.setClipboardTextCp437Multiline(self.subviews.output_label.text_to_wrap)
+                self.subviews.copy.visible = false
+                self.subviews.copy_flash.visible = true
+                local end_ms = dfhack.getTickCount() + 5000
+                local function label_reset()
+                    if dfhack.getTickCount() < end_ms then
+                        dfhack.timeout(10, 'frames', label_reset)
+                    else
+                        self.subviews.copy_flash.visible = false
+                        self.subviews.copy.visible = true
+                    end
+                end
+                label_reset()
+            end,
+            visible=function() return self.subviews.pages:getSelected() == 2 end,
+            enabled=function() return #self.subviews.output_label.text_to_wrap > 0 end,
+        },
+        widgets.Label{
+            view_id='copy_flash',
+            frame={t=1, r=12},
+            text='Copied',
+            auto_width=true,
+            text_pen=COLOR_GREEN,
+            visible=false,
         },
         widgets.Pages{
             view_id='pages',

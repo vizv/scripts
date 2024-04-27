@@ -37,6 +37,7 @@ Template for new versions:
 - `gui/autobutcher`: add warning if autobutcher is disabled
 - `combine`: respect container limits
 - `combine`: reduce combined drink sizes to 25
+- `gui/launcher`: add button for copying output to the system clipboard
 
 ## Removed
 
