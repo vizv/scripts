@@ -31,6 +31,7 @@ Template for new versions:
 ## New Features
 
 ## Fixes
+- `modtools/create-item`: adjust for API changes, tolerate ``reaction-gloves`` tweak being active
 
 ## Misc Improvements
 - `gui/autobutcher`: add functionality to butcher and unbutcher all animals
