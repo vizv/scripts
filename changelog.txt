@@ -32,6 +32,7 @@ Template for new versions:
 
 ## Fixes
 - `modtools/create-item`: adjust for API changes, tolerate ``reaction-gloves`` tweak being active
+- `quickfort`: don't designate multiple tiles of the same tree for chopping when applying a tree chopping blueprint to a multi-tile tree
 
 ## Misc Improvements
 - `gui/autobutcher`: add functionality to butcher and unbutcher all animals
