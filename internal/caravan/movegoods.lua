@@ -415,7 +415,7 @@ local function make_container_search_key(item, desc)
     local words = {}
     common.add_words(words, desc)
     for _, contained_item in ipairs(dfhack.items.getContainedItems(item)) do
-        common.add_words(words, common.get_item_description(contained_item))
+        common.add_words(words, dfhack.items.getReadableDescription(contained_item))
     end
     return table.concat(words, ' ')
 end
@@ -457,7 +457,7 @@ function MoveGoods:cache_choices()
         local is_banned, is_risky = common.scan_banned(item, self.risky_items)
         local is_requested = dfhack.items.isRequestedTradeGood(item)
         local wear_level = item:getWear()
-        local desc = common.get_item_description(item)
+        local desc = dfhack.items.getReadableDescription(item)
         local key = ('%s/%d'):format(desc, value)
         if groups[key] then
             local group = groups[key]

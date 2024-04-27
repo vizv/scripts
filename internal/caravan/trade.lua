@@ -374,7 +374,7 @@ function Trade:cache_choices(list_idx, trade_bins)
         local is_banned, is_risky = common.scan_banned(item, self.risky_items)
         local is_requested = dfhack.items.isRequestedTradeGood(item, trade.mer)
         local wear_level = item:getWear()
-        local desc = common.get_item_description(item)
+        local desc = dfhack.items.getReadableDescription(item)
         local is_ethical = is_ethical_product(item, self.animal_ethics, self.wood_ethics)
         local data = {
             desc=desc,
