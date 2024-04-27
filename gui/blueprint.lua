@@ -65,6 +65,7 @@ function NamePanel:init()
         widgets.EditField{
             view_id='name',
             key='CUSTOM_N',
+            label_text='name: ',
             text=self.name,
             on_change=self:callback('update_tooltip'),
             on_focus=self:callback('on_edit_focus'),
@@ -148,7 +149,7 @@ function PhasesPanel:init()
         widgets.CycleHotkeyLabel{
             view_id='phases',
             key='CUSTOM_SHIFT_P',
-            label='phases',
+            label='phases:',
             options={{label='Autodetect', value='Autodetect', pen=COLOR_GREEN},
                      'Custom'},
             initial_option=self.phases.auto_phase and 'Autodetect' or 'Custom',
@@ -183,9 +184,8 @@ function PhasesPanel:init()
                         initial_option=self:get_default('build')}}},
         widgets.Panel{frame={h=1},
             subviews={widgets.ToggleHotkeyLabel{view_id='place_phase',
-                        frame={t=0, l=0, w=19},
-                        key='CUSTOM_P', label='place',
-                        initial_option=self:get_default('place')},
+                        frame={t=0, l=0, w=19}, key='CUSTOM_P', label='place',
+                        initial_option=self:get_default('place'), label_width=9},
 --                     widgets.ToggleHotkeyLabel{view_id='zone_phase',
 --                         frame={t=0, l=15, w=19},
 --                         key='CUSTOM_Z', label='zone',
@@ -241,8 +241,8 @@ function StartPosPanel:init()
     self:addviews{
         widgets.CycleHotkeyLabel{
             view_id='startpos',
-            key='CUSTOM_P',
-            label='playback start',
+            key='CUSTOM_O',
+            label='playback start:',
             options={'Unset', 'Setting', 'Set'},
             initial_option=self.start_pos and 'Set' or 'Unset',
             on_change=self:callback('on_change'),
@@ -325,7 +325,7 @@ function Blueprint:init()
             widgets.ToggleHotkeyLabel{
                 view_id='engrave',
                 key='CUSTOM_SHIFT_E',
-                label='engrave',
+                label='engrave:',
                 options={{label='On', value=true}, {label='Off', value=false}},
                 initial_option=not not self.presets.engrave},
             widgets.TooltipLabel{
@@ -335,7 +335,7 @@ function Blueprint:init()
             widgets.ToggleHotkeyLabel{
                 view_id='smooth',
                 key='CUSTOM_SHIFT_S',
-                label='smooth',
+                label='smooth:',
                 options={{label='On', value=true}, {label='Off', value=false}},
                 initial_option=not not self.presets.smooth},
             widgets.TooltipLabel{
@@ -345,7 +345,7 @@ function Blueprint:init()
             widgets.CycleHotkeyLabel{
                 view_id='format',
                 key='CUSTOM_F',
-                label='format',
+                label='format:',
                 options={{label='Minimal text .csv', value='minimal', pen=COLOR_GREEN},
                         {label='Pretty text .csv', value='pretty'}},
                 initial_option=self.presets.format},
@@ -362,7 +362,7 @@ function Blueprint:init()
             widgets.ToggleHotkeyLabel{
                 view_id='meta',
                 key='CUSTOM_M',
-                label='meta',
+                label='meta:',
                 initial_option=not self.presets.nometa},
             widgets.TooltipLabel{
                 text_to_wrap='Combine blueprints that can be replayed together.',
@@ -371,7 +371,7 @@ function Blueprint:init()
             widgets.CycleHotkeyLabel{
                 view_id='splitby',
                 key='CUSTOM_T',
-                label='split',
+                label='split:',
                 options={{label='No', value='none', pen=COLOR_GREEN},
                             {label='By group', value='group'},
                             {label='By phase', value='phase'}},
@@ -459,7 +459,7 @@ end
 function Blueprint:onInput(keys)
     if Blueprint.super.onInput(self, keys) then return true end
 
-    if keys.LEAVESCREEN or keys._MOUSE_R_DOWN then
+    if keys.LEAVESCREEN or keys._MOUSE_R then
         if self:is_setting_start_pos() then
             self.subviews.startpos.option_idx = 1
             self.saved_cursor = nil
@@ -474,7 +474,7 @@ function Blueprint:onInput(keys)
     end
 
     local pos = nil
-    if keys._MOUSE_L_DOWN and not self:getMouseFramePos() then
+    if keys._MOUSE_L and not self:getMouseFramePos() then
         pos = dfhack.gui.getMousePos()
         if pos then
             guidm.setCursorPos(pos)

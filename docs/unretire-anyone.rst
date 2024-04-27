@@ -3,7 +3,7 @@ unretire-anyone
 
 .. dfhack-tool::
     :summary: Adventure as any living historical figure.
-    :tags: unavailable adventure embark armok
+    :tags: unavailable
 
 This tool allows you to play as any living (or undead) historical figure (except
 for deities) in adventure mode.

@@ -2,6 +2,7 @@
 --@ module = true
 
 local movegoods = reqscript('internal/caravan/movegoods')
+local pedestal = reqscript('internal/caravan/pedestal')
 local trade = reqscript('internal/caravan/trade')
 local tradeagreement = reqscript('internal/caravan/tradeagreement')
 
@@ -20,6 +21,7 @@ OVERLAY_WIDGETS = {
     tradeagreement=tradeagreement.TradeAgreementOverlay,
     movegoods=movegoods.MoveGoodsOverlay,
     assigntrade=movegoods.AssignTradeOverlay,
+    displayitemselector=pedestal.PedestalOverlay,
 }
 
 INTERESTING_FLAGS = {

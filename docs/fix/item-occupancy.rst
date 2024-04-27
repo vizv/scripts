@@ -3,7 +3,7 @@ fix/item-occupancy
 
 .. dfhack-tool::
     :summary: Fixes errors with phantom items occupying site.
-    :tags: unavailable fort bugfix map
+    :tags: unavailable
 
 This tool diagnoses and fixes issues with nonexistent 'items occupying site',
 usually caused by hacking mishaps with items being improperly moved about.

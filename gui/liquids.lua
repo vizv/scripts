@@ -210,7 +210,7 @@ function SpawnLiquid:onRenderFrame(dc, rect)
     local mouse_pos = dfhack.gui.getMousePos()
 
     if self.is_dragging then
-        if df.global.enabler.mouse_lbut == 0 then
+        if df.global.enabler.mouse_lbut_down == 0 then
             self.is_dragging = false
         elseif mouse_pos and not self:getMouseFramePos() then
             self:spawn(mouse_pos)
@@ -228,7 +228,7 @@ end
 function SpawnLiquid:onInput(keys)
     if SpawnLiquid.super.onInput(self, keys) then return true end
 
-    if keys._MOUSE_L_DOWN and not self:getMouseFramePos() then
+    if keys._MOUSE_L and not self:getMouseFramePos() then
         local mouse_pos = dfhack.gui.getMousePos()
 
         if self.paint_mode == SpawnLiquidPaintMode.CLICK and mouse_pos then
@@ -258,7 +258,7 @@ function SpawnLiquid:onInput(keys)
     end
 
     -- TODO: Holding the mouse down causes event spam.
-    if keys._MOUSE_L and not self:getMouseFramePos() then
+    if keys._MOUSE_L_DOWN and not self:getMouseFramePos() then
         if self.paint_mode == SpawnLiquidPaintMode.DRAG then
             self.is_dragging = true
             return true

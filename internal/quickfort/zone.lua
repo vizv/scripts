@@ -156,10 +156,10 @@ local valid_locations = {
                 contents={desired_instruments=5, need_more={instruments=true}}}},
 }
 local valid_restrictions = {
-    visitors={AllowVisitors=true, AllowResidents=true, OnlyMembers=false},
-    residents={AllowVisitors=false, AllowResidents=true, OnlyMembers=false},
-    citizens={AllowVisitors=false, AllowResidents=false, OnlyMembers=false},
-    members={AllowVisitors=false, AllowResidents=false, OnlyMembers=true},
+    visitors={VISITORS_ALLOWED=true, NON_CITIZENS_ALLOWED=true, MEMBERS_ONLY=false},
+    residents={VISITORS_ALLOWED=false, NON_CITIZENS_ALLOWED=true, MEMBERS_ONLY=false},
+    citizens={VISITORS_ALLOWED=false, NON_CITIZENS_ALLOWED=false, MEMBERS_ONLY=false},
+    members={VISITORS_ALLOWED=false, NON_CITIZENS_ALLOWED=false, MEMBERS_ONLY=true},
 }
 for _, v in pairs(valid_locations) do
     ensure_key(v, 'assign').flags = valid_restrictions.visitors
@@ -312,7 +312,7 @@ local function set_location(zone, location, ctx)
         dfhack.printerr('cannot create a guildhall without a specified profession')
         return
     end
-    local site = df.global.world.world_data.active_site[0]
+    local site = dfhack.world.getCurrentSite()
     local loc_id = nil
     if location.label and safe_index(ctx, 'zone', 'locations', location.label) then
         local cached_loc = ctx.zone.locations[location.label]

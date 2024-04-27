@@ -23,7 +23,7 @@ MoveGoods.ATTRS {
 }
 
 local STATUS_COL_WIDTH = 7
-local VALUE_COL_WIDTH = 6
+local VALUE_COL_WIDTH = 9
 local QTY_COL_WIDTH = 5
 
 local function sort_noop(a, b)
@@ -324,13 +324,11 @@ local function is_tradeable_item(item, depot)
         item.flags.spider_web or
         item.flags.construction or
         item.flags.encased or
-        item.flags.unk12 or
         item.flags.murder or
         item.flags.trader or
         item.flags.owned or
         item.flags.garbage_collect or
-        item.flags.on_fire or
-        item.flags.in_chest
+        item.flags.on_fire
     then
         return false
     end
@@ -349,7 +347,7 @@ local function is_tradeable_item(item, depot)
     if item.flags.in_building then
         if dfhack.items.getHolderBuilding(item) ~= depot then return false end
         for _, contained_item in ipairs(depot.contained_items) do
-            if contained_item.use_mode == 0 then return true end
+            if contained_item.use_mode == df.building_item_role_type.TEMP then return true end
             -- building construction materials
             if item == contained_item.item then return false end
         end
@@ -417,7 +415,7 @@ local function make_container_search_key(item, desc)
     local words = {}
     common.add_words(words, desc)
     for _, contained_item in ipairs(dfhack.items.getContainedItems(item)) do
-        common.add_words(words, common.get_item_description(contained_item))
+        common.add_words(words, dfhack.items.getReadableDescription(contained_item))
     end
     return table.concat(words, ' ')
 end
@@ -436,7 +434,9 @@ local function contains_non_liquid_powder(container)
     return false
 end
 
-function MoveGoods:cache_choices(group_items, inside_containers)
+function MoveGoods:cache_choices()
+    local group_items = self.subviews.group_items:getOptionValue()
+    local inside_containers = self.subviews.inside_containers:getOptionValue()
     local cache_idx = get_cache_index(group_items, inside_containers)
     if self.choices_cache[cache_idx] then return self.choices_cache[cache_idx] end
 
@@ -457,7 +457,7 @@ function MoveGoods:cache_choices(group_items, inside_containers)
         local is_banned, is_risky = common.scan_banned(item, self.risky_items)
         local is_requested = dfhack.items.isRequestedTradeGood(item)
         local wear_level = item:getWear()
-        local desc = common.get_item_description(item)
+        local desc = dfhack.items.getReadableDescription(item)
         local key = ('%s/%d'):format(desc, value)
         if groups[key] then
             local group = groups[key]
@@ -528,8 +528,7 @@ function MoveGoods:cache_choices(group_items, inside_containers)
 end
 
 function MoveGoods:get_choices()
-    local raw_choices = self:cache_choices(self.subviews.group_items:getOptionValue(),
-            self.subviews.inside_containers:getOptionValue())
+    local raw_choices = self:cache_choices()
     local choices = {}
     local include_forbidden = not self.subviews.hide_forbidden:getOptionValue()
     local banned = self.subviews.banned:getOptionValue()
@@ -673,6 +672,7 @@ function MoveGoodsModal:init()
     self.depot = self.depot or dfhack.gui.getSelectedBuilding(true)
     self:addviews{
         MoveGoods{
+            view_id='move_goods',
             pending_item_ids=self.pending_item_ids,
             depot=self.depot,
         },
@@ -684,7 +684,7 @@ function MoveGoodsModal:onDismiss()
     local depot = self.depot
     if not depot then return end
     local pending = self.pending_item_ids
-    for _, choice in ipairs(self.subviews.list:getChoices()) do
+    for _, choice in ipairs(self.subviews.move_goods:cache_choices()) do
         if not choice.data.dirty then goto continue end
         for item_id, item_data in pairs(choice.data.items) do
             local item = item_data.item
@@ -717,6 +717,7 @@ end
 
 MoveGoodsOverlay = defclass(MoveGoodsOverlay, overlay.OverlayWidget)
 MoveGoodsOverlay.ATTRS{
+    desc='Adds link to trade depot building to launch the DFHack trade goods UI.',
     default_pos={x=-64, y=10},
     default_enabled=true,
     viewscreens='dwarfmode/ViewSheets/BUILDING/TradeDepot',
@@ -766,6 +767,7 @@ end
 
 AssignTradeOverlay = defclass(AssignTradeOverlay, overlay.OverlayWidget)
 AssignTradeOverlay.ATTRS{
+    desc='Adds link to the trade goods screen to launch the DFHack trade goods UI.',
     default_pos={x=-41,y=-5},
     default_enabled=true,
     viewscreens='dwarfmode/AssignTrade',

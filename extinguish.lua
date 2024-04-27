@@ -2,7 +2,7 @@
 -- author: Atomic Chicken
 --@ module = true
 
-local utils = require 'utils'
+local utils = require('utils')
 local validArgs = utils.invert({
   'all',
   'location',
@@ -10,32 +10,13 @@ local validArgs = utils.invert({
 })
 local args = utils.processArgs({...}, validArgs)
 
-local usage = [====[
-
-extinguish
-==========
-This script allows the user to put out fires affecting
-map tiles, plants, units, items and buildings.
-
-To select a target, place the cursor over it before running the script.
-Alternatively, use one of the arguments below.
-
-Arguments::
-
-    -all
-        extinguish everything on the map
-
-    -location [ x y z ]
-        extinguish only at the specified coordinates
-]====]
-
 if args.help then
-  print(usage)
+  print(dfhack.script_help())
   return
 end
 
 if args.all and args.location then
-  qerror('-all and -location cannot be specified together.')
+  qerror('--all and --location cannot be specified together.')
 end
 
 function extinguishTiletype(tiletype)
@@ -162,7 +143,7 @@ function extinguishLocation(x,y,z)
     extinguishUnit(unit)
   end
   for _,item in ipairs(df.global.world.items.all) do
-    if same_xyz(pos, item.pos) then
+    if same_xyz(pos, xyz2pos(dfhack.items.getPosition(item))) then
       extinguishItem(item)
     end
   end
@@ -178,10 +159,25 @@ if not dfhack_flags.module then
       qerror("Invalid location coordinates!")
     end
   else
-    local x,y,z = pos2xyz(df.global.cursor)
-    if not x then
-      qerror("Choose a target via the cursor or the -location argument, or specify -all to extinguish everything on the map.")
+    local unit = dfhack.gui.getSelectedUnit(true)
+    local item = dfhack.gui.getSelectedItem(true)
+    local bld = dfhack.gui.getSelectedBuilding(true)
+    if unit then
+      extinguishLocation(dfhack.units.getPosition(unit))
+    elseif item then
+      extinguishLocation(dfhack.items.getPosition(item))
+    elseif bld then
+      for y=bld.y1,bld.y2 do
+        for x=bld.x1,bld.x2 do
+          extinguishLocation(x, y, bld.z)
+        end
+      end
+    else
+      local x,y,z = pos2xyz(df.global.cursor)
+      if not x then
+        qerror("Choose a target via the cursor or the --location argument, or specify --all to extinguish everything on the map.")
+      end
+      extinguishLocation(x,y,z)
     end
-    extinguishLocation(x,y,z)
   end
 end

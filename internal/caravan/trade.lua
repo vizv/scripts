@@ -374,7 +374,7 @@ function Trade:cache_choices(list_idx, trade_bins)
         local is_banned, is_risky = common.scan_banned(item, self.risky_items)
         local is_requested = dfhack.items.isRequestedTradeGood(item, trade.mer)
         local wear_level = item:getWear()
-        local desc = common.get_item_description(item)
+        local desc = dfhack.items.getReadableDescription(item)
         local is_ethical = is_ethical_product(item, self.animal_ethics, self.wood_ethics)
         local data = {
             desc=desc,
@@ -398,13 +398,19 @@ function Trade:cache_choices(list_idx, trade_bins)
             parent_data.has_requested = parent_data.has_requested or is_requested
             parent_data.ethical = parent_data.ethical and is_ethical
         end
+        local is_container = df.item_binst:is_instance(item)
+        local search_key
+        if (trade_bins and is_container) or item:isFoodStorage() then
+            search_key = common.make_container_search_key(item, desc)
+        else
+            search_key = common.make_search_key(desc)
+        end
         local choice = {
-            search_key=common.make_search_key(desc),
+            search_key=search_key,
             icon=curry(get_entry_icon, data),
             data=data,
             text=make_choice_text(data.value, desc),
         }
-        local is_container = df.item_binst:is_instance(item)
         if not data.update_container_fn then
             table.insert(trade_bins_choices, choice)
         end
@@ -525,7 +531,7 @@ end
 function TradeScreen:onInput(keys)
     if self.reset_pending then return false end
     local handled = TradeScreen.super.onInput(self, keys)
-    if keys._MOUSE_L_DOWN and not self.trade_window:getMouseFramePos() then
+    if keys._MOUSE_L and not self.trade_window:getMouseFramePos() then
         -- "trade" or "offer" buttons may have been clicked and we need to reset the cache
         self.reset_pending = true
     end
@@ -534,7 +540,7 @@ end
 
 function TradeScreen:onRenderFrame()
     if not df.global.game.main_interface.trade.open then
-        view:dismiss()
+        if view then view:dismiss() end
     elseif self.reset_pending then
         self.reset_pending = nil
         self.trade_window:reset_cache()
@@ -713,6 +719,7 @@ end
 
 TradeOverlay = defclass(TradeOverlay, overlay.OverlayWidget)
 TradeOverlay.ATTRS{
+    desc='Adds convenience functions for working with bins to the trade screen.',
     default_pos={x=-3,y=-12},
     default_enabled=true,
     viewscreens='dwarfmode/Trade/Default',
@@ -780,7 +787,7 @@ end
 function TradeOverlay:onInput(keys)
     if TradeOverlay.super.onInput(self, keys) then return true end
 
-    if keys._MOUSE_L_DOWN then
+    if keys._MOUSE_L then
         if dfhack.internal.getModifiers().shift then
             handle_shift_click_on_render = true
             copyGoodflagState()
@@ -797,6 +804,7 @@ end
 
 TradeBannerOverlay = defclass(TradeBannerOverlay, overlay.OverlayWidget)
 TradeBannerOverlay.ATTRS{
+    desc='Adds link to the trade screen to launch the DFHack trade UI.',
     default_pos={x=-31,y=-7},
     default_enabled=true,
     viewscreens='dwarfmode/Trade/Default',
@@ -819,7 +827,7 @@ end
 function TradeBannerOverlay:onInput(keys)
     if TradeBannerOverlay.super.onInput(self, keys) then return true end
 
-    if keys._MOUSE_R_DOWN or keys.LEAVESCREEN then
+    if keys._MOUSE_R or keys.LEAVESCREEN then
         if view then
             view:dismiss()
         end

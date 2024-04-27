@@ -23,10 +23,6 @@ local function usage(s)
 end
 
 local function set_adaptation_value(unit, v)
-    if not dfhack.units.isCitizen(unit) or not dfhack.units.isAlive(unit) then
-        return 0
-    end
-
     for _, t in ipairs(unit.status.misc_traits) do
         if t.id == df.misc_trait_type.CaveAdapt then
             if mode == 'show' then
@@ -94,15 +90,15 @@ end
 
 if who == 'him' then
     local u = dfhack.gui.getSelectedUnit(true)
-    if u then
+    if u and (dfhack.units.isCitizen(u) or dfhack.units.isResident(u)) then
         set_adaptation_value(u, value)
     else
-        dfhack.printerr('Please select a dwarf ingame')
+        dfhack.printerr('Please select a citizen or resident ingame')
     end
 elseif who == 'all' then
     local num_set = 0
 
-    for _, uu in ipairs(df.global.world.units.all) do
+    for _, uu in ipairs(dfhack.units.getCitizens()) do
         num_set = num_set + set_adaptation_value(uu, value)
     end
 

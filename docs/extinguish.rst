@@ -8,7 +8,8 @@ extinguish
 With this tool, you can put out fires affecting map tiles, plants, units, items,
 and buildings.
 
-To select a target, place the cursor over it before running the script.
+Select a target in the UI or enable the keyboard cursor place it over the
+target unit, building, or tile before running the script.
 
 If your FPS is unplayably low because of the generated smoke, see `clear-smoke`.
 
@@ -16,7 +17,7 @@ Usage
 -----
 
 ``extinguish``
-    Put out the fire under the cursor.
+    Put out the selected fire.
 ``extinguish --all``
     Put out all fires on the map.
 ``extinguish --location [ <x> <y> <z> ]``

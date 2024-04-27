@@ -3,7 +3,7 @@ pop-control
 
 .. dfhack-tool::
     :summary: Controls population and migration caps persistently per-fort.
-    :tags: unavailable fort auto gameplay
+    :tags: unavailable
 
 This script controls `hermit` and the various population caps per-fortress.
 It is intended to be run from ``dfhack-config/init/onMapLoad.init`` as
