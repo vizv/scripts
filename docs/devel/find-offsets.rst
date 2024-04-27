@@ -3,7 +3,7 @@ devel/find-offsets
 
 .. dfhack-tool::
     :summary: Find memory offsets of DF data structures.
-    :tags: unavailable dev
+    :tags: unavailable
 
 .. warning::
 

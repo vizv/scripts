@@ -11,13 +11,14 @@ if not dfhack_flags.module then
     qerror('this script cannot be called directly')
 end
 
-local utils = require('utils')
+local warmdamp = require('plugins.dig')
 local quickfort_common = reqscript('internal/quickfort/common')
 local quickfort_map = reqscript('internal/quickfort/map')
 local quickfort_parse = reqscript('internal/quickfort/parse')
 local quickfort_preview = reqscript('internal/quickfort/preview')
 local quickfort_set = reqscript('internal/quickfort/set')
 local quickfort_transform = reqscript('internal/quickfort/transform')
+local utils = require('utils')
 
 local log = quickfort_common.log
 
@@ -238,11 +239,12 @@ local function do_up_down_stair(digctx)
         if is_construction(digctx.tileattrs) or
                 (not is_wall(digctx.tileattrs) and
                  not is_fortification(digctx.tileattrs) and
+                 not is_diggable_floor(digctx.tileattrs) and
                  not is_up_stair(digctx.tileattrs)) then
             return nil
         end
     end
-    if is_up_stair(digctx.tileattrs) then
+    if is_diggable_floor(digctx.tileattrs) then
         return function() digctx.flags.dig = values.dig_downstair end
     end
     return function() digctx.flags.dig = values.dig_updownstair end
@@ -531,7 +533,7 @@ local dig_db = {
     F={action=do_fortification, use_priority=true, can_clobber_engravings=true},
     T={action=do_track, use_priority=true, can_clobber_engravings=true},
     v={action=do_toggle_engravings},
-    -- the semantics are unclear if the code is M but m or force_marker_mode is
+    -- the semantics are unclear if the code is M but mb or force_marker_mode is
     -- also specified. skipping all other marker mode settings when toggling
     -- marker mode seems to make the most sense.
     M={action=do_toggle_marker, skip_marker_mode=true},
@@ -590,12 +592,25 @@ for _,v in pairs(dig_db) do
     if v.use_priority then v.priority = 4 end
 end
 
--- handles marker mode 'm' prefix and priority suffix
+-- handles marker mode 'm' prefixes and priority suffix
 local function extended_parser(_, keys)
-    local marker_mode = false
-    if keys:startswith('m') then
-        keys = string.sub(keys, 2)
-        marker_mode = true
+    local marker_mode = {blueprint=false, warm=false, damp=false}
+    while keys:startswith('m') do
+        keys = keys:sub(2)
+        if keys:startswith('b') then
+            marker_mode.blueprint = true
+            keys = keys:sub(2)
+        elseif keys:startswith('w') then
+            marker_mode.warm = true
+            keys = keys:sub(2)
+        elseif keys:startswith('d') then
+            marker_mode.damp = true
+            keys = keys:sub(2)
+        else
+            -- handle old marker mode syntax
+            marker_mode.blueprint = true
+            break
+        end
     end
     local found, _, code, priority = keys:find('^(%D*)(%d*)$')
     if not found then return nil end
@@ -641,7 +656,7 @@ local function set_priority(digctx, priority)
     pbse.priority[digctx.pos.x % 16][digctx.pos.y % 16] = priority * 1000
 end
 
-local function dig_tile(digctx, db_entry)
+local function dig_tile(ctx, digctx, db_entry)
     local action_fn = db_entry.action(digctx)
     if not action_fn then return nil end
     return function()
@@ -655,12 +670,27 @@ local function dig_tile(digctx, db_entry)
             set_priority(digctx, 4)
         else
             if not db_entry.skip_marker_mode then
-                local marker_mode = db_entry.marker_mode or
-                        quickfort_set.get_setting('force_marker_mode')
+                local marker_mode = ctx.marker.blueprint or
+                    (db_entry.marker_mode and db_entry.marker_mode.blueprint) or
+                    quickfort_set.get_setting('force_marker_mode')
                 digctx.occupancy.dig_marked = marker_mode
             end
             if db_entry.use_priority then
-                set_priority(digctx, db_entry.priority)
+                local priority = db_entry.priority - 4 + ctx.priority
+                if priority > 7 then
+                    ctx.stats.dig_priority_overflow.value = ctx.stats.dig_priority_overflow.value + 1
+                    priority = 7
+                elseif priority < 1 then
+                    ctx.stats.dig_priority_underflow.value = ctx.stats.dig_priority_underflow.value + 1
+                    priority = 1
+                end
+                set_priority(digctx, priority)
+            end
+            if ctx.marker.warm or (db_entry.marker_mode and db_entry.marker_mode.warm) then
+                warmdamp.addTileWarmDig(digctx.pos)
+            end
+            if ctx.marker.damp or (db_entry.marker_mode and db_entry.marker_mode.damp) then
+                warmdamp.addTileDampDig(digctx.pos)
             end
         end
     end
@@ -817,7 +847,7 @@ local function do_run_impl(zlevel, grid, ctx)
                             goto inner_continue
                         end
                     end
-                    local action_fn = dig_tile(digctx, db_entry)
+                    local action_fn = dig_tile(ctx, digctx, db_entry)
                     quickfort_preview.set_preview_tile(ctx, extent_pos,
                                                        action_fn ~= nil)
                     if not action_fn then
@@ -859,6 +889,10 @@ local function ensure_ctx_stats(ctx, prefix)
             {label='Tiles that could not be designated for digging', value=0}
     ctx.stats.dig_protected_engraving = ctx.stats.dig_protected_engraving or
             {label='Engravings protected from destruction', value=0}
+    ctx.stats.dig_priority_underflow = ctx.stats.dig_priority_underflow or
+            {label='Tiles whose priority had to be clamped to 1', value=0}
+    ctx.stats.dig_priority_overflow = ctx.stats.dig_priority_overflow or
+            {label='Tiles whose priority had to be clamped to 7', value=0}
 end
 
 function do_run(zlevel, grid, ctx)

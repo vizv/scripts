@@ -1,17 +1,5 @@
 -- Adds more z-status subpages
 --@ enable = true
---[====[
-
-gui/extended-status
-===================
-Adds more subpages to the ``z`` status screen.
-
-Usage::
-
-    gui/extended-status enable|disable|help|subpage_names
-    enable|disable gui/extended-status
-
-]====]
 
 gui = require 'gui'
 dialogs = require 'gui.dialogs'
@@ -159,20 +147,18 @@ function bedroom_list:refresh()
             end
         end
     end
-    for _, u in pairs(world.units.active) do
-        if dfhack.units.isCitizen(u) then
-            add('units', u)
-            local has_bed = false
-            for _, b in pairs(u.owned_buildings) do
-                if df.building_bedst:is_instance(b) then
-                    has_bed = true
-                end
+    for _, u in pairs(dfhack.units.getCitizens(true)) do
+        add('units', u)
+        local has_bed = false
+        for _, b in pairs(u.owned_buildings) do
+            if df.building_bedst:is_instance(b) then
+                has_bed = true
             end
-            if has_bed then
-                add('uwith', u)
-            else
-                add('uwithout', u)
-            end
+        end
+        if has_bed then
+            add('uwith', u)
+        else
+            add('uwithout', u)
         end
     end
     for _, bed in pairs(world.items.other.BED) do

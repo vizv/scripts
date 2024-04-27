@@ -121,7 +121,6 @@ function Sandbox:init()
                     key='CUSTOM_SHIFT_U',
                     label="Spawn unit",
                     on_activate=function()
-                        df.global.enabler.mouse_lbut = 0
                         clear_arena_action()
                         view:sendInputToParent{ARENA_CREATE_CREATURE=true}
                         df.global.game.main_interface.arena_unit.editing_filter = true
@@ -162,7 +161,6 @@ function Sandbox:init()
                     key='CUSTOM_SHIFT_T',
                     label="Spawn tree",
                     on_activate=function()
-                        df.global.enabler.mouse_lbut = 0
                         clear_arena_action()
                         view:sendInputToParent{ARENA_CREATE_TREE=true}
                         df.global.game.main_interface.arena_tree.editing_filter = true
@@ -189,11 +187,11 @@ function Sandbox:init()
 end
 
 function Sandbox:onInput(keys)
-    if keys._MOUSE_R_DOWN and self:getMouseFramePos() then
+    if keys._MOUSE_R and self:getMouseFramePos() then
         clear_arena_action()
         return false
     end
-    if keys.LEAVESCREEN or keys._MOUSE_R_DOWN then
+    if keys.LEAVESCREEN or keys._MOUSE_R then
         if is_arena_action_in_progress() then
             clear_arena_action()
             return true
@@ -211,6 +209,7 @@ function Sandbox:onInput(keys)
         end
     end
     view:sendInputToParent(keys)
+    return true
 end
 
 function Sandbox:find_zombie_syndrome()
@@ -251,10 +250,6 @@ InterfaceMask.ATTRS{
     frame_background=gui.TRANSPARENT_PEN,
 }
 
-function InterfaceMask:onInput(keys)
-    return keys._MOUSE_L and self:getMousePos()
-end
-
 ---------------------
 -- SandboxScreen
 --
@@ -263,7 +258,6 @@ SandboxScreen = defclass(SandboxScreen, gui.ZScreen)
 SandboxScreen.ATTRS {
     focus_path='sandbox',
     force_pause=true,
-    pass_pause=false,
     defocusable=false,
 }
 

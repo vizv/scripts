@@ -2,7 +2,7 @@ prioritize
 ==========
 
 .. dfhack-tool::
-    :summary: Automatically boost the priority of selected job types.
+    :summary: Automatically boost the priority of important job types.
     :tags: fort auto jobs
 
 This tool encourages specified types of jobs to get assigned and completed as

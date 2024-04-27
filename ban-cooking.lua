@@ -90,7 +90,7 @@ funcs.booze = function()
     for _, c in ipairs(df.global.world.raws.creatures.all) do
         for _, m in ipairs(c.material) do
             if m.flags.ALCOHOL and m.flags.EDIBLE_COOKED then
-                local matinfo = dfhack.matinfo.find(creature_id.id, m.id)
+                local matinfo = dfhack.matinfo.find(c.creature_id, m.id)
                 ban_cooking(c.name[2] .. ' ' .. m.id, matinfo.type, matinfo.index, df.item_type.DRINK, -1)
             end
         end

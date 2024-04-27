@@ -1,4 +1,3 @@
--- interactively creates quantum stockpiles
 --@ module = true
 
 local dialogs = require('gui.dialogs')
@@ -11,218 +10,63 @@ local quickfort = reqscript('quickfort')
 local quickfort_command = reqscript('internal/quickfort/command')
 local quickfort_orders = reqscript('internal/quickfort/orders')
 
-
--- UI Layout
-QuantumUI = defclass(QuantumUI, gui.ZScreen)
-QuantumUI.ATTRS {
-    focus_path='quantum',
-    pass_movement_keys=true,
-    pass_mouse_clicks=false
-}
-
-QuantumWin = defclass(QuantumWin, widgets.Window)
-QuantumWin.ATTRS {
-    frame_title = 'Quantum Stockpile',
-    frame = { w=60, h=26 },
-    resizable = true,
-    autoarrange_subviews=true
-}
-
-function QuantumWin:init()
-    cart_count = #assign_minecarts.get_free_vehicles()
-
-    self:addviews{
-        widgets.Label{
-            text='Quantum'
-        },
-        widgets.WrappedLabel{
-            text_to_wrap=self:callback('get_help_text'),
-            text_pen=COLOR_GREY
-        },
-        widgets.HotkeyLabel{
-            key='CUSTOM_Q',
-            label='Place QSP under cursor',
-            on_activate=self:callback('commit')
-        },
-        widgets.Panel{autoarrange_subviews=true,
-            frame = { w=75, h=5 },
-            resizable = true,
-            subviews={
-                widgets.EditField{
-                    view_id='name',
-                    key='CUSTOM_N',
-                    on_char=self:callback('on_name_char'),
-                    text=''
-                },
-                widgets.TooltipLabel{
-                    text_to_wrap='Give the quantum stockpile a custom name.',
-                    show_tooltip=true
-                }
-            }
-        },
-        widgets.Panel{
-            autoarrange_subviews=true,
-            frame = { w=75, h=5 },
-            resizable = true,
-            subviews={
-                widgets.CycleHotkeyLabel{
-                    view_id='dir',
-                    key='CUSTOM_D',
-                    options={
-                        {label='North', value={y=-1}},
-                        {label='South', value={y=1}},
-                        {label='East', value={x=1}},
-                        {label='West', value={x=-1}}
-                    }
-                },
-                widgets.TooltipLabel{
-                    text_to_wrap='Set the dump direction of the quantum stop.',
-                    show_tooltip=true
-                }
-            }
-        },
-        widgets.Panel{
-            autoarrange_subviews=true,
-            frame = { w=75, h=5 },
-            resizable = true,
-            subviews={
-                widgets.ToggleHotkeyLabel{
-                    view_id='refuse',
-                    key='CUSTOM_R',
-                    label='Allow refuse/corpses',
-                    initial_option=false
-                },
-                widgets.TooltipLabel{
-                    text_to_wrap='Note that enabling refuse will cause clothes' ..
-                    ' and armor in this stockpile to quickly rot away.',
-                    show_tooltip=true
-                }
-            }
-        },
-        widgets.WrappedLabel{
-            text_to_wrap=('%d minecart%s available: %s %s'):format(
-                cart_count, cart_count == 1 and '' or 's',
-                cart_count == 1 and 'it' or 'one',
-                cart_count > 0 and 'will be automatically assigned to the quantum route'
-                    or 'will be ordered for you to assign later')
-        },
-        widgets.HotkeyLabel{
-            key='LEAVESCREEN',
-            label=self:callback('get_back_text'),
-            on_activate=self:callback('on_back')
-        }
+local function get_qsp_pos(cursor, offset)
+    return {
+        x=cursor.x+(offset.x or 0),
+        y=cursor.y+(offset.y or 0),
+        z=cursor.z
     }
 end
 
-function QuantumUI:init()
-    self:addviews{QuantumWin{}}
+local function is_valid_pos(cursor, qsp_pos)
+    local stats = quickfort.apply_blueprint{mode='build', data='trackstop', pos=cursor, dry_run=true}
+    if stats.build_designated.value <= 0 then return false end
+
+    if not qsp_pos then return true end
+
+    stats = quickfort.apply_blueprint{mode='place', data='c', pos=qsp_pos, dry_run=true}
+    return stats.place_designated.value > 0
 end
 
--- UI Functions
-function QuantumWin:get_help_text()
-    if not dfhack.gui.getSelectedStockpile() then
-        return 'Please select the feeder stockpile with the mouse.'
-    end
-    return 'Please select the location of the new quantum stockpile with the' ..
-            '  mouse, then press "q" or left click'
-end
 
-function QuantumWin:get_back_text()
-    if
-        self.feeder
-    then
-        return 'Cancel selection'
-    end
-    return 'Back'
-end
-
-function QuantumWin:on_back()
-    self:dismiss()
-end
-
-function QuantumUI:on_back()
-    self:dismiss()
-end
-
-function QuantumWin:on_name_char(char, text)
-    return #text < 12
-end
-
---UI Data Tables
-qspOutputHor = {
-    ["North"]=0,
-    ["East"]=1,
-    ["South"]=0,
-    ["West"]=-1
-}
-
-qspOutputVert = {
-    ["North"]=-1,
-    ["East"]=0,
-    ["South"]=1,
-    ["West"]=0
-}
-
-qspTrackstopDir = {
-    ["North"]='trackstopN',
-    ["East"]='trackstopE',
-    ["South"]='trackstopS',
-    ["West"]='trackstopW'
-}
-
-qspOutputType = {
-    [true]='ry',
-    [false]='c'
-}
-
-
-
---Actually making the QSP
-function QuantumWin:commit()
-    name = self.subviews.name.text
-    dump_dir = self.subviews.dir:getOptionLabel()
-    allow_refuse = self.subviews.refuse:getOptionValue()
-    input_id = dfhack.gui.getSelectedStockpile().id
-    output_hor = qspOutputHor[dump_dir]
-    output_vert = qspOutputVert[dump_dir]
-    output_type = qspOutputType[allow_refuse]
-    trackstop_dir = qspTrackstopDir[dump_dir]
-    if
-        name == ''
-    then
-        name = 'Unnamed QSP'
-    end
-    placed_output = output_type..'{name="'..name..'" quantum=true}:+all'
-    placed_trackstop = trackstop_dir..'{name="'..name..'" take_from='..input_id..'}'
-
-    quickfort.apply_blueprint{
-        mode='place',
-        pos=dfhack.gui.getMousePos(),
-        data={
-            [0]={
-                [output_vert]={[output_hor]=placed_output}
-            }
-        }
-    }
-
-    quickfort.apply_blueprint{
-        mode='build',
-        pos=dfhack.gui.getMousePos(),
-        data={
-            [0]={
-                [0]={[0]=placed_trackstop}
-            }
-        }
-    }
-
-    if
-        cart_count == 0
-    then
-        dfhack.run_command('workorder "{\"amount_left\":1,\"amount_total\":1,\"frequency\":\"OneTime\",\"id\":6,\"is_active\":false,\"is_validated\":true,\"item_subtype\":\"ITEM_TOOL_MINECART\",\"job\":\"MakeTool\",\"material_category\":[\"wood\"]}"')
+local function get_quantumstop_data(feeder_id, name, trackstop_dir)
+    local stop_name, route_name
+    if name == '' then
+        local next_route_id = df.global.plotinfo.hauling.next_id
+        stop_name = ('Dumper %d'):format(next_route_id)
+        route_name = ('Quantum %d'):format(next_route_id)
+    else
+        stop_name = ('%s dumper'):format(name)
+        route_name = ('%s quantum'):format(name)
     end
 
-    dfhack.run_command('assign-minecarts all')
-    self:updateLayout()
+    return ('trackstop%s{name="%s" take_from=%d route="%s"}')
+           :format(trackstop_dir, stop_name, feeder_id, route_name)
+end
+
+local function get_quantumsp_data(name)
+    if name == '' then
+        local next_route_id = df.global.plotinfo.hauling.next_id
+        name = ('Quantum %d'):format(next_route_id-1)
+    end
+    return ('ry{name="%s" quantum=true}:+all'):format(name)
+end
+
+-- this function assumes that is_valid_pos() has already validated the positions
+local function create_quantum(pos, qsp_pos, feeder_id, name, trackstop_dir)
+    local data = get_quantumstop_data(feeder_id, name, trackstop_dir)
+    local stats = quickfort.apply_blueprint{mode='build', pos=pos, data=data}
+    if stats.build_designated.value == 0 then
+        error(('failed to build trackstop at (%d, %d, %d)')
+              :format(pos.x, pos.y, pos.z))
+    end
+
+    data = get_quantumsp_data(name)
+    stats = quickfort.apply_blueprint{mode='place', pos=qsp_pos, data=data}
+    if stats.place_designated.value == 0 then
+        error(('failed to place stockpile at (%d, %d, %d)')
+              :format(qsp_pos.x, qsp_pos.y, qsp_pos.z))
+    end
 end
 
 local function order_minecart(pos)
@@ -231,42 +75,216 @@ local function order_minecart(pos)
     quickfort_orders.enqueue_additional_order(quickfort_ctx, 'wooden minecart')
     quickfort_orders.create_orders(quickfort_ctx)
 end
---Key Input
-function QuantumWin:onInput(keys)
-    pos = dfhack.gui.getSelectedStockpile()
 
-    if
-        QuantumWin.super.onInput(self, keys)
-    then
-        return true
-    end
-
-    local pos = nil
-    if
-        keys.CUSTOM_Q
-    then
-        self:commit()
-    elseif
-        keys._MOUSE_L_DOWN and not self:getMouseFramePos()
-    then
-        self:commit()
-    elseif
-        keys.SELECT
-    then
-        pos = guidm.getCursorPos()
-    end
-
-
+if dfhack.internal.IN_TEST then
+    unit_test_hooks = {
+        is_valid_pos=is_valid_pos,
+        create_quantum=create_quantum,
+    }
 end
 
-function QuantumUI:onDismiss()
+----------------------
+-- Quantum
+--
+
+Quantum = defclass(Quantum, widgets.Window)
+Quantum.ATTRS {
+    frame_title='Quantum',
+    frame={w=35, h=17, r=2, t=18},
+    autoarrange_subviews=true,
+    autoarrange_gap=1,
+    feeder=DEFAULT_NIL,
+}
+
+function Quantum:init()
+    local cart_count = #assign_minecarts.get_free_vehicles()
+
+    self:addviews{
+        widgets.WrappedLabel{
+            text_to_wrap=self:callback('get_help_text'),
+            text_pen=COLOR_GREY,
+        },
+        widgets.EditField{
+            view_id='name',
+            label_text='Name: ',
+            key='CUSTOM_CTRL_N',
+            key_sep=' ',
+            on_char=function(char, text) return #text < 12 end,  -- TODO can be circumvented by pasting
+            text='',
+        },
+        widgets.CycleHotkeyLabel{
+            view_id='dump_dir',
+            key='CUSTOM_CTRL_D',
+            key_sep=' ',
+            label='Dump direction:',
+            options={
+                {label='North', value={y=-1}, pen=COLOR_YELLOW},
+                {label='South', value={y=1}, pen=COLOR_YELLOW},
+                {label='East', value={x=1}, pen=COLOR_YELLOW},
+                {label='West', value={x=-1}, pen=COLOR_YELLOW},
+            },
+        },
+        widgets.ToggleHotkeyLabel{
+            view_id='create_sp',
+            key='CUSTOM_CTRL_Z',
+            label='Create output pile:',
+        },
+        widgets.WrappedLabel{
+            text_to_wrap=('%d minecart%s available: %s will be %s'):format(
+                cart_count, cart_count == 1 and '' or 's',
+                cart_count == 1 and 'it' or 'one',
+                cart_count > 0 and 'automatically assigned to the quantum route'
+                    or 'ordered via the manager for you to assign later'),
+        },
+    }
+end
+
+function Quantum:get_help_text()
+    if not self.feeder then
+        return 'Please select the feeder stockpile.'
+    end
+    return 'Please select the location of the new quantum dumper.'
+end
+
+local function get_hover_stockpile(pos)
+    pos = pos or dfhack.gui.getMousePos()
+    if not pos then return end
+    local bld = dfhack.buildings.findAtTile(pos)
+    if not bld or bld:getType() ~= df.building_type.Stockpile then return end
+    return bld
+end
+
+function Quantum:get_pos_qsp_pos()
+    local pos = dfhack.gui.getMousePos()
+    if not pos then return end
+    local qsp_pos = self.subviews.create_sp:getOptionValue() and
+        get_qsp_pos(pos, self.subviews.dump_dir:getOptionValue())
+    return pos, qsp_pos
+end
+
+local to_pen = dfhack.pen.parse
+local SELECTED_SP_PEN = to_pen{ch='=', fg=COLOR_LIGHTGREEN,
+                               tile=dfhack.screen.findGraphicsTile('ACTIVITY_ZONES', 3, 15)}
+local HOVERED_SP_PEN = to_pen{ch='=', fg=COLOR_GREEN,
+                              tile=dfhack.screen.findGraphicsTile('ACTIVITY_ZONES', 2, 15)}
+
+function Quantum:render_sp_overlay(sp, pen)
+    if not sp or sp.z ~= df.global.window_z then return end
+
+    local function get_overlay_char(pos)
+        if dfhack.buildings.containsTile(sp, pos.x, pos.y) then return pen end
+    end
+
+    guidm.renderMapOverlay(get_overlay_char, sp)
+end
+
+local CURSOR_PEN = to_pen{ch='o', fg=COLOR_BLUE,
+                          tile=dfhack.screen.findGraphicsTile('CURSORS', 5, 22)}
+local GOOD_PEN = to_pen{ch='x', fg=COLOR_GREEN,
+                        tile=dfhack.screen.findGraphicsTile('CURSORS', 1, 2)}
+local BAD_PEN = to_pen{ch='X', fg=COLOR_RED,
+                       tile=dfhack.screen.findGraphicsTile('CURSORS', 3, 0)}
+
+function Quantum:render_placement_overlay()
+    if not self.feeder then return end
+    local stop_pos, qsp_pos = self:get_pos_qsp_pos()
+
+    if not stop_pos then return end
+
+    local bounds = {
+        x1=stop_pos.x,
+        x2=stop_pos.x,
+        y1=stop_pos.y,
+        y2=stop_pos.y,
+    }
+    if qsp_pos then
+        bounds.x1 = math.min(bounds.x1, qsp_pos.x)
+        bounds.x2 = math.max(bounds.x2, qsp_pos.x)
+        bounds.y1 = math.min(bounds.y1, qsp_pos.y)
+        bounds.y2 = math.max(bounds.y2, qsp_pos.y)
+    end
+
+    local ok = is_valid_pos(stop_pos, qsp_pos)
+
+    local function get_overlay_char(pos)
+        if not ok then return BAD_PEN end
+        return same_xy(pos, stop_pos) and CURSOR_PEN or GOOD_PEN
+    end
+
+    guidm.renderMapOverlay(get_overlay_char, bounds)
+end
+
+function Quantum:render(dc)
+    self:render_sp_overlay(get_hover_stockpile(), HOVERED_SP_PEN)
+    self:render_sp_overlay(self.feeder, SELECTED_SP_PEN)
+    self:render_placement_overlay()
+    Quantum.super.render(self, dc)
+end
+
+function Quantum:try_commit()
+    local pos, qsp_pos = self:get_pos_qsp_pos()
+    if not is_valid_pos(pos, qsp_pos) then
+        return
+    end
+
+    create_quantum(pos, qsp_pos, self.feeder.id, self.subviews.name.text,
+        self.subviews.dump_dir:getOptionLabel():sub(1,1))
+
+    local message = nil
+    if assign_minecarts.assign_minecart_to_last_route(true) then
+        message = 'An available minecart was assigned to your new' ..
+                ' quantum stockpile. You\'re all done!'
+    else
+        order_minecart(pos)
+        message = 'There are no minecarts available to assign to the' ..
+                ' quantum stockpile, but a manager order to produce' ..
+                ' one was created for you. Once the minecart is' ..
+                ' built, please add it to the quantum stockpile route' ..
+                ' with the "assign-minecarts all" command or manually in' ..
+                ' the (h)auling menu.'
+    end
+    -- display a message box telling the user what we just did
+    dialogs.MessageBox{text=message:wrap(70)}:show()
+    return true
+end
+
+function Quantum:onInput(keys)
+    if Quantum.super.onInput(self, keys) then return true end
+
+    if not keys._MOUSE_L then return end
+    local sp = get_hover_stockpile()
+    if sp then
+        if sp ~= self.feeder then
+            self.feeder = sp
+            self:updateLayout()
+        end
+    elseif self.feeder then
+        self:try_commit()
+    end
+end
+
+----------------------
+-- QuantumScreen
+--
+
+QuantumScreen = defclass(QuantumScreen, gui.ZScreen)
+QuantumScreen.ATTRS {
+    focus_path='quantum',
+    pass_movement_keys=true,
+    pass_mouse_clicks=false,
+    feeder=DEFAULT_NIL,
+}
+
+function QuantumScreen:init()
+    self:addviews{Quantum{feeder=self.feeder}}
+end
+
+function QuantumScreen:onDismiss()
     view = nil
 end
 
-
---Misc
 if dfhack_flags.module then
     return
 end
 
-view = view and view:raise() or QuantumUI{}:show()
+view = view and view:raise() or QuantumScreen{feeder=dfhack.gui.getSelectedStockpile(true)}:show()

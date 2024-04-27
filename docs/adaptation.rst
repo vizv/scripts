@@ -3,7 +3,7 @@ adaptation
 
 .. dfhack-tool::
     :summary: Adjust a unit's cave adaptation level.
-    :tags: unavailable fort armok units
+    :tags: unavailable
 
 View or set level of cavern adaptation for the selected unit or the whole fort.
 

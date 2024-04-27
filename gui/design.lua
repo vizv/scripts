@@ -1,5 +1,5 @@
 -- A GUI front-end for creating designs
---@ module = false
+--@ module = true
 
 -- TODOS ====================
 
@@ -38,6 +38,7 @@ local gui = require("gui")
 local textures = require("gui.textures")
 local guidm = require("gui.dwarfmode")
 local widgets = require("gui.widgets")
+local overlay = require('plugins.overlay')
 local quickfort = reqscript("quickfort")
 local shapes = reqscript("internal/design/shapes")
 local util = reqscript("internal/design/util")
@@ -1246,9 +1247,6 @@ function Design:onRenderFrame(dc, rect)
         self.marks[self.placing_mark.index] = mouse_pos
     end
 
-    -- Set main points
-    local points = copyall(self.marks)
-
     -- Set the pos of the currently moving extra point
     if self.placing_extra.active then
         self.extra_points[self.placing_extra.index] = mouse_pos
@@ -1287,6 +1285,9 @@ function Design:onRenderFrame(dc, rect)
 
         self.prev_center = mouse_pos
     end
+
+    -- Set main points
+    local points = copyall(self.marks)
 
     if self.mirror_point then
         points = self:get_mirrored_points(points)
@@ -1386,7 +1387,7 @@ function Design:onInput(keys)
     --     return
     -- end
 
-    if keys.LEAVESCREEN or keys._MOUSE_R_DOWN then
+    if keys.LEAVESCREEN or keys._MOUSE_R then
         -- Close help window if open
         if view.help_window.visible then self:dismiss_help() return true end
 
@@ -1438,7 +1439,7 @@ function Design:onInput(keys)
 
 
     local pos = nil
-    if keys._MOUSE_L_DOWN and not self:getMouseFramePos() then
+    if keys._MOUSE_L and not self:getMouseFramePos() then
         pos = getMousePoint()
         if not pos then return true end
         guidm.setCursorPos(dfhack.gui.getMousePos())
@@ -1446,7 +1447,7 @@ function Design:onInput(keys)
         pos = Point(guidm.getCursorPos())
     end
 
-    if keys._MOUSE_L_DOWN and pos then
+    if keys._MOUSE_L and pos then
         -- TODO Refactor this a bit
         if self.shape.max_points and #self.marks == self.shape.max_points and self.placing_mark.active then
             self.marks[self.placing_mark.index] = pos
@@ -1474,6 +1475,27 @@ function Design:onInput(keys)
             self.placing_mirror = false
             self.needs_update = true
         else
+            -- Clicking center point
+            if #self.marks > 0 then
+                local center = self.shape:get_center()
+                if pos == center and not self.prev_center then
+                    self.start_center = pos
+                    self.prev_center = pos
+                    return true
+                elseif self.prev_center then
+                    --If there was no movement presume user wanted to click the mark underneath instead and let the flow through.
+                    if pos == self.start_center then
+                        self.start_center = nil
+                        self.prev_center = nil
+                    else
+                    -- Since it moved let's just drop the shape here.
+                        self.start_center = nil
+                        self.prev_center = nil
+                        return true
+                    end
+                end
+            end
+
             if self.shape.basic_shape and #self.marks == self.shape.max_points then
                 -- Clicking a corner of a basic shape
                 local shape_top_left, shape_bot_right = self.shape:get_point_dims()
@@ -1509,20 +1531,6 @@ function Design:onInput(keys)
                 if pos == self.extra_points[i] then
                     self.placing_extra = { active = true, index = i }
                     self.needs_update = true
-                    return true
-                end
-            end
-
-            -- Clicking center point
-            if #self.marks > 0 then
-                local center = self.shape:get_center()
-                if pos == center and not self.prev_center then
-                    self.start_center = pos
-                    self.prev_center = pos
-                    return true
-                elseif self.prev_center then
-                    self.start_center = nil
-                    self.prev_center = nil
                     return true
                 end
             end
@@ -1770,6 +1778,112 @@ end
 function DesignScreen:onDismiss()
     view = nil
 end
+
+-- ----------------- --
+-- DimensionsOverlay --
+-- ----------------- --
+
+local DEFAULT_DIMENSION_TOOLTIP_WIDTH = 17
+local DIMENSION_TOOLTIP_HEIGHT = 4
+
+local DIMENSION_TOOLTIP_X_OFFSET = 3
+local DIMENSION_TOOLTIP_Y_OFFSET = 3
+
+DimensionsOverlay = defclass(DimensionsOverlay, overlay.OverlayWidget)
+DimensionsOverlay.ATTRS{
+    desc='Adds a tooltip that shows the selected dimensions when drawing boxes.',
+    default_pos={x=1,y=1},
+    default_enabled=true,
+    overlay_only=true, -- not player-repositionable
+    viewscreens={
+        'dwarfmode/Designate',
+        'dwarfmode/Burrow/Paint',
+        'dwarfmode/Stockpile/Paint',
+    },
+    frame={w=DEFAULT_DIMENSION_TOOLTIP_WIDTH, h=DIMENSION_TOOLTIP_HEIGHT},
+}
+
+local selection_rect = df.global.selection_rect
+
+local function is_choosing_area()
+    return selection_rect.start_x >= 0 and dfhack.gui.getMousePos(true)
+end
+
+local function get_cur_area_dims()
+    local pos1 = dfhack.gui.getMousePos(true)
+    if not pos1 or selection_rect.start_x < 0 then return 1, 1, 1 end
+
+    -- clamp to map edges (since you can start selection out of bounds)
+    pos1 = xyz2pos(
+        math.max(0, math.min(df.global.world.map.x_count-1, pos1.x)),
+        math.max(0, math.min(df.global.world.map.y_count-1, pos1.y)),
+        math.max(0, math.min(df.global.world.map.z_count-1, pos1.z)))
+    local pos2 = xyz2pos(
+        math.max(0, math.min(df.global.world.map.x_count-1, selection_rect.start_x)),
+        math.max(0, math.min(df.global.world.map.y_count-1, selection_rect.start_y)),
+        math.max(0, math.min(df.global.world.map.z_count-1, selection_rect.start_z)))
+
+    return math.abs(pos1.x - pos2.x) + 1,
+        math.abs(pos1.y - pos2.y) + 1,
+        math.abs(pos1.z - pos2.z) + 1
+end
+
+local function format_dims()
+    return ('%dx%dx%d'):format(get_cur_area_dims())
+end
+
+function DimensionsOverlay:init()
+    self:addviews{
+        widgets.ResizingPanel{
+            view_id='tooltip',
+            frame={b=0, r=0, w=DEFAULT_DIMENSION_TOOLTIP_WIDTH, h=DIMENSION_TOOLTIP_HEIGHT},
+            frame_style=gui.FRAME_THIN,
+            frame_background=gui.CLEAR_PEN,
+            auto_width=true,
+            visible=is_choosing_area,
+            subviews={
+                widgets.Panel{
+                    -- set minimum size for tooltip frame so DFHack label fits
+                    frame={t=0, l=0, w=7, h=2},
+                },
+                widgets.Label{
+                    view_id='label',
+                    frame={t=0},
+                    auto_width=true,
+                    text={{text=format_dims}},
+                },
+            },
+        },
+    }
+end
+
+-- don't imply that stockpiles will be 3d
+local main_interface = df.global.game.main_interface
+local function check_stockpile_dims()
+    if main_interface.bottom_mode_selected == df.main_bottom_mode_type.STOCKPILE_PAINT and
+        selection_rect.start_x > 0
+    then
+        selection_rect.start_z = df.global.window_z
+    end
+end
+
+function DimensionsOverlay:render(dc)
+    check_stockpile_dims()
+    local x, y = dfhack.screen.getMousePos()
+    if not x then return end
+    local sw, sh = dfhack.screen.getWindowSize()
+    local frame_width = math.max(9, self.subviews.label:getTextWidth() + 2)
+    self:updateLayout()
+    x = math.min(x + DIMENSION_TOOLTIP_X_OFFSET, sw - frame_width)
+    y = math.min(y + DIMENSION_TOOLTIP_Y_OFFSET, sh - DIMENSION_TOOLTIP_HEIGHT)
+    self.frame.w = x + frame_width
+    self.frame.h = y + DIMENSION_TOOLTIP_HEIGHT
+    DimensionsOverlay.super.render(self, dc)
+end
+
+OVERLAY_WIDGETS = {
+    dimensions=DimensionsOverlay,
+}
 
 if dfhack_flags.module then return end
 

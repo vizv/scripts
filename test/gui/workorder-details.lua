@@ -15,7 +15,8 @@ local wait = function(n)
     --delay(n or 30) -- enable for debugging the tests
 end
 
--- handle confirm plugin: we may need to additionally confirm order removal
+-- handle confirm: we may need to additionally confirm order removal
+--[[
 local confirm = require 'plugins.confirm'
 local confirmRemove = function() end
 if confirm.isEnabled() then
@@ -34,6 +35,7 @@ if confirm.isEnabled() then
         end
     end
 end
+]]
 
 function test.changeOrderDetails()
     --[[ this is not needed because of how gui.simulateInput'D_JOBLIST' works

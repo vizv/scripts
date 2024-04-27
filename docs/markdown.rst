@@ -3,7 +3,7 @@ markdown
 
 .. dfhack-tool::
     :summary: Exports the text you see on the screen for posting online.
-    :tags: unavailable dfhack
+    :tags: unavailable
 
 This tool saves a copy of a text screen, formatted in markdown, for posting to
 Reddit (among other places). See `forum-dwarves` if you want to export BBCode

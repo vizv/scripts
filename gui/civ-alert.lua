@@ -35,6 +35,21 @@ local function clear_alarm()
     df.global.plotinfo.alerts.civ_alert_idx = 0
 end
 
+function set_civalert_burrow_if_unset(burrow)
+    local burrows = get_civ_alert().burrows
+    if #burrows == 0 then
+        burrows:insert('#', burrow.id)
+    end
+end
+
+function unset_civalert_burrow_if_set(burrow)
+    local burrows = get_civ_alert().burrows
+    if #burrows > 0 and burrows[0] == burrow.id then
+        burrows:resize(0)
+        clear_alarm()
+    end
+end
+
 local function toggle_civalert_burrow(id)
     local burrows = get_civ_alert().burrows
     if #burrows == 0 then
@@ -96,6 +111,7 @@ end
 
 CivalertOverlay = defclass(CivalertOverlay, overlay.OverlayWidget)
 CivalertOverlay.ATTRS{
+    desc='Adds a button for activating a civilian alert when the squads panel is open.',
     default_pos={x=-15,y=-1},
     default_enabled=true,
     viewscreens='dwarfmode',

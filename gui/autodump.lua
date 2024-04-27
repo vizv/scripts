@@ -267,11 +267,11 @@ end
 
 function Autodump:onInput(keys)
     if Autodump.super.onInput(self, keys) then return true end
-    if keys._MOUSE_R_DOWN and self.mark then
+    if keys._MOUSE_R and self.mark then
         self.mark = nil
         self:updateLayout()
         return true
-    elseif keys._MOUSE_L_DOWN then
+    elseif keys._MOUSE_L then
         if self:getMouseFramePos() then return true end
         local pos = dfhack.gui.getMousePos()
         if not pos then

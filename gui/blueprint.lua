@@ -241,7 +241,7 @@ function StartPosPanel:init()
     self:addviews{
         widgets.CycleHotkeyLabel{
             view_id='startpos',
-            key='CUSTOM_P',
+            key='CUSTOM_O',
             label='playback start',
             options={'Unset', 'Setting', 'Set'},
             initial_option=self.start_pos and 'Set' or 'Unset',
@@ -459,7 +459,7 @@ end
 function Blueprint:onInput(keys)
     if Blueprint.super.onInput(self, keys) then return true end
 
-    if keys.LEAVESCREEN or keys._MOUSE_R_DOWN then
+    if keys.LEAVESCREEN or keys._MOUSE_R then
         if self:is_setting_start_pos() then
             self.subviews.startpos.option_idx = 1
             self.saved_cursor = nil
@@ -474,7 +474,7 @@ function Blueprint:onInput(keys)
     end
 
     local pos = nil
-    if keys._MOUSE_L_DOWN and not self:getMouseFramePos() then
+    if keys._MOUSE_L and not self:getMouseFramePos() then
         pos = dfhack.gui.getMousePos()
         if pos then
             guidm.setCursorPos(pos)
