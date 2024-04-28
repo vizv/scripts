@@ -287,17 +287,21 @@ local function createItem(mat, itemType, quality, creator, description, amount)
     return items
 end
 
-local function get_first_citizen()
+local function get_default_unit()
     local citizens = dfhack.units.getCitizens(true)
-    if not citizens or not citizens[1] then
-        qerror('Could not choose a creator unit. Please select one in the UI')
+    if citizens and citizens[1] then
+        return citizens[1]
     end
-    return citizens[1]
+    local adventurer = dfhack.world.getAdventurer()
+    if adventurer then
+        return adventurer
+    end
+    qerror('Could not choose a creator unit. Please select one in the UI')
 end
 
 -- returns the list of created items, or nil on error
 function hackWish(accessors, opts)
-    local unit = accessors.get_unit(opts) or get_first_citizen()
+    local unit = accessors.get_unit(opts) or get_default_unit()
     local qualityok, quality = false, df.item_quality.Ordinary
     local itemok, itemtype, itemsubtype = accessors.get_item_type()
     if not itemok then return end

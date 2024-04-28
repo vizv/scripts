@@ -27,6 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
+- Validated for adventure mode: `gui/sandbox`, `gui/create-item`
 
 ## New Features
 
