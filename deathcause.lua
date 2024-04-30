@@ -1,14 +1,13 @@
 -- show death cause of a creature
-local utils = require('utils')
+local guidm = require('gui.dwarfmode')
+
 local DEATH_TYPES = reqscript('gui/unit-info-viewer').DEATH_TYPES
 
 -- Gets the first corpse item at the given location
-function getItemAtPosition(ref_item)
-    if not ref_item then return end
-    local x, y, z = dfhack.items.getPosition(ref_item)
+function getItemAtPosition(pos)
     for _, item in ipairs(df.global.world.items.other.ANY_CORPSE) do
-        if item.pos.x == x and item.pos.y == y and item.pos.z == z then
-            print("Automatically chose first corpse at selected location.")
+        if item.pos.x == pos.x and item.pos.y == pos.y and item.pos.z == pos.z then
+            print("Automatically chose first corpse at the selected location.")
             return item
         end
     end
@@ -111,10 +110,7 @@ end
 function displayDeathHistFig(histfig)
     local histfig_unit = df.unit.find(histfig.unit_id)
     if not histfig_unit then
-        qerror(("Failed to retrieve unit for histfig [histfig_id: %d, histfig_unit_id: %d"):format(
-                histfig.id,
-                tostring(histfig.unit_id)
-        ))
+        qerror("Cause of death not available")
     end
 
     if not dfhack.units.isDead(histfig_unit) then
@@ -134,14 +130,32 @@ end
 local selected_item = dfhack.gui.getSelectedItem(true)
 local selected_unit = dfhack.gui.getSelectedUnit(true)
 
-if not selected_unit and not is_corpse_item(selected_item) then
-    -- if there isn't a selected unit and we don't have a selected item or the selected item is not a corpse
-    -- let's try to look for corpses under the cursor because it's probably what the user wants
-    -- we will just grab the first one as it's the best we can do
-    selected_item = getItemAtPosition(selected_item)
+if not selected_unit and not selected_item then
+    local pos
+    if not selected_item and
+        dfhack.gui.matchFocusString('dwarfmode/ViewSheets/ITEM_LIST', dfhack.gui.getDFViewscreen(true)) and
+        #df.global.game.main_interface.view_sheets.viewing_itid > 0
+    then
+        selected_item = df.item.find(df.global.game.main_interface.view_sheets.viewing_itid[0])
+    elseif selected_item then
+        pos = xyz2pos(dfhack.items.getPosition(selected_item))
+    end
+    if not selected_item then
+        pos = guidm.getCursorPos()
+    end
+    if pos then
+        -- if there isn't a selected unit and we don't have a selected item or the selected item is not a corpse
+        -- let's try to look for corpses at the same location because it's probably what the user wants
+        -- we will just grab the first one as it's the best we can do
+        selected_item = getItemAtPosition(pos)
+    end
 end
 
 if not selected_unit and not is_corpse_item(selected_item) then
+    if df.item_remainsst:is_instance(selected_item) then
+        print(("The %s died."):format(getRaceNameSingular(selected_item.race)))
+        return
+    end
     qerror("Please select a corpse")
 end
 
@@ -153,12 +167,12 @@ elseif selected_unit then
 end
 
 if not hist_figure_id then
-    qerror("Failed to find hist_figure_id. This is not user error")
+    qerror("Cause of death not available")
 elseif hist_figure_id == -1 then
     if not selected_unit then
         selected_unit = df.unit.find(selected_item.unit_id)
         if not selected_unit then
-            qerror("Not a historical figure, cannot find death info")
+            qerror("Cause of death not available")
         end
     end
 
