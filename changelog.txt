@@ -35,6 +35,7 @@ Template for new versions:
 ## Fixes
 - `modtools/create-item`: adjust for API changes, tolerate ``reaction-gloves`` tweak being active
 - `quickfort`: don't designate multiple tiles of the same tree for chopping when applying a tree chopping blueprint to a multi-tile tree
+- `gui/quantum`: fix processing when creating a quantum dump instead of a quantum stockpile
 
 ## Misc Improvements
 - `gui/autobutcher`: add functionality to butcher and unbutcher all animals
@@ -44,6 +45,8 @@ Template for new versions:
 - `gui/launcher`: add button for copying output to the system clipboard
 - `deathcause`: give better responses for vermin remains
 - `deathcause`: automatically choose a corpse when a pile of items is selected
+- `gui/quantum`: add option for whether a minecart automatically gets ordered and/or attached
+- `gui/quantum`: when attaching a minecart, show which minecart was attached
 
 ## Removed
 
