@@ -83,7 +83,7 @@ local function order_instrument(name, amount)
         end
     end
 
-    if instrument == nil then
+    if not instrument then
         qerror("Could not find instrument " .. name)
     end
 
@@ -140,7 +140,7 @@ if #args == 0 or args[1] == "list" then
     print_list()
 elseif args[1] == "order" then
     local instrument_name = args[2]
-    if instrument_name == nil then
+    if not instrument_name then
         qerror("Usage: instruments order <instrument_name> [<amount>]")
     end
 
