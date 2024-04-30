@@ -24,9 +24,9 @@ Examples
 --------
 
 ``adaptation``
-    Show the cave adaptation level for the seelcted unit.
+    Show the cave adaptation level for the selected unit.
 ``adaptation set --all 0``
-    Clear the cave adaptation levels for all dwarves.
+    Clear the cave adaptation levels for all citizens and residents.
 
 Options
 -------
