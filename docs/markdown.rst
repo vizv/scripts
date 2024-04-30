@@ -8,7 +8,7 @@ markdown
 Saves the description of a selected unit or item to a Markdown file encoded in
 UTF-8.
 
-By default, data is stored in the `markdown_{YourWorldName}.md` file in the
+By default, data is stored in the ``markdown_{YourWorldName}.md`` file in the
 root of the game directory.
 
 For units, the script exports:
