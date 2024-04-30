@@ -28,6 +28,7 @@ Template for new versions:
 
 ## New Tools
 - Validated for adventure mode: `gui/sandbox`, `gui/create-item`
+- `markdown`: (reinstated) export unit or item descriptions to a markdown text file
 
 ## New Features
 - `instruments`: new subcommand ``instruments order`` for creating instrument work orders
@@ -47,6 +48,7 @@ Template for new versions:
 - `deathcause`: automatically choose a corpse when a pile of items is selected
 - `gui/quantum`: add option for whether a minecart automatically gets ordered and/or attached
 - `gui/quantum`: when attaching a minecart, show which minecart was attached
+- `markdown`: new keybinding for triggering text export: Ctrl-t
 
 ## Removed
 
