@@ -61,11 +61,13 @@ local function create_quantum(pos, qsp_pos, feeder_id, name, trackstop_dir)
               :format(pos.x, pos.y, pos.z))
     end
 
-    data = get_quantumsp_data(name)
-    stats = quickfort.apply_blueprint{mode='place', pos=qsp_pos, data=data}
-    if stats.place_designated.value == 0 then
-        error(('failed to place stockpile at (%d, %d, %d)')
-              :format(qsp_pos.x, qsp_pos.y, qsp_pos.z))
+    if qsp_pos then
+        data = get_quantumsp_data(name)
+        stats = quickfort.apply_blueprint{mode='place', pos=qsp_pos, data=data}
+        if stats.place_designated.value == 0 then
+            error(('failed to place stockpile at (%d, %d, %d)')
+                :format(qsp_pos.x, qsp_pos.y, qsp_pos.z))
+        end
     end
 end
 
@@ -90,15 +92,13 @@ end
 Quantum = defclass(Quantum, widgets.Window)
 Quantum.ATTRS {
     frame_title='Quantum',
-    frame={w=35, h=17, r=2, t=18},
+    frame={w=35, h=19, r=2, t=18},
     autoarrange_subviews=true,
     autoarrange_gap=1,
     feeder=DEFAULT_NIL,
 }
 
 function Quantum:init()
-    local cart_count = #assign_minecarts.get_free_vehicles()
-
     self:addviews{
         widgets.WrappedLabel{
             text_to_wrap=self:callback('get_help_text'),
@@ -109,7 +109,7 @@ function Quantum:init()
             label_text='Name: ',
             key='CUSTOM_CTRL_N',
             key_sep=' ',
-            on_char=function(char, text) return #text < 12 end,  -- TODO can be circumvented by pasting
+            on_char=function(_, text) return #text < 12 end,  -- TODO can be circumvented by pasting
             text='',
         },
         widgets.CycleHotkeyLabel{
@@ -129,14 +129,51 @@ function Quantum:init()
             key='CUSTOM_CTRL_Z',
             label='Create output pile:',
         },
-        widgets.WrappedLabel{
-            text_to_wrap=('%d minecart%s available: %s will be %s'):format(
-                cart_count, cart_count == 1 and '' or 's',
-                cart_count == 1 and 'it' or 'one',
-                cart_count > 0 and 'automatically assigned to the quantum route'
-                    or 'ordered via the manager for you to assign later'),
+        widgets.CycleHotkeyLabel{
+            view_id='minecart',
+            key='CUSTOM_CTRL_M',
+            label='Assign minecart:',
+            options={
+                {label='Auto', value='auto', pen=COLOR_GREEN},
+                {label='Order', value='order', pen=COLOR_YELLOW},
+                {label='Manual', value='manual', pen=COLOR_LIGHTRED},
+            },
+        },
+        widgets.Panel{
+            frame={h=4},
+            subviews={
+                widgets.WrappedLabel{
+                    text_to_wrap=function() return ('%d minecart%s available: %s will be %s'):format(
+                        self.cart_count, self.cart_count == 1 and '' or 's',
+                        self.cart_count == 1 and 'it' or 'one',
+                        self.cart_count > 0 and 'automatically assigned to the quantum route'
+                            or 'ordered via the manager for you to assign to the quantum route later')
+                    end,
+                    visible=function() return self.subviews.minecart:getOptionValue() == 'auto' end,
+                },
+                widgets.WrappedLabel{
+                    text_to_wrap=function() return ('%d minecart%s available: %s will be ordered for you to assign to the quantum route later'):format(
+                        self.cart_count, self.cart_count == 1 and '' or 's',
+                        self.cart_count >= 1 and 'an additional one' or 'one')
+                    end,
+                    visible=function() return self.subviews.minecart:getOptionValue() == 'order' end,
+                },
+                widgets.WrappedLabel{
+                    text_to_wrap=function() return ('%d minecart%s available: please %s a minecart of your choice to the quantum route later'):format(
+                        self.cart_count, self.cart_count == 1 and '' or 's',
+                        self.cart_count == 0 and 'order and assign' or 'assign')
+                    end,
+                    visible=function() return self.subviews.minecart:getOptionValue() == 'manual' end,
+                },
+            },
         },
     }
+
+    self:refresh()
+end
+
+function Quantum:refresh()
+    self.cart_count = #assign_minecarts.get_free_vehicles()
 end
 
 function Quantum:get_help_text()
@@ -230,18 +267,35 @@ function Quantum:try_commit()
     create_quantum(pos, qsp_pos, self.feeder.id, self.subviews.name.text,
         self.subviews.dump_dir:getOptionLabel():sub(1,1))
 
-    local message = nil
-    if assign_minecarts.assign_minecart_to_last_route(true) then
-        message = 'An available minecart was assigned to your new' ..
-                ' quantum stockpile. You\'re all done!'
-    else
+    local minecart, message = nil, nil
+    local minecart_option = self.subviews.minecart:getOptionValue()
+    if minecart_option == 'auto' then
+        minecart = assign_minecarts.assign_minecart_to_last_route(true)
+        if minecart then
+            message = 'An available minecart (' ..
+                    dfhack.items.getReadableDescription(minecart) ..
+                    ') was assigned to your new' ..
+                    ' quantum stockpile. You\'re all done!'
+        else
+            message = 'There are no minecarts available to assign to the' ..
+            ' quantum stockpile, but a manager order to produce' ..
+            ' one was created for you. Once the minecart is' ..
+            ' built, please add it to the quantum stockpile route' ..
+            ' with the "assign-minecarts all" command or manually in' ..
+            ' the (H)auling menu.'
+        end
+    end
+    if minecart_option == 'order' then
         order_minecart(pos)
-        message = 'There are no minecarts available to assign to the' ..
-                ' quantum stockpile, but a manager order to produce' ..
-                ' one was created for you. Once the minecart is' ..
+        message = 'A manager order to produce a minecart has been' ..
+                ' created for you. Once the minecart is' ..
                 ' built, please add it to the quantum stockpile route' ..
                 ' with the "assign-minecarts all" command or manually in' ..
-                ' the (h)auling menu.'
+                ' the (H)auling menu.'
+    end
+    if not message then
+        message = 'Please add a minecart of your choice to the quantum' ..
+                ' stockpile route in the (H)auling menu.'
     end
     -- display a message box telling the user what we just did
     dialogs.MessageBox{text=message:wrap(70)}:show()
@@ -260,6 +314,8 @@ function Quantum:onInput(keys)
         end
     elseif self.feeder then
         self:try_commit()
+        self:refresh()
+        self:updateLayout()
     end
 end
 
