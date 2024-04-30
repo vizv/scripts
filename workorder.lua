@@ -5,6 +5,9 @@
 -- which is a great place to look up stuff like "How the hell do I find out if
 -- a creature can be sheared?!!"
 
+--@ module=true
+
+
 local function print_help()
     print(dfhack.script_help())
 end
@@ -181,7 +184,7 @@ end
 
 -- creates a df.manager_order from it's definition.
 -- this is translated orders.cpp to Lua,
-local function create_orders(orders)
+function create_orders(orders)
     -- is dfhack.with_suspend necessary?
 
     -- we need id mapping to restore saved order_conditions
@@ -429,7 +432,11 @@ local function create_orders(orders)
             order.amount_left = amount
             order.amount_total = amount
 
-            print("Queuing " .. df.job_type[order.job_type]
+            local job_type = df.job_type[order.job_type]
+            if job_type == "CustomReaction" then
+                job_type  = job_type .. " '" .. order.reaction_name .. "'"
+            end
+            print("Queuing " .. job_type
                 .. (amount==0 and " infinitely" or " x"..amount))
             world.manager_orders:insert('#', order)
         end
@@ -438,7 +445,7 @@ local function create_orders(orders)
 end
 
 -- set missing values, process special `amount_total` value
-local function preprocess_orders(orders)
+function preprocess_orders(orders)
     -- if called with single order make an array
     if orders.job then
         orders = {orders}
@@ -506,7 +513,7 @@ local order_defaults = {
     frequency = 'OneTime'
 }
 local _order_mt = {__index = order_defaults}
-local function fillin_defaults(orders)
+function fillin_defaults(orders)
     for _, order in ipairs(orders) do
         setmetatable(order, _order_mt)
     end
@@ -647,6 +654,10 @@ actions = {
     ["-vv"] = toggle_debug_verbose,
     ["--reset"] = function() initialized = false end,
 }
+
+if dfhack_flags.module then
+    return
+end
 
 -- Lua is beautiful.
 (actions[ (...) or "?" ] or default_action)(...)

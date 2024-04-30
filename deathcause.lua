@@ -1,35 +1,20 @@
 -- show death cause of a creature
-local utils = require('utils')
+local guidm = require('gui.dwarfmode')
+
 local DEATH_TYPES = reqscript('gui/unit-info-viewer').DEATH_TYPES
 
--- Creates a table of all items at the given location optionally matching a given item type
-function getItemsAtPosition(pos_x, pos_y, pos_z, item_type)
-    local items = {}
-    for _, item in ipairs(df.global.world.items.all) do
-        if item.pos.x == pos_x and item.pos.y == pos_y and item.pos.z == pos_z then
-            if not item_type or item:getType() == item_type then
-                table.insert(items, item)
-            end
+-- Gets the first corpse item at the given location
+function getItemAtPosition(pos)
+    for _, item in ipairs(df.global.world.items.other.ANY_CORPSE) do
+        if item.pos.x == pos.x and item.pos.y == pos.y and item.pos.z == pos.z then
+            print("Automatically chose first corpse at the selected location.")
+            return item
         end
     end
-    return items
-end
-
--- Find a histfig with the given id or nil if no unit is found
-function findHistFig(histfig_id)
-    if not histfig_id or histfig_id == -1 then
-        return nil
-    end
-
-    return utils.binsearch(df.global.world.history.figures, histfig_id, 'id')
-end
-
-function getRace(race_id)
-    return df.global.world.raws.creatures.all[race_id]
 end
 
 function getRaceNameSingular(race_id)
-    return getRace(race_id).name[0]
+    return df.creature_raw.find(race_id).name[0]
 end
 
 function getDeathStringFromCause(cause)
@@ -46,9 +31,8 @@ function displayDeathUnit(unit)
         str = str .. (" %s"):format(dfhack.TranslateName(unit.name))
     end
 
-    if not unit.flags2.killed and not unit.flags3.ghostly then
-        str = str .. " is not dead yet!"
-        print(str)
+    if not dfhack.units.isDead(unit) then
+        print(str .. " is not dead yet!")
         return
     end
 
@@ -90,7 +74,7 @@ function displayDeathEventHistFigUnit(histfig_unit, event)
             event.year
     )
 
-    local slayer_histfig = findHistFig(event.slayer_hf)
+    local slayer_histfig = df.historical_figure.find(event.slayer_hf)
     if slayer_histfig then
         str = str .. (", killed by the %s %s"):format(
                 getRaceNameSingular(slayer_histfig.race),
@@ -126,13 +110,10 @@ end
 function displayDeathHistFig(histfig)
     local histfig_unit = df.unit.find(histfig.unit_id)
     if not histfig_unit then
-        qerror(("Failed to retrieve unit for histfig [histfig_id: %d, histfig_unit_id: %d"):format(
-                histfig.id,
-                tostring(histfig.unit_id)
-        ))
+        qerror("Cause of death not available")
     end
 
-    if not histfig_unit.flags2.killed and not histfig_unit.flags3.ghostly then
+    if not dfhack.units.isDead(histfig_unit) then
         print(("%s is not dead yet!"):format(dfhack.TranslateName(histfig_unit.name)))
     else
         local death_event = getDeathEventForHistFig(histfig.id)
@@ -140,25 +121,45 @@ function displayDeathHistFig(histfig)
     end
 end
 
+local function is_corpse_item(item)
+    if not item then return false end
+    local itype = item:getType()
+    return itype == df.item_type.CORPSE or itype == df.item_type.CORPSEPIECE
+end
+
 local selected_item = dfhack.gui.getSelectedItem(true)
 local selected_unit = dfhack.gui.getSelectedUnit(true)
-local hist_figure_id
 
-if not selected_unit and (not selected_item or selected_item:getType() ~= df.item_type.CORPSE) then
-    -- if there isn't a selected unit and we don't have a selected item or the selected item is not a corpse
-    -- let's try to look for corpses under the cursor because it's probably what the user wants
-    -- we will just grab the first one as it's the best we can do
-    local items = getItemsAtPosition(df.global.cursor.x, df.global.cursor.y, df.global.cursor.z, df.item_type.CORPSE)
-    if #items > 0 then
-        print("Automatically chose first corpse under cursor.")
-        selected_item = items[1]
+if not selected_unit and not selected_item then
+    local pos
+    if not selected_item and
+        dfhack.gui.matchFocusString('dwarfmode/ViewSheets/ITEM_LIST', dfhack.gui.getDFViewscreen(true)) and
+        #df.global.game.main_interface.view_sheets.viewing_itid > 0
+    then
+        selected_item = df.item.find(df.global.game.main_interface.view_sheets.viewing_itid[0])
+    elseif selected_item then
+        pos = xyz2pos(dfhack.items.getPosition(selected_item))
+    end
+    if not selected_item then
+        pos = guidm.getCursorPos()
+    end
+    if pos then
+        -- if there isn't a selected unit and we don't have a selected item or the selected item is not a corpse
+        -- let's try to look for corpses at the same location because it's probably what the user wants
+        -- we will just grab the first one as it's the best we can do
+        selected_item = getItemAtPosition(pos)
     end
 end
 
-if not selected_unit and not selected_item then
+if not selected_unit and not is_corpse_item(selected_item) then
+    if df.item_remainsst:is_instance(selected_item) then
+        print(("The %s died."):format(getRaceNameSingular(selected_item.race)))
+        return
+    end
     qerror("Please select a corpse")
 end
 
+local hist_figure_id
 if selected_item then
     hist_figure_id = selected_item.hist_figure_id
 elseif selected_unit then
@@ -166,16 +167,16 @@ elseif selected_unit then
 end
 
 if not hist_figure_id then
-    qerror("Failed to find hist_figure_id. This is not user error")
+    qerror("Cause of death not available")
 elseif hist_figure_id == -1 then
     if not selected_unit then
         selected_unit = df.unit.find(selected_item.unit_id)
         if not selected_unit then
-            qerror("Not a historical figure, cannot find death info")
+            qerror("Cause of death not available")
         end
     end
 
     displayDeathUnit(selected_unit)
 else
-    displayDeathHistFig(findHistFig(hist_figure_id))
+    displayDeathHistFig(df.historical_figure.find(hist_figure_id))
 end

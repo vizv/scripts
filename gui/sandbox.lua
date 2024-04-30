@@ -23,6 +23,7 @@ Sandbox.ATTRS {
     frame={r=2, t=18, w=26, h=20},
     frame_inset={b=1},
     interface_masks=DEFAULT_NIL,
+    creator_unit=DEFAULT_NIL,
 }
 
 local function is_sentient(unit)
@@ -170,7 +171,15 @@ function Sandbox:init()
                     frame={l=0},
                     key='CUSTOM_SHIFT_I',
                     label="Create item",
-                    on_activate=function() dfhack.run_script('gui/create-item') end
+                    on_activate=function()
+                        local cmd = {'gui/create-item'}
+                        if self.creator_unit then
+                            table.insert(cmd, '-u')
+                            table.insert(cmd, tostring(self.creator_unit.id))
+                        end
+                        printall(cmd)
+                        dfhack.run_script(table.unpack(cmd))
+                    end
                 },
             },
         },
@@ -464,21 +473,32 @@ function SandboxScreen:init()
         Sandbox{
             view_id='sandbox',
             interface_masks=mask_panel.subviews,
+            creator_unit=dfhack.world.getAdventurer(),
         },
     }
 
-    self.prev_gametype = df.global.gametype
-    df.global.gametype = df.game_type.DWARF_ARENA
+    self.prev_gamemode, self.prev_gametype = df.global.gamemode, df.global.gametype
+    df.global.gamemode, df.global.gametype = df.game_mode.DWARF, df.game_type.DWARF_ARENA
+    if self.prev_gamemode ~= df.game_mode.DWARF then
+        local dwarf = df.viewscreen_dwarfmodest:new()
+        dfhack.screen.show(dwarf)
+    end
 end
 
 function SandboxScreen:onDismiss()
-    df.global.gametype = self.prev_gametype
-    view = nil
     self.subviews.sandbox:finalize_group()
 end
 
-if not dfhack.isWorldLoaded() then
-    qerror('gui/sandbox must have a world loaded')
+function SandboxScreen:onDestroy()
+    view = nil
+    df.global.gamemode, df.global.gametype = self.prev_gamemode, self.prev_gametype
+    if self.prev_gamemode ~= df.game_mode.DWARF then
+        dfhack.run_script('devel/pop-screen')
+    end
+end
+
+if not dfhack.isMapLoaded() then
+    qerror('gui/sandbox must have a map loaded')
 end
 
 view = view and view:raise() or SandboxScreen{}:show()

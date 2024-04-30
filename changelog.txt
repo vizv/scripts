@@ -27,14 +27,50 @@ Template for new versions:
 # Future
 
 ## New Tools
+- Validated for adventure mode: `gui/sandbox`, `gui/create-item`
 
 ## New Features
+- `instruments`: new subcommand ``instruments order`` for creating instrument work orders
 
 ## Fixes
+- `modtools/create-item`: adjust for API changes, tolerate ``reaction-gloves`` tweak being active
+- `quickfort`: don't designate multiple tiles of the same tree for chopping when applying a tree chopping blueprint to a multi-tile tree
+- `gui/quantum`: fix processing when creating a quantum dump instead of a quantum stockpile
 
 ## Misc Improvements
+- `gui/autobutcher`: add functionality to butcher and unbutcher all animals
+- `gui/autobutcher`: add warning if autobutcher is disabled
+- `combine`: respect container limits
+- `combine`: reduce combined drink sizes to 25
+- `gui/launcher`: add button for copying output to the system clipboard
+- `deathcause`: give better responses for vermin remains
+- `deathcause`: automatically choose a corpse when a pile of items is selected
+- `gui/quantum`: add option for whether a minecart automatically gets ordered and/or attached
+- `gui/quantum`: when attaching a minecart, show which minecart was attached
 
 ## Removed
+
+# 50.13-r1.1
+
+## Fixes
+- `gui/quantum`: accept all item types in the output stockpile as intended
+- `deathcause`: fix error on run
+
+# 50.13-r1
+
+## New Tools
+- `gui/unit-info-viewer`: (reinstated) give detailed information on a unit, such as egg laying behavior, body size, birth date, age, and information about their afterlife behavior (if a ghost)
+- `gui/quantum`: (reinstated) point and click interface for creating quantum stockpiles or quantum dumps
+
+## Fixes
+- `open-legends`: don't interfere with the dragging of vanilla list scrollbars
+- `gui/create-item`: properly restrict bags to bag materials by default
+- `gui/create-item`: allow gloves and shoees to be made out of textiles by default
+- `exterminate`: don't classify dangerous non-invader units as friendly (e.g. snatchers)
+
+## Misc Improvements
+- `open-legends`: allow player to cancel the "DF will now exit" dialog and continue browsing
+- `gui/gm-unit`: changes to unit appearance will now immediately be reflected in the unit portrait
 
 # 50.12-r3
 

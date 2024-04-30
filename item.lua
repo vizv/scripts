@@ -1,7 +1,5 @@
 --@module = true
 
-local caravan_common = reqscript('internal/caravan/common')
-
 -----------------------------------------------------------
 -- helper functions
 -----------------------------------------------------------
@@ -279,7 +277,7 @@ function execute(action, conditions, options, return_items)
         end
 
         if options.verbose then
-            local desc = caravan_common.get_item_description(item)
+            local desc = dfhack.items.getReadableDescription(item)
             descriptions[desc] = (descriptions[desc] or 0) + 1
         end
 

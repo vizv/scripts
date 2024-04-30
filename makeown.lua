@@ -285,6 +285,7 @@ function make_citizen(unit)
     name_unit(unit)
 end
 
+---@param unit unit
 function make_own(unit)
     unit.flags1.marauder = false;
     unit.flags1.merchant = false;

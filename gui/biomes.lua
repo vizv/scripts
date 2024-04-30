@@ -24,60 +24,6 @@ if TILE_STARTING_SYMBOL < 0 then -- use a fallback
     TILE_STARTING_SYMBOL = 97 -- `a`
 end
 
-local biomeTypeNames = {
-    MOUNTAIN = "Mountain",
-    GLACIER = "Glacier",
-    TUNDRA = "Tundra",
-    SWAMP_TEMPERATE_FRESHWATER = "Temperate Freshwater Swamp",
-    SWAMP_TEMPERATE_SALTWATER = "Temperate Saltwater Swamp",
-    MARSH_TEMPERATE_FRESHWATER = "Temperate Freshwater Marsh",
-    MARSH_TEMPERATE_SALTWATER = "Temperate Saltwater Marsh",
-    SWAMP_TROPICAL_FRESHWATER = "Tropical Freshwater Swamp",
-    SWAMP_TROPICAL_SALTWATER = "Tropical Saltwater Swamp",
-    SWAMP_MANGROVE = "Mangrove Swamp",
-    MARSH_TROPICAL_FRESHWATER = "Tropical Freshwater Marsh",
-    MARSH_TROPICAL_SALTWATER = "Tropical Saltwater Marsh",
-    FOREST_TAIGA = "Taiga Forest",
-    FOREST_TEMPERATE_CONIFER = "Temperate Conifer Forest",
-    FOREST_TEMPERATE_BROADLEAF = "Temperate Broadleaf Forest",
-    FOREST_TROPICAL_CONIFER = "Tropical Conifer Forest",
-    FOREST_TROPICAL_DRY_BROADLEAF = "Tropical Dry Broadleaf Forest",
-    FOREST_TROPICAL_MOIST_BROADLEAF = "Tropical Moist Broadleaf Forest",
-    GRASSLAND_TEMPERATE = "Temperate Grassland",
-    SAVANNA_TEMPERATE = "Temperate Savanna",
-    SHRUBLAND_TEMPERATE = "Temperate Shrubland",
-    GRASSLAND_TROPICAL = "Tropical Grassland",
-    SAVANNA_TROPICAL = "Tropical Savanna",
-    SHRUBLAND_TROPICAL = "Tropical Shrubland",
-    DESERT_BADLAND = "Badland Desert",
-    DESERT_ROCK = "Rock Desert",
-    DESERT_SAND = "Sand Desert",
-    OCEAN_TROPICAL = "Tropical Ocean",
-    OCEAN_TEMPERATE = "Temperate Ocean",
-    OCEAN_ARCTIC = "Arctic Ocean",
-    POOL_TEMPERATE_FRESHWATER = "Temperate Freshwater Pool",
-    POOL_TEMPERATE_BRACKISHWATER = "Temperate Brackishwater Pool",
-    POOL_TEMPERATE_SALTWATER = "Temperate Saltwater Pool",
-    POOL_TROPICAL_FRESHWATER = "Tropical Freshwater Pool",
-    POOL_TROPICAL_BRACKISHWATER = "Tropical Brackishwater Pool",
-    POOL_TROPICAL_SALTWATER = "Tropical Saltwater Pool",
-    LAKE_TEMPERATE_FRESHWATER = "Temperate Freshwater Lake",
-    LAKE_TEMPERATE_BRACKISHWATER = "Temperate Brackishwater Lake",
-    LAKE_TEMPERATE_SALTWATER = "Temperate Saltwater Lake",
-    LAKE_TROPICAL_FRESHWATER = "Tropical Freshwater Lake",
-    LAKE_TROPICAL_BRACKISHWATER = "Tropical Brackishwater Lake",
-    LAKE_TROPICAL_SALTWATER = "Tropical Saltwater Lake",
-    RIVER_TEMPERATE_FRESHWATER = "Temperate Freshwater River",
-    RIVER_TEMPERATE_BRACKISHWATER = "Temperate Brackishwater River",
-    RIVER_TEMPERATE_SALTWATER = "Temperate Saltwater River",
-    RIVER_TROPICAL_FRESHWATER = "Tropical Freshwater River",
-    RIVER_TROPICAL_BRACKISHWATER = "Tropical Brackishwater River",
-    RIVER_TROPICAL_SALTWATER = "Tropical Saltwater River",
-    SUBTERRANEAN_WATER = "Subterranean Water",
-    SUBTERRANEAN_CHASM = "Subterranean Chasm",
-    SUBTERRANEAN_LAVA = "Subterranean Lava",
-}
-
 local function find(t, predicate)
     for k, item in pairs(t) do
         if predicate(k, item) then
@@ -185,11 +131,8 @@ local function GetBiomeName(biome, biomeTypeId)
         "Calm", "Wilderness", "Untamed Wilds",
         "Sinister", "Haunted", "Terrifying"
     }
-    local surrounding = surroundings[surr]
 
-    local name = biomeTypeNames[df.biome_type[biomeTypeId]] or "DFHACK_Unknown"
-
-    return ([[%s %s]]):format(surrounding, name)
+    return ([[%s %s]]):format(surroundings[surr], df.biome_type.attrs[biomeTypeId].caption)
 end
 
 function BiomeVisualizerLegend:init()

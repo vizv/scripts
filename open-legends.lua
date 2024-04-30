@@ -11,7 +11,7 @@ tainted = tainted or false
 -- LegendsManager
 --
 
-LegendsManager = defclass(LegendsManager, gui.Screen)
+LegendsManager = defclass(LegendsManager, gui.ZScreen)
 LegendsManager.ATTRS {
     focus_path='open-legends',
     no_autoquit=false,
@@ -20,7 +20,7 @@ LegendsManager.ATTRS {
 function LegendsManager:init()
     tainted = true
 
-    -- back up what we can to make a return to the previous mode possible
+    -- back up what we can to make a return to the previous mode possible.
     -- note that even with these precautions, data **is lost** when switching
     -- to legends mode and back. testing shows that a savegame made directly
     -- after returning from legends mode will be **smaller** than a savegame
@@ -36,7 +36,7 @@ function LegendsManager:init()
     df.global.gametype = df.game_type.VIEW_LEGENDS
 
     local legends = df.viewscreen_legendsst:new()
-    legends.page:insert("#",{new=true, header="Legends", mode=0, index=-1})
+    legends.page:insert("#", {new=true, header="Legends", mode=0, index=-1})
     dfhack.screen.show(legends)
 
     self:addviews{
@@ -47,24 +47,19 @@ function LegendsManager:init()
     }
 end
 
-function LegendsManager:render()
-    self:renderParent()
-end
-
 function LegendsManager:onInput(keys)
     if keys.LEAVESCREEN or (keys._MOUSE_L and self.subviews.done_mask:getMousePos()) then
         if self.no_autoquit then
             self:dismiss()
         else
-            dialogs.showMessage('Exiting to avoid save corruption',
+            dialogs.showYesNoPrompt('Exiting to avoid save corruption',
                 'Dwarf Fortress is in a non-playable state\nand will now exit to protect your savegame.',
                 COLOR_YELLOW,
                 self:callback('dismiss'))
         end
-    else
-        self:sendInputToParent(keys)
+        return true
     end
-    return true
+    return LegendsManager.super.onInput(self, keys)
 end
 
 function LegendsManager:onDestroy()
@@ -149,6 +144,7 @@ function LegendsWarning:init()
         widgets.HotkeyLabel{
             key='CUSTOM_ALT_L',
             label='Click here to continue to legends mode',
+            text_pen=self.no_autoquit and COLOR_RED or nil,
             auto_width=true,
             on_activate=function()
                 self.parent_view:dismiss()
