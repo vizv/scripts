@@ -29,6 +29,7 @@ Template for new versions:
 ## New Tools
 - Validated for adventure mode: `gui/sandbox`, `gui/create-item`
 - `markdown`: (reinstated) export unit or item descriptions to a markdown text file
+- `adaptation`: (reinstated) inspect or set unit cave adaptation levels
 
 ## New Features
 - `instruments`: new subcommand ``instruments order`` for creating instrument work orders
