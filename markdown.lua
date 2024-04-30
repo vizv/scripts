@@ -10,8 +10,8 @@ local worldName = dfhack.df2utf(dfhack.TranslateName(df.global.world.world_data.
 
 local help, overwrite, filenameArg = false, false, nil
 local positionals = argparse.processArgsGetopt({ ... }, {
-    { 'o', 'overwrite', hasArg = false, handler = function() overwrite = true end },
-    { 'h', 'help',      hasArg = false, handler = function() help = true end }
+    {'o', 'overwrite', handler=function() overwrite = true end},
+    {'h', 'help',      handler=function() help = true end},
 })
 
 -- Extract non-option arguments (filename)

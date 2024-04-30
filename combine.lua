@@ -788,9 +788,9 @@ local function parse_commandline(opts, args)
     })
 
     -- if stockpile option is not specificed, then default to all
-    if args[1] == 'all' then
+    if positionals[1] == 'all' then
         opts.all=get_stockpile_all()
-    elseif args[1] == 'here' then
+    elseif positionals[1] == 'here' then
         opts.here=get_stockpile_here()
     else
         opts.help = true
