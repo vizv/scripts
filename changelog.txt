@@ -42,6 +42,8 @@ Template for new versions:
 - `combine`: respect container limits
 - `combine`: reduce combined drink sizes to 25
 - `gui/launcher`: add button for copying output to the system clipboard
+- `deathcause`: give better responses for vermin remains
+- `deathcause`: automatically choose a corpse when a pile of items is selected
 
 ## Removed
 
