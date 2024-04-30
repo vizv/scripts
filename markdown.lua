@@ -2,7 +2,6 @@
 -- This script extracts the description of a selected unit or item and saves it
 -- as a Markdown file encoded in UTF-8 in the root game directory.
 
-local utils = require('utils')
 local gui = require('gui')
 local argparse = require('argparse')
 
