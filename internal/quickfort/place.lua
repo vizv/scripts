@@ -257,12 +257,12 @@ local function configure_stockpile(bld, db_entry)
     for _,cat in ipairs(db_entry.categories) do
         local name = ('library/cat_%s'):format(cat)
         log('enabling stockpile category: %s', cat)
-        stockpiles.import_stockpile(name, {id=bld.id, mode='enable'})
+        stockpiles.import_settings(name, {id=bld.id, mode='enable'})
     end
     for adjlist in pairs(db_entry.adjustments or {}) do
         for _,adj in ipairs(adjlist) do
             log('applying stockpile preset: %s %s (filters=)', adj.mode, adj.name, table.concat(adj.filters or {}, ','))
-            stockpiles.import_stockpile(adj.name, {id=bld.id, mode=adj.mode, filters=adj.filters})
+            stockpiles.import_settings(adj.name, {id=bld.id, mode=adj.mode, filters=adj.filters})
         end
     end
 end

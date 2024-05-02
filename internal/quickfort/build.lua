@@ -385,10 +385,17 @@ local function add_stop(name, pos, adjustments)
         id=stop_id,
         pos=pos,
     })
-    stockpiles.import_route('library/everything', route.id, stop_id, 'set')
+    local opts = {
+        route_id=route.id,
+        stop_id=stop_id,
+        mode='set',
+    }
+    stockpiles.import_settings('library/everything', opts)
     for _, adj in ipairs(adjustments) do
         log('applying stockpile preset: %s %s', adj.mode, adj.name)
-        stockpiles.import_route(adj.name, route.id, stop_id, adj.mode, adj.filters)
+        opts.mode = adj.mode
+        opts.filters = adj.filters
+        stockpiles.import_settings(adj.name, opts)
     end
     return route.stops[#route.stops-1]
 end
