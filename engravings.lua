@@ -27,7 +27,8 @@ local engravings = df.global.world.engravings
 for index = #engravings-1,0,-1 do
     local engraving = engravings[index]
 	if not is_good_engraving(engraving) then
-        df.global.world.engravings:erase(index)
+        engravings:erase(index)
+
 		engraving:delete()
 		cleanup = cleanup + 1
     end
