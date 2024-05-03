@@ -27,7 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
-- Validated for adventure mode: `gui/sandbox`, `gui/create-item`
+- Updated for adventure mode: `gui/sandbox`, `gui/create-item`
 - `markdown`: (reinstated) export unit or item descriptions to a markdown text file
 - `adaptation`: (reinstated) inspect or set unit cave adaptation levels
 
@@ -35,21 +35,19 @@ Template for new versions:
 - `instruments`: new subcommand ``instruments order`` for creating instrument work orders
 
 ## Fixes
-- `modtools/create-item`: adjust for API changes, tolerate ``reaction-gloves`` tweak being active
+- `modtools/create-item`: now functions properly when the ``reaction-gloves`` tweak is active
 - `quickfort`: don't designate multiple tiles of the same tree for chopping when applying a tree chopping blueprint to a multi-tile tree
 - `gui/quantum`: fix processing when creating a quantum dump instead of a quantum stockpile
 
 ## Misc Improvements
-- `gui/autobutcher`: add functionality to butcher and unbutcher all animals
-- `gui/autobutcher`: add warning if autobutcher is disabled
-- `combine`: respect container limits
+- `gui/autobutcher`: add shortcuts for butchering/unbutchering all animals
+- `combine`: respect container volume limits
 - `combine`: reduce combined drink sizes to 25
 - `gui/launcher`: add button for copying output to the system clipboard
 - `deathcause`: give better responses for vermin remains
-- `deathcause`: automatically choose a corpse when a pile of items is selected
+- `deathcause`: automatically choose a relevant corpse when a pile of items is selected
 - `gui/quantum`: add option for whether a minecart automatically gets ordered and/or attached
 - `gui/quantum`: when attaching a minecart, show which minecart was attached
-- `markdown`: new keybinding for triggering text export: Ctrl-t
 
 ## Removed
 
