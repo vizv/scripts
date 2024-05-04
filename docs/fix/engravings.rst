@@ -13,4 +13,10 @@ Usage
 
 ::
 
-    fix/engravings
+    fix/engravings [<options>]
+
+Options
+-------
+
+``-q``, ``--quiet``
+    Only output status when something was actually fixed.
