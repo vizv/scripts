@@ -3,7 +3,7 @@ markdown
 
 .. dfhack-tool::
     :summary: Export displayed text to a Markdown file.
-    :tags: dfhack items units
+    :tags: adventure fort items units
 
 Saves the description of a selected unit or item to a Markdown file encoded in
 UTF-8.

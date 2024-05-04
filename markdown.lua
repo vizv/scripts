@@ -80,55 +80,63 @@ end
 
 local log = getFileHandle()
 
+local gps = df.global.gps
+local mi = df.global.game.main_interface
+
 if item then
     -- Item processing
     local itemRawName = dfhack.items.getDescription(item, 0, true)
-    local itemRawDescription = df.global.game.main_interface.view_sheets.raw_description
+    local itemRawDescription = mi.view_sheets.raw_description
     log:write('### ' ..
         dfhack.df2utf(itemRawName) .. '\n\n#### Description: \n' .. reformat(dfhack.df2utf(itemRawDescription)) .. '\n')
     print('Exporting description of the ' .. itemRawName)
 elseif unit then
     -- Unit processing
     -- Simulate UI interactions to load data into memory (click through tabs). Note: Constant might change with DF updates/patches
+    local is_adv = dfhack.world.isAdventureMode()
     local screen = dfhack.gui.getDFViewscreen()
     local windowSize = dfhack.screen.getWindowSize()
 
     -- Click "Personality"
-    local personalityWidthConstant = 48
-    local personalityHeightConstant = 11
+    local personalityWidthConstant = is_adv and 68 or 48
+    local personalityHeightConstant = is_adv and 13 or 11
 
-    df.global.gps.mouse_x = windowSize - personalityWidthConstant
-    df.global.gps.mouse_y = personalityHeightConstant
+    gps.mouse_x = windowSize - personalityWidthConstant
+    gps.mouse_y = personalityHeightConstant
 
     gui.simulateInput(screen, '_MOUSE_L')
 
     -- Click "Health"
     local healthWidthConstant = 74
-    local healthHeightConstant = 13
+    local healthHeightConstant = is_adv and 15 or 13
 
-    df.global.gps.mouse_x = windowSize - healthWidthConstant
-    df.global.gps.mouse_y = healthHeightConstant
+    gps.mouse_x = windowSize - healthWidthConstant
+    gps.mouse_y = healthHeightConstant
 
     gui.simulateInput(screen, '_MOUSE_L')
 
     -- Click "Health/Description"
-    local healthDescriptionWidthConstant = 51
-    local healthDescriptionHeightConstant = 15
+    local healthDescriptionWidthConstant = is_adv and 74 or 51
+    local healthDescriptionHeightConstant = is_adv and 17 or 15
 
-    df.global.gps.mouse_x = windowSize - healthDescriptionWidthConstant
-    df.global.gps.mouse_y = healthDescriptionHeightConstant
+    gps.mouse_x = windowSize - healthDescriptionWidthConstant
+    gps.mouse_y = healthDescriptionHeightConstant
 
     gui.simulateInput(screen, '_MOUSE_L')
 
-    local unit_description_raw = df.global.game.main_interface.view_sheets.unit_health_raw_str[0].value
-    local unit_personality_raw = df.global.game.main_interface.view_sheets.personality_raw_str
+    local unit_description_raw = #mi.view_sheets.unit_health_raw_str > 0 and mi.view_sheets.unit_health_raw_str[0].value or ''
+    local unit_personality_raw = mi.view_sheets.personality_raw_str
 
     log:write('### ' ..
         dfhack.df2utf(getNameRaceAgeProf(unit)) ..
-        '\n\n#### Description: \n' .. reformat(dfhack.df2utf(unit_description_raw)) .. '\n\n#### Personality: \n')
-    for _, unit_personality in ipairs(unit_personality_raw) do
-        log:write(reformat(dfhack.df2utf(unit_personality.value)) .. '\n')
+        '\n\n#### Description: \n' .. reformat(dfhack.df2utf(unit_description_raw)) .. '\n')
+    if #unit_personality_raw > 0 then
+        log:write('\n#### Personality: \n')
+        for _, unit_personality in ipairs(unit_personality_raw) do
+            log:write(reformat(dfhack.df2utf(unit_personality.value)) .. '\n')
+        end
     end
     print('Exporting Health/Description & Personality/Traits data for: \n' .. dfhack.df2console(getNameRaceAgeProf(unit)))
 end
+
 closeFileHandle(log)
