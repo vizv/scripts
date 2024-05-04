@@ -21,7 +21,7 @@ end
 
 local help = false
 local quiet = false
-local positionals = argparse.processArgsGetopt(args, {
+local positionals = argparse.processArgsGetopt({...}, {
     {'h', 'help', handler=function() help = true end},
     {'q', 'quiet', handler=function() quiet = true end},
 })
