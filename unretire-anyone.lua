@@ -7,7 +7,7 @@ local commands = argparse.processArgsGetopt({ ... }, {
 
 local dialogs = require 'gui.dialogs'
 
-local viewscreen = dfhack.gui.getCurViewscreen()
+local viewscreen = dfhack.gui.getDFViewscreen(true)
 if viewscreen._type ~= df.viewscreen_setupadventurest then
     qerror("This script can only be used during adventure mode setup!")
 end
@@ -15,19 +15,19 @@ end
 --luacheck: in=df.viewscreen_setupadventurest,df.nemesis_record
 function addNemesisToUnretireList(advSetUpScreen, nemesis)
     local unretireOption = false
-    for i = #advSetUpScreen.race_ids - 1, 0, -1 do
-        if advSetUpScreen.race_ids[i] == -2 then -- this is the "Specific Person" option on the menu
+    for i = #advSetUpScreen.valid_race - 1, 0, -1 do
+        if advSetUpScreen.valid_race[i] == -2 then -- this is the "Specific Person" option on the menu
             unretireOption = true
             break
         end
     end
 
     if not unretireOption then
-        advSetUpScreen.race_ids:insert('#', -2)
+        advSetUpScreen.valid_race:insert('#', -2)
     end
 
     nemesis.flags.ADVENTURER = true
-    advSetUpScreen.nemesis_ids:insert('#', nemesis.id)
+    advSetUpScreen.nemesis_index:insert('#', nemesis.id)
 end
 
 --luacheck: in=table
@@ -42,7 +42,7 @@ function showNemesisPrompt(advSetUpScreen)
                 not histFlags.force
             then
                 local creature = df.creature_raw.find(histFig.race).caste[histFig.caste]
-                local name = creature.caste_name[0]
+                local name =  creature.caste_name[0]
                 if histFig.died_year >= -1 then
                     histFig.died_year = -1
                     histFig.died_seconds = -1
