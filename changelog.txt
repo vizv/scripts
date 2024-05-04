@@ -31,6 +31,7 @@ Template for new versions:
 - `markdown`: (reinstated) export unit or item descriptions to a markdown text file
 - `adaptation`: (reinstated) inspect or set unit cave adaptation levels
 - `fix/engravings`: fix corrupt engraving tiles
+- `unretire-anyone`: choose anybody in the world as an adventurer
 
 ## New Features
 - `instruments`: new subcommand ``instruments order`` for creating instrument work orders
