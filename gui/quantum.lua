@@ -29,7 +29,7 @@ local function is_valid_pos(cursor, qsp_pos)
 end
 
 
-local function get_quantumstop_data(feeder_id, name, trackstop_dir)
+local function get_quantumstop_data(feeders, name, trackstop_dir)
     local stop_name, route_name
     if name == '' then
         local next_route_id = df.global.plotinfo.hauling.next_id
@@ -40,8 +40,13 @@ local function get_quantumstop_data(feeder_id, name, trackstop_dir)
         route_name = ('%s quantum'):format(name)
     end
 
-    return ('trackstop%s{name="%s" take_from=%d route="%s"}')
-           :format(trackstop_dir, stop_name, feeder_id, route_name)
+    local feeder_ids = {}
+    for _, feeder in ipairs(feeders) do
+        table.insert(feeder_ids, tostring(feeder.id))
+    end
+
+    return ('trackstop%s{name="%s" take_from=%s route="%s"}')
+           :format(trackstop_dir, stop_name, table.concat(feeder_ids, ','), route_name)
 end
 
 local function get_quantumsp_data(name)
@@ -53,8 +58,8 @@ local function get_quantumsp_data(name)
 end
 
 -- this function assumes that is_valid_pos() has already validated the positions
-local function create_quantum(pos, qsp_pos, feeder_id, name, trackstop_dir)
-    local data = get_quantumstop_data(feeder_id, name, trackstop_dir)
+local function create_quantum(pos, qsp_pos, feeders, name, trackstop_dir)
+    local data = get_quantumstop_data(feeders, name, trackstop_dir)
     local stats = quickfort.apply_blueprint{mode='build', pos=pos, data=data}
     if stats.build_designated.value == 0 then
         error(('failed to build trackstop at (%d, %d, %d)')
@@ -92,10 +97,10 @@ end
 Quantum = defclass(Quantum, widgets.Window)
 Quantum.ATTRS {
     frame_title='Quantum',
-    frame={w=35, h=19, r=2, t=18},
+    frame={w=35, h=21, r=2, t=18},
     autoarrange_subviews=true,
     autoarrange_gap=1,
-    feeder=DEFAULT_NIL,
+    feeders=DEFAULT_NIL,
 }
 
 function Quantum:init()
@@ -128,6 +133,15 @@ function Quantum:init()
             view_id='create_sp',
             key='CUSTOM_CTRL_Z',
             label='Create output pile:',
+        },
+        widgets.CycleHotkeyLabel{
+            view_id='feeder_mode',
+            key='CUSTOM_CTRL_F',
+            label='Feeder select:',
+            options={
+                {label='Single', value='single', pen=COLOR_GREEN},
+                {label='Multi', value='multi', pen=COLOR_YELLOW},
+            },
         },
         widgets.CycleHotkeyLabel{
             view_id='minecart',
@@ -177,10 +191,13 @@ function Quantum:refresh()
 end
 
 function Quantum:get_help_text()
-    if not self.feeder then
-        return 'Please select the feeder stockpile.'
+    if #self.feeders == 0 then
+        return 'Please select a feeder stockpile.'
     end
-    return 'Please select the location of the new quantum dumper.'
+    if self.subviews.feeder_mode:getOptionValue() == 'single' then
+        return 'Please select the location of the new quantum dumper.'
+    end
+    return 'Please select additional feeder stockpiles or the location of the new quantum dumper.'
 end
 
 local function get_hover_stockpile(pos)
@@ -223,7 +240,7 @@ local BAD_PEN = to_pen{ch='X', fg=COLOR_RED,
                        tile=dfhack.screen.findGraphicsTile('CURSORS', 3, 0)}
 
 function Quantum:render_placement_overlay()
-    if not self.feeder then return end
+    if #self.feeders == 0 then return end
     local stop_pos, qsp_pos = self:get_pos_qsp_pos()
 
     if not stop_pos then return end
@@ -253,7 +270,9 @@ end
 
 function Quantum:render(dc)
     self:render_sp_overlay(get_hover_stockpile(), HOVERED_SP_PEN)
-    self:render_sp_overlay(self.feeder, SELECTED_SP_PEN)
+    for _, feeder in ipairs(self.feeders) do
+        self:render_sp_overlay(feeder, SELECTED_SP_PEN)
+    end
     self:render_placement_overlay()
     Quantum.super.render(self, dc)
 end
@@ -264,7 +283,7 @@ function Quantum:try_commit()
         return
     end
 
-    create_quantum(pos, qsp_pos, self.feeder.id, self.subviews.name.text,
+    create_quantum(pos, qsp_pos, self.feeders, self.subviews.name.text,
         self.subviews.dump_dir:getOptionLabel():sub(1,1))
 
     local minecart, message = nil, nil
@@ -308,11 +327,23 @@ function Quantum:onInput(keys)
     if not keys._MOUSE_L then return end
     local sp = get_hover_stockpile()
     if sp then
-        if sp ~= self.feeder then
-            self.feeder = sp
-            self:updateLayout()
+        if self.subviews.feeder_mode:getOptionValue() == 'single' then
+            self.feeders = {sp}
+        else
+            local found = false
+            for idx, feeder in ipairs(self.feeders) do
+                if sp.id == feeder.id then
+                    found = true
+                    table.remove(self.feeders, idx)
+                    break
+                end
+            end
+            if not found then
+                table.insert(self.feeders, sp)
+            end
         end
-    elseif self.feeder then
+        self:updateLayout()
+    elseif #self.feeders > 0 then
         self:try_commit()
         self:refresh()
         self:updateLayout()
@@ -332,7 +363,7 @@ QuantumScreen.ATTRS {
 }
 
 function QuantumScreen:init()
-    self:addviews{Quantum{feeder=self.feeder}}
+    self:addviews{Quantum{feeders={self.feeder}}}
 end
 
 function QuantumScreen:onDismiss()
