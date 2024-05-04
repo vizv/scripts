@@ -54,7 +54,7 @@ local function moveToContainer(item, creator, container_type)
     end
     local bucketType = dfhack.items.findType(container_type .. ':NONE')
     local buckets = dfhack.items.createItem(creator, bucketType, -1, containerMat.type, containerMat.index)
-    local bucket = buckets[0]
+    local bucket = buckets[1]
     dfhack.items.moveToContainer(item, bucket)
     return bucket
 end
@@ -120,7 +120,7 @@ local function createCorpsePiece(creator, bodypart, partlayer, creatureID, caste
     local material = 'CREATURE_MAT:' .. raceName .. ':' .. layerMat
     local materialInfo = dfhack.matinfo.find(material)
     local items = dfhack.items.createItem(creator, itemType, itemSubtype, materialInfo['type'], materialInfo.index)
-    local item = items[0]
+    local item = items[1]
     -- if the item type is a corpsepiece, we know we have one, and then go on to set the appropriate flags
     if item_type == 'CORPSEPIECE' then
         if layerName == 'BONE' then -- check if bones
