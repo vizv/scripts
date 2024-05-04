@@ -28,6 +28,7 @@ Template for new versions:
 
 ## New Tools
 - Updated for adventure mode: `gui/sandbox`, `gui/create-item`, `gui/reveal`
+- `ghostly`: (reinstated) allow your adventurer to phase through walls
 - `markdown`: (reinstated) export unit or item descriptions to a markdown text file
 - `adaptation`: (reinstated) inspect or set unit cave adaptation levels
 - `fix/engravings`: fix corrupt engraving tiles
