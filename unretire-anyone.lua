@@ -42,7 +42,7 @@ function showNemesisPrompt(advSetUpScreen)
                 not histFlags.force
             then
                 local creature = df.creature_raw.find(histFig.race).caste[histFig.caste]
-                local name =  creature.caste_name[0]
+                local name = creature.caste_name[0]
                 if histFig.died_year >= -1 then
                     histFig.died_year = -1
                     histFig.died_seconds = -1
