@@ -28,4 +28,6 @@ for index = #engravings-1,0,-1 do
         cleanup = cleanup + 1
     end
 end
-print(('%d bad engraving(s) fixed.'):format(cleanup))
+if not quiet or cleanup > 0 then
+    print(('%d bad engraving(s) fixed.'):format(cleanup))
+end
