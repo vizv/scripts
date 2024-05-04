@@ -41,21 +41,21 @@ function test.create_quantum()
 
     mock.patch(quickfort, 'apply_blueprint',
                mock_apply_blueprint(all_good, all_good), function()
-        q.create_quantum(pos, qsp_pos, feeder_id, '', 'N')
+        q.create_quantum(pos, qsp_pos, {{id=feeder_id}}, '', 'N')
         -- passes if no error is thrown
     end)
 
     mock.patch(quickfort, 'apply_blueprint',
                mock_apply_blueprint(all_good, bad_place), function()
         expect.error_match('failed to place stockpile', function()
-                q.create_quantum(pos, qsp_pos, feeder_id, '', 'N')
+                q.create_quantum(pos, qsp_pos, {{id=feeder_id}}, '', 'N')
         end)
     end)
 
     mock.patch(quickfort, 'apply_blueprint',
                mock_apply_blueprint(bad_build, all_good), function()
         expect.error_match('failed to build trackstop', function()
-                q.create_quantum(pos, qsp_pos, feeder_id, '', 'N')
+                q.create_quantum(pos, qsp_pos, {{id=feeder_id}}, '', 'N')
         end)
     end)
 end
