@@ -29,7 +29,7 @@ stockpiles that will contain heavy items like corpses, furniture, or boulders.
 The UI will walk you through the steps:
 
 1. Select a feeder stockpile by clicking on it. If you want to select multiple
-  feeder stockpiles, switch the feeder selection toggle into multi mode.
+   feeder stockpiles, switch the feeder selection toggle into multi mode.
 2. Set configuration with the onscreen options.
 3. Click on the map to build the quantum stockpile there.
 
