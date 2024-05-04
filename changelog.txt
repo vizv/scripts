@@ -35,6 +35,7 @@ Template for new versions:
 - `unretire-anyone`: (reinstated) choose anybody in the world as an adventurer
 - `reveal-adv-map`: (reinstated) reveal (or hide) the adventure map
 - `resurrect-adv`: (reinstated) allow your adventurer to recover from death
+- `flashstep`: (reinstated) teleport your adventurer to the mouse cursor
 
 ## New Features
 - `instruments`: new subcommand ``instruments order`` for creating instrument work orders
