@@ -24,6 +24,12 @@ Reveal.ATTRS {
 function Reveal:init()
     self.graphics = dfhack.screen.inGraphicsMode()
 
+    local is_adv = dfhack.world.isAdventureMode()
+
+    if is_adv then
+        self.frame.t = 0
+    end
+
     self:addviews{
         widgets.ResizingPanel{
             autoarrange_subviews=true,
@@ -31,21 +37,21 @@ function Reveal:init()
             visible=not self.opts.aquifers_only,
             subviews={
                 widgets.WrappedLabel{
-                    text_to_wrap='The map is revealed. The game will be force paused until you close this window.',
+                    text_to_wrap='The map is revealed.' .. (is_adv and '' or ' The game will be force paused until you close this window.'),
                 },
                 widgets.WrappedLabel{
                     text_to_wrap='Areas with event triggers are kept hidden to avoid spoilers.',
                     visible=not self.opts.hell,
                 },
                 widgets.WrappedLabel{
-                    text_to_wrap='Areas with event triggers have been revealed. The map must be hidden again before unpausing.',
+                    text_to_wrap='Areas with hidden secrets have been revealed.' .. (is_adv and '' or ' The map must be hidden again before unpausing.'),
                     text_pen=COLOR_RED,
                     visible=self.opts.hell,
                 },
                 widgets.WrappedLabel{
                     text_to_wrap='In graphics mode, solid tiles that are not adjacent to open space are not rendered. Switch to ASCII mode to see them.',
                     text_pen=COLOR_BROWN,
-                    visible=dfhack.screen.inGraphicsMode,
+                    visible=dfhack.screen.inGraphicsMode and not is_adv,
                 },
             },
         },
@@ -58,7 +64,7 @@ function Reveal:init()
             frame_style=gui.FRAME_THIN,
             frame_style_l=false,
             frame_style_r=false,
-            visible=not self.opts.aquifers_only,
+            visible=not self.opts.aquifers_only and not is_adv,
         },
         widgets.ToggleHotkeyLabel{
             view_id='unreveal',
@@ -69,7 +75,7 @@ function Reveal:init()
                 {label='No', value=false, pen=COLOR_RED},
             },
             enabled=not self.opts.hell,
-            visible=not self.opts.aquifers_only,
+            visible=not self.opts.aquifers_only and not is_adv,
         },
     }
 end
