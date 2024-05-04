@@ -17,6 +17,18 @@ local function is_good_engraving(engraving)
     end
 end
 
+local help = false
+local quiet = false
+local positionals = argparse.processArgsGetopt(args, {
+    {'h', 'help', handler=function() help = true end},
+    {'q', 'quiet', handler=function() quiet = true end},
+})
+
+if help or positionals[1] == 'help' then
+    print(dfhack.script_help())
+    return
+end
+
 --loop runs through list of all engravings checking each using is_good_engraving and if bad gets deleted
 local cleanup = 0
 local engravings = df.global.world.engravings
