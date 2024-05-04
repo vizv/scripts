@@ -72,6 +72,8 @@ COMMANDS_BY_IDX = {
     {command='fix/empty-wheelbarrows', group='bugfix', mode='repeat', default=true,
         desc='Make abandoned full wheelbarrows usable again.',
         params={'--time', '1', '--timeUnits', 'days', '--command', '[', 'fix/empty-wheelbarrows', '-q', ']'}},
+    {command='fix/engravings', group='bugfix', mode='repeat', default=true,
+        params={'--time', '1', '--timeUnits', 'days', '--command', '[', 'fix/engravings', ']'}},
     {command='fix/general-strike', group='bugfix', mode='repeat', default=true,
         desc='Prevent dwarves from getting stuck and refusing to work.',
         params={'--time', '1', '--timeUnits', 'days', '--command', '[', 'fix/general-strike', '-q', ']'}},
