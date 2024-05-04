@@ -1,3 +1,5 @@
+local argparse = require('argparse')
+
 --function checks tiletype for attributes and returns true or false depending on if its engraving location is correct
 local function is_good_engraving(engraving)
     local ttype = dfhack.maps.getTileType(engraving.pos)
