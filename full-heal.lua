@@ -1,6 +1,3 @@
--- Attempts to fully heal the selected unit
---author Kurik Amudnil, Urist DaVinci
---edited by expwnent and AtomicChicken
 --@ module = true
 
 local utils = require('utils')
@@ -45,7 +42,7 @@ function addResurrectionEvent(histFigID)
     df.global.hist_event_next_id = df.global.hist_event_next_id + 1
 end
 
-function heal(unit,resurrect,keep_corpse)
+function heal(unit, resurrect, keep_corpse)
     if not unit then
         return
     end

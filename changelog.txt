@@ -34,6 +34,7 @@ Template for new versions:
 - `fix/engravings`: fix corrupt engraving tiles
 - `unretire-anyone`: (reinstated) choose anybody in the world as an adventurer
 - `reveal-adv-map`: (reinstated) reveal (or hide) the adventure map
+- `resurrect-adv`: (reinstated) allow your adventurer to recover from death
 
 ## New Features
 - `instruments`: new subcommand ``instruments order`` for creating instrument work orders
