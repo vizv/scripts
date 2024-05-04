@@ -4,16 +4,16 @@ local argparse = require('argparse')
 local function is_good_engraving(engraving)
     local ttype = dfhack.maps.getTileType(engraving.pos)
     if not ttype then return end
-    local tileattrs = df.tiletype.attrs[ttype]  
+    local tileattrs = df.tiletype.attrs[ttype]
 
     if tileattrs.special ~= df.tiletype_special.SMOOTH then
         return false
     end
-	
+
     if tileattrs.shape == df.tiletype_shape.FLOOR then
         return engraving.flags.floor
-    end	
-	
+    end
+
     if tileattrs.shape == df.tiletype_shape.WALL then
         return not engraving.flags.floor
     end
