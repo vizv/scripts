@@ -335,7 +335,7 @@ local function is_tradeable_item(item, depot)
     if item.flags.in_inventory then
         local gref = dfhack.items.getGeneralRef(item, df.general_ref_type.CONTAINED_IN_ITEM)
         if not gref then return false end
-        if not is_container(df.item.find(gref.item_id)) or item:isLiquidPowder() then
+        if not is_container(gref:getItem()) or item:isLiquidPowder() then
             return false
         end
     end
@@ -442,14 +442,14 @@ function MoveGoods:cache_choices()
 
     local pending = self.pending_item_ids
     local groups = {}
-    for _, item in ipairs(df.global.world.items.all) do
-        local item_id = item.id
+    for _, item in ipairs(df.global.world.items.other.IN_PLAY) do
         if not item or not is_tradeable_item(item, self.depot) then goto continue end
         if inside_containers and is_container(item) and contains_non_liquid_powder(item) then
             goto continue
         elseif not inside_containers and item.flags.in_inventory then
             goto continue
         end
+        local item_id = item.id
         local value = common.get_perceived_value(item)
         if value <= 0 then goto continue end
         local is_pending = not not pending[item_id] or item.flags.in_building

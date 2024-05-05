@@ -194,7 +194,7 @@ function AddBackpackItems(backpack,items)
 end
 function GetItemsAtPos(pos)
     local ret={}
-    for k,v in pairs(df.global.world.items.all) do
+    for k,v in pairs(df.global.world.items.other.IN_PLAY) do
         if v.flags.on_ground and v.pos.x==pos.x and v.pos.y==pos.y and v.pos.z==pos.z then
             table.insert(ret,v)
         end
