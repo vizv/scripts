@@ -27,7 +27,7 @@ local DEFAULT_JOB_TYPES = {
     -- get tasks done quickly that might block the player from getting on to
     -- the next thing they want to do
     'BringItemToDepot', 'DestroyBuilding', 'DumpItem', 'FellTree',
-    'RemoveConstruction', 'PullLever', 'FillPond'
+    'RemoveConstruction', 'PullLever', 'FillPond', 'PutItemOnDisplay',
 }
 
 -- set of job types that we are watching. maps job_type (as a number) to

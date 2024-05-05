@@ -57,6 +57,7 @@ Template for new versions:
 - `gui/quantum`: add option for whether a minecart automatically gets ordered and/or attached
 - `gui/quantum`: when attaching a minecart, show which minecart was attached
 - `gui/quantum`: allow multiple feeder stockpiles to be linked to the minecart route
+- `prioritize`: add PutItemOnDisplay jobs to the default prioritization list -- when these kinds of jobs are requested by the player, they generally want them done ASAP
 
 ## Removed
 
