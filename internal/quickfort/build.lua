@@ -159,11 +159,18 @@ local function is_tile_generic_and_wall_adjacent(pos)
             is_shape_at(xyz2pos(pos.x, pos.y-1, pos.z), allowed_door_shapes)
 end
 
+local function is_floor(pos)
+    local tt = dfhack.maps.getTileType(pos)
+    if not tt then return false end
+    local shape = df.tiletype.attrs[tt].shape
+    return df.tiletype_shape.attrs[shape].basic_shape == df.tiletype_shape_basic.Floor
+end
+
 local function is_tile_floor_adjacent(pos)
-    return is_valid_tile_generic(xyz2pos(pos.x+1, pos.y, pos.z)) or
-            is_valid_tile_generic(xyz2pos(pos.x-1, pos.y, pos.z)) or
-            is_valid_tile_generic(xyz2pos(pos.x, pos.y+1, pos.z)) or
-            is_valid_tile_generic(xyz2pos(pos.x, pos.y-1, pos.z))
+    return is_floor(xyz2pos(pos.x+1, pos.y, pos.z)) or
+        is_floor(xyz2pos(pos.x-1, pos.y, pos.z)) or
+        is_floor(xyz2pos(pos.x, pos.y+1, pos.z)) or
+        is_floor(xyz2pos(pos.x, pos.y-1, pos.z))
 end
 
 -- for wells
