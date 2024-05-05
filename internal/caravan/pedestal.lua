@@ -493,7 +493,7 @@ function AssignItems:cache_choices(inside_containers, display_bld)
     if self.choices_cache[inside_containers] then return self.choices_cache[inside_containers] end
 
     local choices = {}
-    for _, item in ipairs(df.global.world.items.all) do
+    for _, item in ipairs(df.global.world.items.other.IN_PLAY) do
         if not is_displayable_item(item) then goto continue end
         if inside_containers and is_container(item) and contains_non_liquid_powder(item) then
             goto continue

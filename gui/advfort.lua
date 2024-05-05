@@ -556,7 +556,7 @@ function IsUnit(args)
 end
 function itemsAtPos(pos,tbl)
     local ret=tbl or {}
-    for k,v in pairs(df.global.world.items.all) do
+    for k,v in pairs(df.global.world.items.other.IN_PLAY) do
         if v.pos.x==pos.x and v.pos.y==pos.y and v.pos.z==pos.z and v.flags.on_ground then
             table.insert(ret,v)
         end
@@ -770,13 +770,13 @@ end
 function EnumItems(args)
     local ret=args.table or {}
     if args.all then
-        for k,v in pairs(df.global.world.items.all) do
+        for k,v in pairs(df.global.world.items.other.IN_PLAY) do
             if v.flags.on_ground then
                 AddItem(ret,v,args.deep)
             end
         end
     elseif args.pos~=nil then
-        for k,v in pairs(df.global.world.items.all) do
+        for k,v in pairs(df.global.world.items.other.IN_PLAY) do
             if v.pos.x==args.pos.x and v.pos.y==args.pos.y and v.pos.z==args.pos.z and v.flags.on_ground then
                 AddItem(ret,v,args.deep)
             end

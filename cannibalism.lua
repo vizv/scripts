@@ -1,13 +1,3 @@
---Allows consumption of sapient corpses.
---[====[
-
-cannibalism
-===========
-Allows consumption of sapient corpses. Use from an adventurer's inventory screen
-or an individual item's detail screen.
-
-]====]
-
 function unmark_inventory(inventory)
     for _, entry in ipairs(inventory) do
         entry.item.flags.dead_dwarf = false

@@ -114,7 +114,7 @@ function extinguishAll()
   for _,plant in ipairs(df.global.world.plants.all) do
     plant.damage_flags.is_burning = false
   end
-  for _,item in ipairs(df.global.world.items.all) do
+  for _,item in ipairs(df.global.world.items.other.IN_PLAY) do
     extinguishItem(item)
   end
   for _,unit in ipairs(df.global.world.units.active) do
@@ -142,7 +142,7 @@ function extinguishLocation(x,y,z)
   for _,unit in ipairs(units) do
     extinguishUnit(unit)
   end
-  for _,item in ipairs(df.global.world.items.all) do
+  for _,item in ipairs(df.global.world.items.other.IN_PLAY) do
     if same_xyz(pos, xyz2pos(dfhack.items.getPosition(item))) then
       extinguishItem(item)
     end

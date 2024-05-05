@@ -174,7 +174,7 @@ end
 function Autodump:refresh_dump_items()
     local dump_items = {}
     local include = self:get_include()
-    for _,item in ipairs(df.global.world.items.all) do
+    for _,item in ipairs(df.global.world.items.other.IN_PLAY) do
         if not is_good_item(item, include) then goto continue end
         if item.flags.dump then
             table.insert(dump_items, item)

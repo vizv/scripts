@@ -44,6 +44,7 @@ Template for new versions:
 - `modtools/create-item`: now functions properly when the ``reaction-gloves`` tweak is active
 - `quickfort`: don't designate multiple tiles of the same tree for chopping when applying a tree chopping blueprint to a multi-tile tree
 - `gui/quantum`: fix processing when creating a quantum dump instead of a quantum stockpile
+- `caravan`: don't include undiscovered divine artifacts in the goods list
 
 ## Misc Improvements
 - `gui/autobutcher`: add shortcuts for butchering/unbutchering all animals
