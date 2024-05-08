@@ -406,7 +406,8 @@ ModmanageOverlay.ATTRS {
     frame = { w=16, h=3 },
     frame_style = gui.MEDIUM_FRAME,
     desc = "Adds a link to the mod selection screen for accessing the mod manager.",
-    default_pos = { x=5, y=-5 },
+    default_pos = { x=5, y=-6 },
+    version = 2,
     viewscreens = { "new_region/Mods" },
     default_enabled=true,
 }
@@ -429,7 +430,8 @@ NotificationOverlay = defclass(NotificationOverlay, overlay.OverlayWidget)
 NotificationOverlay.ATTRS {
     frame = { w=60, h=1 },
     desc = "Displays a message when a mod preset has been automatically applied.",
-    default_pos = { x=3, y=-2 },
+    default_pos = { x=3, y=-6 },
+    version = 2,
     viewscreens = { "new_region" },
     default_enabled=true,
 }
