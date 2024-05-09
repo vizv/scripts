@@ -45,7 +45,7 @@ function displayDeathUnit(unit)
         if incident.criminal then
             local killer = df.unit.find(incident.criminal)
             if killer then
-                str = str .. (" killed by the %s"):format(getRaceNameSingular(killer.race))
+                str = str .. (", killed by the %s"):format(getRaceNameSingular(killer.race))
                 if killer.name.has_name then
                     str = str .. (" %s"):format(dfhack.TranslateName(killer.name))
                 end
