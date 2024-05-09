@@ -127,55 +127,39 @@ local function is_corpse_item(item)
     return itype == df.item_type.CORPSE or itype == df.item_type.CORPSEPIECE
 end
 
-local selected_item = dfhack.gui.getSelectedItem(true)
-local selected_unit = dfhack.gui.getSelectedUnit(true)
+local view_sheets = df.global.game.main_interface.view_sheets
 
-if not selected_unit and not selected_item then
-    local pos
+local function get_target()
+    local selected_unit = dfhack.gui.getSelectedUnit(true)
+    if selected_unit then
+        return selected_unit.hist_figure_id, selected_unit
+    end
+    local selected_item = dfhack.gui.getSelectedItem(true)
     if not selected_item and
         dfhack.gui.matchFocusString('dwarfmode/ViewSheets/ITEM_LIST', dfhack.gui.getDFViewscreen(true)) and
-        #df.global.game.main_interface.view_sheets.viewing_itid > 0
+        #view_sheets.viewing_itid > 0
     then
-        selected_item = df.item.find(df.global.game.main_interface.view_sheets.viewing_itid[0])
-    elseif selected_item then
-        pos = xyz2pos(dfhack.items.getPosition(selected_item))
-    end
-    if not selected_item then
-        pos = guidm.getCursorPos()
-    end
-    if pos then
-        -- if there isn't a selected unit and we don't have a selected item or the selected item is not a corpse
-        -- let's try to look for corpses at the same location because it's probably what the user wants
-        -- we will just grab the first one as it's the best we can do
+        local pos = xyz2pos(dfhack.items.getPosition(df.item.find(view_sheets.viewing_itid[0])))
         selected_item = getItemAtPosition(pos)
     end
-end
-
-if not selected_unit and not is_corpse_item(selected_item) then
-    if df.item_remainsst:is_instance(selected_item) then
-        print(("The %s died."):format(getRaceNameSingular(selected_item.race)))
-        return
+    if not is_corpse_item(selected_item) then
+        if df.item_remainsst:is_instance(selected_item) then
+            print(("The %s died."):format(getRaceNameSingular(selected_item.race)))
+            return
+        end
+        qerror("Please select a unit, a corpse, or a body part")
     end
-    qerror("Please select a corpse")
+    return selected_item.hist_figure_id, df.unit.find(selected_item.unit_id)
 end
 
-local hist_figure_id
-if selected_item then
-    hist_figure_id = selected_item.hist_figure_id
-elseif selected_unit then
-    hist_figure_id = selected_unit.hist_figure_id
-end
+local hist_figure_id, selected_unit = get_target()
 
 if not hist_figure_id then
     qerror("Cause of death not available")
 elseif hist_figure_id == -1 then
     if not selected_unit then
-        selected_unit = df.unit.find(selected_item.unit_id)
-        if not selected_unit then
-            qerror("Cause of death not available")
-        end
+        qerror("Cause of death not available")
     end
-
     displayDeathUnit(selected_unit)
 else
     displayDeathHistFig(df.historical_figure.find(hist_figure_id))
