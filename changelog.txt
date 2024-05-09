@@ -27,9 +27,21 @@ Template for new versions:
 # Future
 
 ## New Tools
+
+## New Features
+
+## Fixes
+
+## Misc Improvements
+
+## Removed
+
+# 50.13-r2
+
+## New Tools
 - Updated for adventure mode: `gui/sandbox`, `gui/create-item`, `gui/reveal`
 - `ghostly`: (reinstated) allow your adventurer to phase through walls
-- `markdown`: (reinstated) export unit or item descriptions to a markdown text file
+- `markdown`: (reinstated) export description of selected unit or item to a text file
 - `adaptation`: (reinstated) inspect or set unit cave adaptation levels
 - `fix/engravings`: fix corrupt engraving tiles
 - `unretire-anyone`: (reinstated) choose anybody in the world as an adventurer
@@ -46,20 +58,17 @@ Template for new versions:
 - `gui/quantum`: fix processing when creating a quantum dump instead of a quantum stockpile
 - `caravan`: don't include undiscovered divine artifacts in the goods list
 - `quickfort`: fix detection of valid tiles for wells
+- `combine`: respect container volume limits
 
 ## Misc Improvements
 - `gui/autobutcher`: add shortcuts for butchering/unbutchering all animals
-- `combine`: respect container volume limits
 - `combine`: reduce combined drink sizes to 25
 - `gui/launcher`: add button for copying output to the system clipboard
-- `deathcause`: give better responses for vermin remains
-- `deathcause`: automatically choose a relevant corpse when a pile of items is selected
+- `deathcause`: automatically find and choose a corpse when a pile of mixed items is selected
 - `gui/quantum`: add option for whether a minecart automatically gets ordered and/or attached
 - `gui/quantum`: when attaching a minecart, show which minecart was attached
 - `gui/quantum`: allow multiple feeder stockpiles to be linked to the minecart route
 - `prioritize`: add PutItemOnDisplay jobs to the default prioritization list -- when these kinds of jobs are requested by the player, they generally want them done ASAP
-
-## Removed
 
 # 50.13-r1.1
 
