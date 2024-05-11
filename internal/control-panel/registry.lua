@@ -90,6 +90,8 @@ COMMANDS_BY_IDX = {
         params={'--time', '439', '--timeUnits', 'ticks', '--command', '[', 'fix/noexert-exhaustion', ']'}},
     {command='flask-contents', help_command='tweak', group='bugfix', mode='tweak', default=true,
         desc='Displays flask contents in the item name, similar to barrels and bins.'},
+    {command='named-codices', help_command='tweak', group='bugfix', mode='tweak', default=true,
+        desc='Displays titles for books instead of a material description.'},
     {command='preserve-tombs', group='bugfix', mode='enable', default=true},
     {command='reaction-gloves', help_command='tweak', group='bugfix', mode='tweak', default=true,
         desc='Fixes reactions not producing gloves in sets with correct handedness.'},
