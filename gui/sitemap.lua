@@ -91,14 +91,22 @@ local function zoom_to_next_zone(_, choice)
 end
 
 local function get_unit_choices()
+    local is_fort = dfhack.world.isFortressMode()
     local choices = {}
     for _, unit in ipairs(df.global.world.units.active) do
+        if not dfhack.units.isActive(unit) or
+            dfhack.units.isHidden(unit) or
+            (is_fort and not dfhack.maps.isTileVisible(dfhack.units.getPosition(unit)))
+        then
+            goto continue
+        end
         table.insert(choices, {
             text=dfhack.units.getReadableName(unit),
             data={
                 unit_id=unit.id,
             },
         })
+        ::continue::
     end
     return choices
 end
@@ -114,12 +122,14 @@ end
 local function get_artifact_choices()
     local choices = {}
     for _, item in ipairs(df.global.world.items.other.ANY_ARTIFACT) do
+        if item.flags.garbage_collect then goto continue end
         table.insert(choices, {
             text=dfhack.items.getReadableDescription(item),
             data={
                 item_id=item.id,
             },
         })
+        ::continue::
     end
     return choices
 end
@@ -142,7 +152,7 @@ function Sitemap:init()
         widgets.TabBar{
             frame={t=0, l=0},
             labels={
-                'People',
+                'Creatures',
                 'Locations',
                 'Artifacts',
             },
