@@ -2,16 +2,17 @@ gui/sitemap
 ===========
 
 .. dfhack-tool::
-    :summary: List and zoom to locations at the current site.
+    :summary: List and zoom to people, locations, or artifacts.
     :tags: adventure fort inspection
 
-This simple UI shows a searchable list of all locations -- temples, guildhalls,
-hospitals, taverns, and libraries -- at the current site. Clicking on a list
-item will zoom the map to that location. If the location has multiple zones
-attached to it, clicking again will zoom to each component zone in turn.
+This simple UI gives you searchable lists of people, locations (temples,
+guildhalls, hospitals, taverns, and libraries), and artifacts in the local area.
+Clicking on a list item will zoom the map to the target. If you are zooming to
+a location and the location has multiple zones attached to it, clicking again
+will zoom to each component zone in turn.
 
-This also works in adventure mode, though of course you have to be visiting a
-site for the list to show any locations.
+Locations are attached to a site, so if you're in adventure mode, you must
+enter a site before searching for locations.
 
 Usage
 -----
