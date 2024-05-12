@@ -13,6 +13,10 @@ Sitemap.ATTRS {
     resizable=true,
 }
 
+local function to_title_case(str)
+    return dfhack.capitalizeStringWords(dfhack.lowerCp437(str:gsub('_', ' ')))
+end
+
 local function get_location_desc(loc)
     if df.abstract_building_hospitalst:is_instance(loc) then
         return 'Hospital', COLOR_WHITE
@@ -23,7 +27,7 @@ local function get_location_desc(loc)
     elseif df.abstract_building_guildhallst:is_instance(loc) then
         local prof = df.profession[loc.contents.profession]
         if not prof then return 'Guildhall', COLOR_MAGENTA end
-        return ('%s guildhall'):format(dfhack.capitalizeStringWords(dfhack.lowerCp437(prof))), COLOR_MAGENTA
+        return ('%s guildhall'):format(to_title_case(prof)), COLOR_MAGENTA
     elseif df.abstract_building_templest:is_instance(loc) then
         local is_deity = loc.deity_type == df.temple_deity_type.Deity
         local id = loc.deity_data[is_deity and 'Deity' or 'Religion']
@@ -36,6 +40,8 @@ local function get_location_desc(loc)
         end
         return desc, COLOR_YELLOW
     end
+    local type_name = df.abstract_building_type[loc:getType()] or 'unknown'
+    return to_title_case(type_name), COLOR_GREY
 end
 
 local function get_location_label(loc, zones)
@@ -50,10 +56,14 @@ local function get_location_label(loc, zones)
         })
         table.insert(tokens, ')')
     end
-    if #zones > 1 then
-        table.insert(tokens, ' [')
-        table.insert(tokens, ('%d zones'):format(#zones))
-        table.insert(tokens, ']')
+    if #zones == 0 then
+        if loc.flags.DOES_NOT_EXIST then
+            table.insert(tokens, ' [retired]')
+        else
+            table.insert(tokens, ' [no fixed location]')
+        end
+    elseif #zones > 1 then
+        table.insert(tokens, (' [%d zones]'):format(#zones))
     end
     return tokens
 end
@@ -62,8 +72,8 @@ local function get_location_choices(site)
     local choices = {}
     if not site then return choices end
     for _,loc in ipairs(site.buildings) do
-        local zones = loc._type._fields.contents and loc.contents.building_ids or {}
-        if #zones == 0 then goto continue end
+        local contents = loc:getContents()
+        local zones = contents and contents.building_ids or {}
         table.insert(choices, {
             text=get_location_label(loc, zones),
             data={
@@ -73,7 +83,6 @@ local function get_location_choices(site)
                 next_idx=1,
             },
         })
-        ::continue::
     end
     return choices
 end
