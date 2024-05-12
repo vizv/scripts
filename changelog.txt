@@ -27,7 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
-- `gui/sitemap`: list and zoom to locations at the current site
+- `gui/sitemap`: list and zoom to nearby people, locations, and artifacts
 
 ## New Features
 

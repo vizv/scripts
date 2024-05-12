@@ -13,7 +13,7 @@ Sitemap.ATTRS {
     resizable=true,
 }
 
-local function get_desc(loc)
+local function get_location_desc(loc)
     if df.abstract_building_hospitalst:is_instance(loc) then
         return 'Hospital', COLOR_WHITE
     elseif df.abstract_building_inn_tavernst:is_instance(loc) then
@@ -32,16 +32,16 @@ local function get_desc(loc)
         if not entity then return desc, COLOR_YELLOW end
         local name = dfhack.TranslateName(entity.name, true)
         if #name > 0 then
-            desc = ('%s of %s'):format(desc, name)
+            desc = ('%s to %s'):format(desc, name)
         end
         return desc, COLOR_YELLOW
     end
 end
 
-local function get_label(loc, zones)
+local function get_location_label(loc, zones)
     local tokens = {}
     table.insert(tokens, dfhack.TranslateName(loc.name, true))
-    local desc, pen = get_desc(loc)
+    local desc, pen = get_location_desc(loc)
     if desc then
         table.insert(tokens, ' (')
         table.insert(tokens, {
@@ -58,14 +58,14 @@ local function get_label(loc, zones)
     return tokens
 end
 
-local function get_choices(site)
+local function get_location_choices(site)
     local choices = {}
     if not site then return choices end
     for _,loc in ipairs(site.buildings) do
         local zones = loc.contents.building_ids
         if #zones == 0 then goto continue end
         table.insert(choices, {
-            text=get_label(loc, zones),
+            text=get_location_label(loc, zones),
             data={
                 -- clone since an adventurer might wander off the site
                 -- and the vector gets deallocated
@@ -78,7 +78,7 @@ local function get_choices(site)
     return choices
 end
 
-local function zoom_to(_, choice)
+local function zoom_to_next_zone(_, choice)
     local data = choice.data
     if #data.zones == 0 then return end
     if data.next_idx > #data.zones then data.next_idx = 1 end
@@ -90,36 +90,131 @@ local function zoom_to(_, choice)
     data.next_idx = data.next_idx % #data.zones + 1
 end
 
+local function get_unit_choices()
+    local choices = {}
+    for _, unit in ipairs(df.global.world.units.active) do
+        table.insert(choices, {
+            text=dfhack.units.getReadableName(unit),
+            data={
+                unit_id=unit.id,
+            },
+        })
+    end
+    return choices
+end
+
+local function zoom_to_unit(_, choice)
+    local data = choice.data
+    local unit = df.unit.find(data.unit_id)
+    if not unit then return end
+    dfhack.gui.revealInDwarfmodeMap(
+        xyz2pos(dfhack.units.getPosition(unit)), true, true)
+end
+
+local function get_artifact_choices()
+    local choices = {}
+    for _, item in ipairs(df.global.world.items.other.ANY_ARTIFACT) do
+        table.insert(choices, {
+            text=dfhack.items.getReadableDescription(item),
+            data={
+                item_id=item.id,
+            },
+        })
+    end
+    return choices
+end
+
+local function zoom_to_item(_, choice)
+    local data = choice.data
+    local item = df.item.find(data.item_id)
+    if not item then return end
+    dfhack.gui.revealInDwarfmodeMap(
+        xyz2pos(dfhack.items.getPosition(item)), true, true)
+end
+
 function Sitemap:init()
     local site = dfhack.world.getCurrentSite() or false
-    local choices = get_choices(site)
+    local location_choices = get_location_choices(site)
+    local unit_choices = get_unit_choices()
+    local artifact_choices = get_artifact_choices()
 
     self:addviews{
-        widgets.Label{
+        widgets.TabBar{
             frame={t=0, l=0},
-            text='Locations at this site:',
-            visible=site,
-        },
-        widgets.Label{
-            frame={t=0, l=0},
-            text='Please enter a site to see locations.',
-            text_pen=COLOR_LIGHTRED,
-            visible=not site,
-        },
-        widgets.Label{
-            frame={t=2, l=0},
-            text={
-                'No temples, guildhalls, hospitals, taverns,', NEWLINE,
-                'or libraries found at this site.'
+            labels={
+                'People',
+                'Locations',
+                'Artifacts',
             },
-            text_pen=COLOR_LIGHTRED,
-            visible=site and #choices == 0,
+            on_select=function(idx)
+                self.subviews.pages:setSelected(idx)
+                local _, page = self.subviews.pages:getSelected()
+                page.subviews.list.edit:setFocus(true)
+            end,
+            get_cur_page=function() return self.subviews.pages:getSelected() end,
         },
-        widgets.FilteredList{
-            frame={t=2, b=5},
-            on_submit=zoom_to,
-            choices=choices,
-            visible=#choices > 0,
+        widgets.Pages{
+            view_id='pages',
+            frame={t=3, l=0, b=5, r=0},
+            subviews={
+                widgets.Panel{
+                    subviews={
+                        widgets.Label{
+                            frame={t=0, l=0},
+                            text='Nobody around. Spooky!',
+                            text_pen=COLOR_LIGHTRED,
+                            visible=#unit_choices == 0,
+                        },
+                        widgets.FilteredList{
+                            view_id='list',
+                            on_submit=zoom_to_unit,
+                            choices=unit_choices,
+                            visible=#unit_choices > 0,
+                        },
+                    },
+                },
+                widgets.Panel{
+                    subviews={
+                        widgets.Label{
+                            frame={t=0, l=0},
+                            text='Please enter a site to see locations.',
+                            text_pen=COLOR_LIGHTRED,
+                            visible=not site,
+                        },
+                        widgets.Label{
+                            frame={t=0, l=0},
+                            text={
+                                'No temples, guildhalls, hospitals, taverns,', NEWLINE,
+                                'or libraries found at this site.'
+                            },
+                            text_pen=COLOR_LIGHTRED,
+                            visible=site and #location_choices == 0,
+                        },
+                        widgets.FilteredList{
+                            view_id='list',
+                            on_submit=zoom_to_next_zone,
+                            choices=location_choices,
+                            visible=#location_choices > 0,
+                        },
+                    },
+                },
+                widgets.Panel{
+                    subviews={
+                        widgets.Label{
+                            frame={t=0, l=0},
+                            text='No artifacts around here.',
+                            text_pen=COLOR_LIGHTRED,
+                            visible=#artifact_choices == 0,
+                        },
+                        widgets.FilteredList{
+                            view_id='list',
+                            on_submit=zoom_to_item,
+                            choices=artifact_choices,
+                            visible=#artifact_choices > 0,
+                        },
+                    },
+                },
+            },
         },
         widgets.Divider{
             frame={b=3, h=1},
@@ -131,9 +226,8 @@ function Sitemap:init()
             frame={b=0, l=0},
             text={
                 'Click on a name or hit ', {text='Enter', pen=COLOR_LIGHTGREEN}, NEWLINE,
-                'to zoom to the selected location.'
+                'to zoom to the selected target.'
             },
-            visible=site and #choices > 0,
         },
     }
 end
