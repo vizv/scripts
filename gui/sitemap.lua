@@ -62,7 +62,7 @@ local function get_location_choices(site)
     local choices = {}
     if not site then return choices end
     for _,loc in ipairs(site.buildings) do
-        local zones = loc.contents.building_ids
+        local zones = loc._type._fields.contents and loc.contents.building_ids or {}
         if #zones == 0 then goto continue end
         table.insert(choices, {
             text=get_location_label(loc, zones),
