@@ -27,6 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
+- `gui/sitemap`: list and zoom to locations at the current site
 
 ## New Features
 
