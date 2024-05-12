@@ -1,4 +1,5 @@
 local gui = require('gui')
+local utils = require('utils')
 local widgets = require('gui.widgets')
 
 --
@@ -66,8 +67,10 @@ local function get_choices(site)
         table.insert(choices, {
             text=get_label(loc, zones),
             data={
-                zones=zones,
-                next_idx=0,
+                -- clone since an adventurer might wander off the site
+                -- and the vector gets deallocated
+                zones=utils.clone(zones),
+                next_idx=1,
             },
         })
         ::continue::
@@ -78,13 +81,13 @@ end
 local function zoom_to(_, choice)
     local data = choice.data
     if #data.zones == 0 then return end
-    if data.next_idx >= #data.zones then data.next_idx = 0 end
+    if data.next_idx > #data.zones then data.next_idx = 1 end
     local bld = df.building.find(data.zones[data.next_idx])
     if bld then
         dfhack.gui.revealInDwarfmodeMap(
             xyz2pos(bld.centerx, bld.centery, bld.z), true, true)
     end
-    data.next_idx = (data.next_idx + 1) % #data.zones
+    data.next_idx = data.next_idx % #data.zones + 1
 end
 
 function Sitemap:init()
