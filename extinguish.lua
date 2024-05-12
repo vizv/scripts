@@ -111,9 +111,9 @@ function extinguishAll()
     extinguishTile(pos2xyz(campfires[i].pos))
     campfires:erase(i)
   end
-  for _,plant in ipairs(df.global.world.plants.all) do
-    plant.damage_flags.is_burning = false
-  end
+  --[[for _,plant in ipairs(df.global.world.plants.all) do
+    plant.damage_flags.unused_01 = false -- is_burning no longer used
+  end]]
   for _,item in ipairs(df.global.world.items.other.IN_PLAY) do
     extinguishItem(item)
   end
