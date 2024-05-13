@@ -60,7 +60,7 @@ local function get_location_label(loc, zones)
         if loc.flags.DOES_NOT_EXIST then
             table.insert(tokens, ' [retired]')
         else
-            table.insert(tokens, ' [no fixed location]')
+            table.insert(tokens, ' [no zone]')
         end
     elseif #zones > 1 then
         table.insert(tokens, (' [%d zones]'):format(#zones))
