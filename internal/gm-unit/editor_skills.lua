@@ -24,7 +24,13 @@ function list_skills(unit, learned_only)
                     u_skill={rating=-1,experience=0}
                 end
                 local rating
-                if u_skill.rating >=0 then
+                if u_skill.rating >15 then
+                    local legendary_bonus= u_skill.rating - 15
+                    rating=df.skill_rating.attrs[15]
+                    rating={ xp_threshold=rating.xp_threshold, caption=rating.caption }
+                    rating.xp_threshold= rating.xp_threshold + legendary_bonus * 100
+                    rating.caption = rating.caption.."+"..legendary_bonus
+                elseif u_skill.rating >=0 then
                     rating=df.skill_rating.attrs[u_skill.rating]
                 else
                     rating={caption="<unlearned>",xp_threshold=0}
