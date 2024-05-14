@@ -350,7 +350,6 @@ end
 local function get_size_compared_to_median(unit)
 	local size_normal = unit.body.size_info.size_base
 	local size_modifier = unit.appearance.size_modifier
-	--return size_normal/get_caste_data(unit).misc.adult_size
 	if size_modifier >= 110 then
 		return "larger than average"
 	elseif size_modifier <= 90 then
