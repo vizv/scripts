@@ -334,29 +334,29 @@ local function get_size_in_cc(unit)
 end
 
 local function get_conceivable_comparison(unit, comparison_unit)
-	--the objective here is to get a (resaonably) small number to help concieve how large a thing is. "83 dwarves" doesn't really help convey the size of an elephant much better than 5m cc, so at certain breakpoints we will use different animals
-	local size = unit.body.size_info.size_cur
-	local base_comparison_size = 6000
-	if size > base_comparison_size*20 then
-		return string.format('%.3f average elephants', size/500000)
-	elseif size > base_comparison_size*0.25 then
-		return string.format('%.3f average dwarves', size/6000)
-	else
-		return string.format('%.3f average cats', size/500)
-	end
-	
-end 
+    --the objective here is to get a (resaonably) small number to help concieve how large a thing is. "83 dwarves" doesn't really help convey the size of an elephant much better than 5m cc, so at certain breakpoints we will use different animals
+    local size = unit.body.size_info.size_cur
+    local base_comparison_size = 6000
+    if size > base_comparison_size*20 then
+        return string.format('%.3f average elephants', size/500000)
+    elseif size > base_comparison_size*0.25 then
+        return string.format('%.3f average dwarves', size/6000)
+    else
+        return string.format('%.3f average cats', size/500)
+    end
+
+end
 
 local function get_size_compared_to_median(unit)
-	local size_normal = unit.body.size_info.size_base
-	local size_modifier = unit.appearance.size_modifier
-	if size_modifier >= 110 then
-		return "larger than average"
-	elseif size_modifier <= 90 then
-		return "smaller than average"
-	else
-		return "about average"
-	end
+    local size_normal = unit.body.size_info.size_base
+    local size_modifier = unit.appearance.size_modifier
+    if size_modifier >= 110 then
+        return "larger than average"
+    elseif size_modifier <= 90 then
+        return "smaller than average"
+    else
+        return "about average"
+    end
 end
 
 local function get_body_chunk(unit)
@@ -365,8 +365,8 @@ local function get_body_chunk(unit)
 end
 
 local function get_average_size(unit)
-	local blurb = ('%s is %s in size'):format(get_pronoun(unit), get_size_compared_to_median(unit))
-	return{text=blurb, pen=COLOR_LIGHTCYAN}
+    local blurb = ('%s is %s in size'):format(get_pronoun(unit), get_size_compared_to_median(unit))
+    return{text=blurb, pen=COLOR_LIGHTCYAN}
 end
 
 local function get_grazer_chunk(unit)
@@ -481,7 +481,7 @@ function UnitInfo:refresh(unit, width)
     add_chunk(chunks, get_ghostly_chunk(unit), width)
     add_chunk(chunks, get_dead_chunk(unit), width)
     add_chunk(chunks, get_body_chunk(unit), width)
-	add_chunk(chunks, get_average_size(unit), width)
+    add_chunk(chunks, get_average_size(unit), width)
     add_chunk(chunks, get_grazer_chunk(unit), width)
     add_chunk(chunks, get_milkable_chunk(unit), width)
     add_chunk(chunks, get_shearable_chunk(unit), width)
