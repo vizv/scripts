@@ -32,8 +32,10 @@ Template for new versions:
 ## New Features
 
 ## Fixes
+- `item`: don't match uncollected spider webs when you search for "silk"
 
 ## Misc Improvements
+- `gui/gm-unit`: correctly display skill levels above Legendary+5
 - `gui/unit-info-viewer`: now displays a unit's weight, relative to either dwarves, elephants or cats
 - `gui/unit-info-viewer`: shows a unit's relative size to its race's average.
 
