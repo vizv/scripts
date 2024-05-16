@@ -333,31 +333,31 @@ local function get_dead_chunk(unit)
 end
 
 local function get_conceivable_comparison(unit, comparison_unit)
-	--[[ the objective here is to get a (resaonably) small number to help concieve
-    how large a thing is. "83 dwarves" doesn't really help convey the size of an 
-    elephant much better than 5m cc, so at certain breakpoints we will use 
+    --[[ the objective here is to get a (resaonably) small number to help concieve
+    how large a thing is. "83 dwarves" doesn't really help convey the size of an
+    elephant much better than 5m cc, so at certain breakpoints we will use
     different animals --]]
-	local size = unit.body.size_info.size_cur
-	local dwarf_size = 6000
-	if size > dwarf_size*20 and get_creature_data(unit).creature_id ~= "ELEPHANT" then
-		return string.format('%.1f average elephants', size/500000)
-	elseif size <= dwarf_size*0.25 and get_creature_data(unit).creature_id ~= "CAT" then
-		return string.format('%.2f average cats', size/500)
-	else
-		return string.format('%.1f average dwarves', size/6000)
-	end
-	
-end 
+    local size = unit.body.size_info.size_cur
+    local dwarf_size = 6000
+    if size > dwarf_size*20 and get_creature_data(unit).creature_id ~= "ELEPHANT" then
+        return string.format('%.1f average elephants', size/500000)
+    elseif size <= dwarf_size*0.25 and get_creature_data(unit).creature_id ~= "CAT" then
+        return string.format('%.2f average cats', size/500)
+    else
+        return string.format('%.1f average dwarves', size/6000)
+    end
+
+end
 
 local function get_size_compared_to_median(unit)
-	local size_modifier = unit.appearance.size_modifier
-	if size_modifier >= 110 then
-		return "larger than average"
-	elseif size_modifier <= 90 then
-		return "smaller than average"
-	else
-		return "about average"
-	end
+    local size_modifier = unit.appearance.size_modifier
+    if size_modifier >= 110 then
+        return "larger than average"
+    elseif size_modifier <= 90 then
+        return "smaller than average"
+    else
+        return "about average"
+    end
 end
 
 local function get_body_chunk(unit)
@@ -366,8 +366,8 @@ local function get_body_chunk(unit)
 end
 
 local function get_average_size(unit)
-	local blurb = ('%s is %s in size.'):format(get_pronoun(unit), get_size_compared_to_median(unit))
-	return{text=blurb, pen=COLOR_LIGHTCYAN}
+    local blurb = ('%s is %s in size.'):format(get_pronoun(unit), get_size_compared_to_median(unit))
+    return{text=blurb, pen=COLOR_LIGHTCYAN}
 end
 
 local function get_grazer_chunk(unit)
@@ -484,7 +484,7 @@ function UnitInfo:refresh(unit, width)
     if get_creature_data(unit).creature_id ~= "DWARF" then
         add_chunk(chunks, get_body_chunk(unit), width)
     end
-	add_chunk(chunks, get_average_size(unit), width)
+    add_chunk(chunks, get_average_size(unit), width)
     add_chunk(chunks, get_grazer_chunk(unit), width)
     add_chunk(chunks, get_milkable_chunk(unit), width)
     add_chunk(chunks, get_shearable_chunk(unit), width)
