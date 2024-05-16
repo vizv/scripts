@@ -32,6 +32,7 @@ Template for new versions:
 ## New Features
 
 ## Fixes
+- `item`: don't match uncollected spider webs when you search for "silk"
 
 ## Misc Improvements
 

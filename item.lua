@@ -219,6 +219,7 @@ function execute(action, conditions, options, return_items)
             (item.flags.artifact and not options.artifact) or
             item.flags.on_fire or
             item.flags.trader or
+            item.flags.spider_web or
             (item.flags.owned and not options.owned)
         then
             goto skipitem
