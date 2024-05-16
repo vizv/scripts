@@ -170,6 +170,10 @@ local function get_caste_data(unit)
     return df.global.world.raws.creatures.all[unit.race].caste[unit.caste]
 end
 
+local function get_creature_data(unit)
+    return df.global.world.raws.creatures.all[unit.race]
+end
+
 local function get_name_chunk(unit)
     return {
         text=dfhack.units.getReadableName(unit),
@@ -328,15 +332,42 @@ local function get_dead_chunk(unit)
     return {text=dfhack.units.getReadableName(unit)..str, pen=pen}
 end
 
-local function get_size_in_cc(unit)
-    -- internal measure is cubic centimeters divided by 10
-    return unit.body.size_info.size_cur * 10
+local function get_conceivable_comparison(unit, comparison_unit)
+    --[[ the objective here is to get a (resaonably) small number to help concieve
+    how large a thing is. "83 dwarves" doesn't really help convey the size of an
+    elephant much better than 5m cc, so at certain breakpoints we will use
+    different animals --]]
+    local size = unit.body.size_info.size_cur
+    local dwarf_size = 6000
+    if size > dwarf_size*20 and get_creature_data(unit).creature_id ~= "ELEPHANT" then
+        return string.format('%.1f average elephants', size/500000)
+    elseif size <= dwarf_size*0.25 and get_creature_data(unit).creature_id ~= "CAT" then
+        return string.format('%.2f average cats', size/500)
+    else
+        return string.format('%.1f average dwarves', size/6000)
+    end
+
+end
+
+local function get_size_compared_to_median(unit)
+    local size_modifier = unit.appearance.size_modifier
+    if size_modifier >= 110 then
+        return "larger than average"
+    elseif size_modifier <= 90 then
+        return "smaller than average"
+    else
+        return "about average"
+    end
 end
 
 local function get_body_chunk(unit)
-    local blurb = ('%s appears to be about %d cubic centimeters in size.'):format(
-        get_pronoun(unit), get_size_in_cc(unit))
+    local blurb = ('%s weighs about as much as %s'):format(get_pronoun(unit), get_conceivable_comparison(unit, comparison_unit))
     return {text=blurb, pen=COLOR_LIGHTBLUE}
+end
+
+local function get_average_size(unit)
+    local blurb = ('%s is %s in size.'):format(get_pronoun(unit), get_size_compared_to_median(unit))
+    return{text=blurb, pen=COLOR_LIGHTCYAN}
 end
 
 local function get_grazer_chunk(unit)
@@ -450,7 +481,10 @@ function UnitInfo:refresh(unit, width)
     add_chunk(chunks, get_max_age_chunk(unit), width)
     add_chunk(chunks, get_ghostly_chunk(unit), width)
     add_chunk(chunks, get_dead_chunk(unit), width)
-    add_chunk(chunks, get_body_chunk(unit), width)
+    if get_creature_data(unit).creature_id ~= "DWARF" then
+        add_chunk(chunks, get_body_chunk(unit), width)
+    end
+    add_chunk(chunks, get_average_size(unit), width)
     add_chunk(chunks, get_grazer_chunk(unit), width)
     add_chunk(chunks, get_milkable_chunk(unit), width)
     add_chunk(chunks, get_shearable_chunk(unit), width)
