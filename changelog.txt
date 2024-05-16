@@ -35,6 +35,7 @@ Template for new versions:
 - `item`: don't match uncollected spider webs when you search for "silk"
 
 ## Misc Improvements
+- `gui/gm-unit`: correctly display skill levels above Legendary+5
 
 ## Removed
 
