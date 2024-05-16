@@ -34,6 +34,7 @@ Template for new versions:
 ## Fixes
 
 ## Misc Improvements
+- `gui/gm-unit`: correctly display skill levels above Legendary+5
 
 ## Removed
 
