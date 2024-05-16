@@ -76,6 +76,9 @@ Options
 ``--include-owned``
     Include items owned by units (e.g., your dwarves or visitors)
 
+``--ignore-webs``
+    Ignore undisturbed spider webs.
+
 ``-i``, ``--inside <burrow>``
     Only include items inside the given burrow.
 
