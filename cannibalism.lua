@@ -10,7 +10,7 @@ if df.viewscreen_itemst:is_instance(scrn) then
 elseif df.viewscreen_dungeon_monsterstatusst:is_instance(scrn) then
     unmark_inventory(scrn.inventory) --hint:df.viewscreen_dungeon_monsterstatusst
 elseif df.global.adventure.menu == df.ui_advmode_menu.Inventory then
-    unmark_inventory(df.global.world.units.active[0].inventory)
+    unmark_inventory(dfhack.world.getAdventurer().inventory)
 else
     qerror('Unsupported context')
 end
