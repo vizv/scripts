@@ -21,28 +21,31 @@ local branch_dir =
     [15] = string.char(197), --WNES
 }
 
+local function print_color(s, color)
+    dfhack.color(color)
+    dfhack.print(s)
+    dfhack.color(COLOR_RESET)
+end
+
 function printTreeTile(bits)
-    local old_color = dfhack.color()
-    local chars = 8
+    local chars = 8 --launcher doesn't like tab
     local exists
 
     if bits.trunk then
-        dfhack.color(COLOR_BROWN)
         chars = chars-1
         exists = true
 
         if bits.trunk_is_thick then
-            dfhack.print('@')
+            print_color('@', COLOR_BROWN)
         else
-            dfhack.print('O')
+            print_color('O', COLOR_BROWN)
         end
     end
 
     if bits.branches then
-        dfhack.color(COLOR_GREEN)
         chars = chars-1
         exists = true
-        dfhack.print(string.char(172)) --1/4
+        print_color(string.char(172), COLOR_GREEN) --1/4
     end
 
     if bits.trunk ~= bits.branches then --align properly
@@ -51,77 +54,64 @@ function printTreeTile(bits)
     end
 
     if bits.twigs then
-        dfhack.color(COLOR_GREEN)
         chars = chars-1
         exists = true
-        dfhack.print(';')
+        print_color(';', COLOR_GREEN)
     end
 
     if bits.blocked then
-        dfhack.color(COLOR_RED)
         chars = chars-1
-        dfhack.print('x')
+        print_color('x', COLOR_RED)
     elseif not exists then
-        dfhack.color(COLOR_RESET)
         chars = chars-1
         dfhack.print('.')
     end
 
-    dfhack.color(COLOR_GREY)
     chars = chars-2
-    dfhack.print(' '..(branch_dir[bits.branches_dir] or '?'))
+    print_color(' '..(branch_dir[bits.branches_dir] or '?'), COLOR_GREY)
 
-    dfhack.color(COLOR_DARKGREY)
     local dir = bits.parent_dir
     if dir > 0 then
         chars = chars-2
         if dir == 1 then
-            dfhack.print(' N')
+            print_color(' N', COLOR_DARKGREY)
         elseif dir == 2 then
-            dfhack.print(' S')
+            print_color(' S', COLOR_DARKGREY)
         elseif dir == 3 then
-            dfhack.print(' W')
+            print_color(' W', COLOR_DARKGREY)
         elseif dir == 4 then
-            dfhack.print(' E')
+            print_color(' E', COLOR_DARKGREY)
         elseif dir == 5 then
-            dfhack.print(' U')
+            print_color(' U', COLOR_DARKGREY)
         elseif dir == 6 then
-            dfhack.print(' D')
+            print_color(' D', COLOR_DARKGREY)
         else
-            dfhack.print(' ?')
+            print_color(' ?', COLOR_DARKGREY)
         end
     end
 
     dfhack.print((' '):rep(chars))
-
-    dfhack.color(old_color)
 end
 
 function printRootTile(bits)
-    local old_color = dfhack.color()
-    local chars = 8
+    local chars = 8 --launcher doesn't like tab
     local exists
 
     if bits.regular then
-        dfhack.color(COLOR_BROWN)
         chars = chars-1
         exists = true
-        dfhack.print(string.char(172)) --1/4
+        print_color(string.char(172), COLOR_BROWN) --1/4
     end
 
     if bits.blocked then
-        dfhack.color(COLOR_RED)
         chars = chars-1
-        dfhack.print('x')
+        print_color('x', COLOR_RED)
     elseif not exists then
-        dfhack.color(COLOR_RESET)
         chars = chars-1
         dfhack.print('.')
     end
 
     dfhack.print((' '):rep(chars))
-
-    dfhack.color(old_color)
 end
 
 function printTree(t)
