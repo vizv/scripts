@@ -34,6 +34,7 @@ Template for new versions:
 
 ## Fixes
 - `item`: don't match uncollected spider webs when you search for "silk"
+- `assign-profile`: fix handling of unit option for setting target unit id
 
 ## Misc Improvements
 - `gui/gm-unit`: correctly display skill levels above Legendary+5
