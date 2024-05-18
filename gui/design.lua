@@ -1799,66 +1799,42 @@ DimensionsOverlay.ATTRS{
         'dwarfmode/Designate',
         'dwarfmode/Burrow/Paint',
         'dwarfmode/Stockpile/Paint',
+        'dwarfmode/Building/Placement',
     },
     frame={w=DEFAULT_DIMENSION_TOOLTIP_WIDTH, h=DIMENSION_TOOLTIP_HEIGHT},
 }
 
+local main_interface = df.global.game.main_interface
 local selection_rect = df.global.selection_rect
+local uibs = df.global.buildreq
 
-local function is_choosing_area()
-    return selection_rect.start_x >= 0 and dfhack.gui.getMousePos(true)
+local function get_selection_rect_pos()
+    if selection_rect.start_x < 0 then return end
+    return xyz2pos(selection_rect.start_x, selection_rect.start_y, selection_rect.start_z)
 end
 
-local function get_cur_area_dims()
-    local pos1 = dfhack.gui.getMousePos(true)
-    if not pos1 or selection_rect.start_x < 0 then return 1, 1, 1 end
-
-    -- clamp to map edges (since you can start selection out of bounds)
-    pos1 = xyz2pos(
-        math.max(0, math.min(df.global.world.map.x_count-1, pos1.x)),
-        math.max(0, math.min(df.global.world.map.y_count-1, pos1.y)),
-        math.max(0, math.min(df.global.world.map.z_count-1, pos1.z)))
-    local pos2 = xyz2pos(
-        math.max(0, math.min(df.global.world.map.x_count-1, selection_rect.start_x)),
-        math.max(0, math.min(df.global.world.map.y_count-1, selection_rect.start_y)),
-        math.max(0, math.min(df.global.world.map.z_count-1, selection_rect.start_z)))
-
-    return math.abs(pos1.x - pos2.x) + 1,
-        math.abs(pos1.y - pos2.y) + 1,
-        math.abs(pos1.z - pos2.z) + 1
-end
-
-local function format_dims()
-    return ('%dx%dx%d'):format(get_cur_area_dims())
+local function get_uibs_pos()
+    if uibs.selection_pos.x < 0 then return end
+    return uibs.selection_pos
 end
 
 function DimensionsOverlay:init()
     self:addviews{
-        widgets.ResizingPanel{
-            view_id='tooltip',
-            frame={b=0, r=0, w=DEFAULT_DIMENSION_TOOLTIP_WIDTH, h=DIMENSION_TOOLTIP_HEIGHT},
-            frame_style=gui.FRAME_THIN,
-            frame_background=gui.CLEAR_PEN,
-            auto_width=true,
-            visible=is_choosing_area,
-            subviews={
-                widgets.Panel{
-                    -- set minimum size for tooltip frame so DFHack label fits
-                    frame={t=0, l=0, w=7, h=2},
-                },
-                widgets.Label{
-                    view_id='label',
-                    frame={t=0},
-                    auto_width=true,
-                    text={{text=format_dims}},
-                },
-            },
+        widgets.DimensionsTooltip{
+            get_anchor_pos_fn=function()
+                if dfhack.gui.matchFocusString('dwarfmode/Building/Placement',
+                    dfhack.gui.getDFViewscreen(true))
+                then
+                    return get_uibs_pos()
+                else
+                    return get_selection_rect_pos()
+                end
+            end,
         },
     }
 end
 
 -- don't imply that stockpiles will be 3d
-local main_interface = df.global.game.main_interface
 local function check_stockpile_dims()
     if main_interface.bottom_mode_selected == df.main_bottom_mode_type.STOCKPILE_PAINT and
         selection_rect.start_x > 0
@@ -1869,16 +1845,12 @@ end
 
 function DimensionsOverlay:render(dc)
     check_stockpile_dims()
-    local x, y = dfhack.screen.getMousePos()
-    if not x then return end
-    local sw, sh = dfhack.screen.getWindowSize()
-    local frame_width = math.max(9, self.subviews.label:getTextWidth() + 2)
-    self:updateLayout()
-    x = math.min(x + DIMENSION_TOOLTIP_X_OFFSET, sw - frame_width)
-    y = math.min(y + DIMENSION_TOOLTIP_Y_OFFSET, sh - DIMENSION_TOOLTIP_HEIGHT)
-    self.frame.w = x + frame_width
-    self.frame.h = y + DIMENSION_TOOLTIP_HEIGHT
     DimensionsOverlay.super.render(self, dc)
+end
+
+function DimensionsOverlay:preUpdateLayout(parent_rect)
+    self.frame.w = parent_rect.width
+    self.frame.h = parent_rect.height
 end
 
 OVERLAY_WIDGETS = {
