@@ -81,24 +81,28 @@ function BigRedButton:init()
 
     self:addviews{
         widgets.Label{
-            text={
-                ' Activate ', NEWLINE,
-                ' civilian ', NEWLINE,
-                '  alert   ',
+            text=widgets.makeButtonLabelText{
+                chars={
+                    ' Activate ',
+                    ' civilian ',
+                    '  alert   ',
+                },
+                pens=BUTTON_TEXT_ON,
+                pens_hover=BUTTON_TEXT_OFF,
             },
-            text_pen=BUTTON_TEXT_ON,
-            text_hpen=BUTTON_TEXT_OFF,
             visible=can_sound_alarm,
             on_click=sound_alarm,
         },
         widgets.Label{
-            text={
-                '  Clear   ', NEWLINE,
-                ' civilian ', NEWLINE,
-                '  alert   ',
+            text=widgets.makeButtonLabelText{
+                chars={
+                    '  Clear   ',
+                    ' civilian ',
+                    '  alert   ',
+                },
+                pens=BUTTON_TEXT_OFF,
+                pens_hover=BUTTON_TEXT_ON,
             },
-            text_pen=BUTTON_TEXT_OFF,
-            text_hpen=BUTTON_TEXT_ON,
             visible=can_clear_alarm,
             on_click=clear_alarm,
         },
