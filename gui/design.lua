@@ -15,7 +15,7 @@
 --   Should consolidate the states into a single state attribute with enum values
 -- Keyboard support
 -- As the number of shapes and designations grow it might be better to have list menus for them instead of cycle
--- Grid view without slowness (can ignore if next TODO is done, since nrmal mining mode has grid view)
+-- Grid view without slowness (can ignore if next TODO is done, since normal mining mode has grid view)
 --   Lags when drawing the full screen grid on each frame render
 -- Integrate with default mining mode for designation type, priority, etc... (possible?)
 -- Figure out how to remove dug stairs with mode (nothing seems to work, include 'dig ramp')
