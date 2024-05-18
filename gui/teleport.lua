@@ -39,7 +39,7 @@ end
 Teleport = defclass(Teleport, widgets.Window)
 Teleport.ATTRS {
     frame_title='Teleport',
-    frame={w=45, h=28, r=2, t=18},
+    frame={w=45, h=26, r=2, t=18},
     resizable=true,
     resize_min={h=20},
     autoarrange_subviews=true,
@@ -64,19 +64,6 @@ function Teleport:init()
         widgets.WrappedLabel{
             frame={l=0},
             text_to_wrap=self:callback('get_help_text'),
-        },
-        widgets.Panel{
-            frame={h=2},
-            subviews={
-                widgets.Label{
-                    frame={l=0, t=0},
-                    text={
-                        'Selected area: ',
-                        {text=self:callback('get_selection_area_text')}
-                    },
-                },
-            },
-            visible=function() return self.mark end,
         },
         widgets.HotkeyLabel{
             frame={l=0},
@@ -275,13 +262,6 @@ function Teleport:get_help_text()
     return help_text
 end
 
-function Teleport:get_selection_area_text()
-    local mark = self.mark
-    if not mark then return '' end
-    local cursor = dfhack.gui.getMousePos() or {x=mark.x, y=mark.y, z=df.global.window_z}
-    return ('%dx%dx%d'):format(get_dims(mark, cursor))
-end
-
 function Teleport:get_bounds(cursor, mark)
     cursor = cursor or self.mark
     mark = mark or self.mark or cursor
@@ -402,7 +382,13 @@ TeleportScreen.ATTRS {
 }
 
 function TeleportScreen:init()
-    self:addviews{Teleport{}}
+    local window = Teleport{}
+    self:addviews{
+        window,
+        widgets.DimensionsTooltip{
+            get_anchor_pos_fn=function() return window.mark end,
+        },
+    }
 end
 
 function TeleportScreen:onDismiss()
