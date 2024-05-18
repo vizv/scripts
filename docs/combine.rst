@@ -5,6 +5,12 @@ combine
     :summary: Combine items that can be stacked together.
     :tags: fort productivity items plants stockpiles
 
+This handy tool "defragments" your items without giving your fort the undue
+advantage of unreasonably large stacks. Within each stockpile, similar items
+will be combined into fewer, larger stacks for more compact and
+easier-to-manage storage. Items outside of stockpiles will not be combined, and
+items in separate stockpiles will not be combined together.
+
 Usage
 -----
 
@@ -18,9 +24,9 @@ Examples
 ``combine``
     Displays help
 ``combine all --dry-run``
-    Preview stack changes for all types in all stockpiles.
+    Preview what will be combined for all types in all stockpiles.
 ``combine all``
-    Merge stacks for all stockpile and all types
+    Merge stacks in all stockpile for all types
 ``combine all --types=meat,plant``
     Merge ``meat`` and ``plant`` type stacks in all stockpiles.
 ``combine here``
@@ -38,39 +44,46 @@ Options
 -------
 
 ``-d``, ``--dry-run``
-    Display the stack changes without applying them.
+    Display what would be combined instead of actually combining items.
 
 ``-t``, ``--types <comma separated list of types>``
-    Filter item types. Default is ``all``. Valid types are:
+    Specify which item types should be combined. Default is ``all``. Valid
+    types are:
 
-        ``all``:     all of the types listed here.
-        ``ammo``:    AMMO. Qty max 25.
-        ``drink``:   DRINK. Qty max 25.
-        ``fat``:     GLOB and CHEESE. Qty max 5.
-        ``fish``:    FISH, FISH_RAW and EGG. Qty max 5.
-        ``food``:    FOOD. Qty max 20.
-        ``meat``:    MEAT. Qty max 5.
-        ``parts``:   CORPSEPIECE. Material max 30.
-        ``plant``:   PLANT and PLANT_GROWTH. Qty max 5.
-        ``powders``: POWDERS_MISC. Qty max 10.
+    :all:     all of the types listed here.
+    :ammo:    stacks of ammunition. Qty max 25.
+    :drink:   stacks of drinks in barrels/pots. Qty max 25.
+    :fat:     cheese, fat, tallow, and other globs. Qty max 5.
+    :fish:    raw and prepared fish. this category also includes all types of
+              eggs. Qty max 5.
+    :food:    prepared food. Qty max 20.
+    :meat:    meat. Qty max 5.
+    :parts:   corpse pieces. Material max 30.
+    :plant:   plant and plant growths. Qty max 5.
+    :powders: dye and other non-sand, non-plaster powders. Qty max 10.
 
 ``-q``, ``--quiet``
-    Only print changes instead of a summary of all processed stockpiles.
+    Don't print the final item distribution summary.
 
 ``-v``, ``--verbose n``
-    Print verbose output, n from 1 to 4.
+    Print verbose output for debugging purposes, n from 1 to 4.
 
 Notes
 -----
 
 The following conditions prevent an item from being combined:
-    1. An item is not in a stockpile.
-    2. An item is sand or plaster.
-    3. An item is rotten, forbidden, marked for dumping/melting, on fire, encased, owned by a trader/hostile/dwarf or is in a spider web.
-    4. An item is part of a corpse and is not butchered.
 
-The following categories are defined:
-    1. Corpse pieces, grouped by piece type and race
-    2. Items that have an associated race/caste, grouped by item type, race, and caste
-    3. Ammo, grouped by ammo type, material, and quality. If the ammo is a masterwork, it is also grouped by who created it.
-    4. Anything else, grouped by item type and material.
+1. it is not in a stockpile.
+2. it is sand or plaster.
+3. it is rotten, forbidden, marked for dumping/melting, on fire, encased, owned
+   by a trader/hostile/dwarf or is in a spider web.
+4. it is part of a corpse and has not been butchered.
+
+Moreover, if a stack is in a container associated with a stockpile, the stack
+will not be able to grow past the volume limit of the container.
+
+An item can be combined with other similar items if it:
+
+1. has an associated race/caste and is of the same item type, race, and caste
+2. has the same type, material, and quality. If it is a masterwork, it is also
+   grouped by who created it.
