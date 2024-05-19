@@ -25,12 +25,9 @@ function ActionPanel:init()
     self:addviews{
         widgets.WrappedLabel{
             view_id='action_label',
-            text_to_wrap=self:callback('get_action_text')},
-        widgets.TooltipLabel{
-            view_id='selected_area',
-            indent=1,
-            text={{text=self:callback('get_area_text')}},
-            show_tooltip=self.get_mark_fn}}
+            text_to_wrap=self:callback('get_action_text')
+        }
+    }
 end
 function ActionPanel:get_action_text()
     local text = 'Select the '
@@ -42,16 +39,6 @@ function ActionPanel:get_action_text()
         text = text .. 'first corner'
     end
     return text .. ' with the mouse.'
-end
-function ActionPanel:get_area_text()
-    local mark = self.get_mark_fn()
-    if not mark then return '' end
-    local other = dfhack.gui.getMousePos()
-            or {x=mark.x, y=mark.y, z=df.global.window_z}
-    local width, height, depth = get_dims(mark, other)
-    local tiles = width * height * depth
-    local plural = tiles > 1 and 's' or ''
-    return ('%dx%dx%d (%d tile%s)'):format(width, height, depth, tiles, plural)
 end
 
 NamePanel = defclass(NamePanel, widgets.ResizingPanel)
@@ -293,7 +280,7 @@ end
 Blueprint = defclass(Blueprint, widgets.Window)
 Blueprint.ATTRS {
     frame_title='Blueprint',
-    frame={w=47, h=40, r=2, t=18},
+    frame={w=47, h=38, r=2, t=18},
     resizable=true,
     resize_min={h=10},
     autoarrange_subviews=true,
@@ -609,7 +596,13 @@ BlueprintScreen.ATTRS {
 }
 
 function BlueprintScreen:init()
-    self:addviews{Blueprint{presets=self.presets}}
+    local window = Blueprint{presets=self.presets}
+    self:addviews{
+        window,
+        widgets.DimensionsTooltip{
+            get_anchor_pos_fn=function() return window.mark end,
+        },
+    }
 end
 
 function BlueprintScreen:onDismiss()
