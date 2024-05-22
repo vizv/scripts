@@ -1,7 +1,9 @@
 -- shape definitions for gui/dig
 --@ module = true
 
-local Point = reqscript("internal/design/util").Point
+local util = reqscript("internal/design/util")
+
+local Point = util.Point
 
 if not dfhack_flags.module then
     qerror("this script cannot be called directly")
@@ -213,6 +215,8 @@ end
 Ellipse = defclass(Ellipse, Shape)
 Ellipse.ATTRS {
     name = "Ellipse",
+    texture_offset = 5,
+    button_chars = util.make_ascii_button(9, 248)
 }
 
 function Ellipse:init()
@@ -224,7 +228,7 @@ function Ellipse:init()
             key = "CUSTOM_H",
         },
         thickness = {
-            name = "Thickness",
+            name = "Line thickness",
             type = "plusminus",
             value = 2,
             enabled = { "hollow", true },
@@ -276,6 +280,8 @@ end
 Rectangle = defclass(Rectangle, Shape)
 Rectangle.ATTRS {
     name = "Rectangle",
+    texture_offset = 1,
+    button_chars = util.make_ascii_button(222, 221)
 }
 
 function Rectangle:init()
@@ -287,7 +293,7 @@ function Rectangle:init()
             key = "CUSTOM_H",
         },
         thickness = {
-            name = "Thickness",
+            name = "Line thickness",
             type = "plusminus",
             value = 2,
             enabled = { "hollow", true },
@@ -322,6 +328,8 @@ end
 Rows = defclass(Rows, Shape)
 Rows.ATTRS {
     name = "Rows",
+    texture_offset = 9,
+    button_chars = util.make_ascii_button(197, 197)
 }
 
 function Rows:init()
@@ -360,6 +368,8 @@ end
 Diag = defclass(Diag, Shape)
 Diag.ATTRS {
     name = "Diagonal",
+    texture_offset = 13,
+    button_chars = util.make_ascii_button('/', '/')
 }
 
 function Diag:init()
@@ -397,14 +407,16 @@ Line = defclass(Line, Shape)
 Line.ATTRS {
     name = "Line",
     extra_points = { { label = "Curve Point" }, { label = "Second Curve Point" } },
-    invertable = false, -- Doesn't support invert
-    basic_shape = false -- Driven by points, not rectangle bounds
+    invertable = false,  -- Doesn't support invert
+    basic_shape = false, -- Driven by points, not rectangle bounds
+    texture_offset = 17,
+    button_chars = util.make_ascii_button(250, '(')
 }
 
 function Line:init()
     self.options = {
         thickness = {
-            name = "Thickness",
+            name = "Line thickness",
             type = "plusminus",
             value = 1,
             min = 1,
@@ -551,13 +563,15 @@ FreeForm.ATTRS = {
     min_points = 1,
     max_points = DEFAULT_NIL,
     basic_shape = false,
-    can_mirror = true
+    can_mirror = true,
+    texture_offset = 21,
+    button_chars = util.make_ascii_button('?', '*')
 }
 
 function FreeForm:init()
     self.options = {
         thickness = {
-            name = "Thickness",
+            name = "Line thickness",
             type = "plusminus",
             value = 1,
             min = 1,

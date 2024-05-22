@@ -1,10 +1,45 @@
 -- Utilities for design.lua
 --@ module = true
 
+function make_ascii_button(ch1, ch2)
+    return {
+        {218, 196, 196, 191},
+        {179, ch1, ch2, 179},
+        {192, 196, 196, 217},
+    }
+end
+
+local function get_interface_button_tiles(x, y)
+    local function get_tile(xoff, yoff)
+        return dfhack.screen.findGraphicsTile('INTERFACE_BITS', x + xoff, y + yoff)
+    end
+    return {
+        {get_tile(0, 0), get_tile(1, 0), get_tile(2, 0), get_tile(3, 0)},
+        {get_tile(0, 1), get_tile(1, 1), get_tile(2, 1), get_tile(3, 1)},
+        {get_tile(0, 2), get_tile(1, 2), get_tile(2, 2), get_tile(3, 2)},
+    }
+end
+
+function make_button_spec(ch1, ch2, ch1_color, ch2_color, border_color, border_hcolor, x, y)
+    return {
+        chars=make_ascii_button(ch1, ch2),
+        pens={
+            {border_color, border_color, border_color, border_color},
+            {border_color, ch1_color,    ch2_color,    border_color},
+            {border_color, border_color, border_color, border_color},
+        },
+        pens_hover={
+            {border_hcolor, border_hcolor, border_hcolor, border_hcolor},
+            {border_hcolor, ch1_color,     ch2_color,     border_hcolor},
+            {border_hcolor, border_hcolor, border_hcolor, border_hcolor},
+        },
+        tiles=get_interface_button_tiles(x, y),
+    }
+end
+
 -- Point class used by gui/design
 Point = defclass(Point)
 Point.ATTRS {
-    __is_point = true,
     x = DEFAULT_NIL,
     y = DEFAULT_NIL,
     z = DEFAULT_NIL
@@ -82,5 +117,5 @@ end
 
 function getMousePoint()
     local pos = dfhack.gui.getMousePos()
-    return pos and Point{x = pos.x, y = pos.y, z = pos.z} or nil
+    return pos and Point(pos) or nil
 end
