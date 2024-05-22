@@ -9,17 +9,6 @@ function make_ascii_button(ch1, ch2)
     }
 end
 
-local function get_interface_button_tiles(x, y)
-    local function get_tile(xoff, yoff)
-        return dfhack.screen.findGraphicsTile('INTERFACE_BITS', x + xoff, y + yoff)
-    end
-    return {
-        {get_tile(0, 0), get_tile(1, 0), get_tile(2, 0), get_tile(3, 0)},
-        {get_tile(0, 1), get_tile(1, 1), get_tile(2, 1), get_tile(3, 1)},
-        {get_tile(0, 2), get_tile(1, 2), get_tile(2, 2), get_tile(3, 2)},
-    }
-end
-
 function make_button_spec(ch1, ch2, ch1_color, ch2_color, border_color, border_hcolor, x, y)
     return {
         chars=make_ascii_button(ch1, ch2),
@@ -33,7 +22,7 @@ function make_button_spec(ch1, ch2, ch1_color, ch2_color, border_color, border_h
             {border_hcolor, ch1_color,     ch2_color,     border_hcolor},
             {border_hcolor, border_hcolor, border_hcolor, border_hcolor},
         },
-        tiles=get_interface_button_tiles(x, y),
+        asset={page='INTERFACE_BITS', x=x, y=y},
     }
 end
 
