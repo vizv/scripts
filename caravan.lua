@@ -20,6 +20,7 @@ OVERLAY_WIDGETS = {
     tradebanner=trade.TradeBannerOverlay,
     tradeagreement=tradeagreement.TradeAgreementOverlay,
     movegoods=movegoods.MoveGoodsOverlay,
+    movegoods_hider=movegoods.MoveGoodsHiderOverlay,
     assigntrade=movegoods.AssignTradeOverlay,
     displayitemselector=pedestal.PedestalOverlay,
 }
