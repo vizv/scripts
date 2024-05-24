@@ -476,7 +476,7 @@ function EditPanel:init()
             on_char=function(ch, text)
                 -- if game was not initially paused, then allow double-space to toggle pause
                 if ch == ' ' and not self.parent_view.parent_view.saved_pause_state then
-                    return text:match('%S$')
+                    return text:sub(1, self.subviews.editfield.cursor - 1):match('%S$')
                 end
                 return true
             end,
