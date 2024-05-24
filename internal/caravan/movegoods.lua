@@ -762,6 +762,23 @@ function MoveGoodsOverlay:init()
 end
 
 -- -------------------
+-- MoveGoodsHiderOverlay
+--
+
+MoveGoodsHiderOverlay = defclass(MoveGoodsHiderOverlay, overlay.OverlayWidget)
+MoveGoodsHiderOverlay.ATTRS{
+    desc='Hides the vanilla trade goods selection button.',
+    default_pos={x=-70, y=12},
+    viewscreens='dwarfmode/ViewSheets/BUILDING/TradeDepot',
+    frame={w=27, h=3},
+    frame_background=gui.CLEAR_PEN,
+}
+
+function MoveGoodsHiderOverlay:onInput(keys)
+    return keys._MOUSE_L and self:getMouseFramePos()
+end
+
+-- -------------------
 -- AssignTradeOverlay
 --
 

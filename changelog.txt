@@ -41,6 +41,7 @@ Template for new versions:
 ## Misc Improvements
 - `gui/unit-info-viewer`: now displays a unit's weight, relative to either dwarves, elephants or cats
 - `gui/unit-info-viewer`: shows a unit's relative size to its race's average.
+- `caravan`: optional overlay to hide vanilla bring trade goods to depot button (if you prefer to always use the DFHack version and don't want to accidentally click on the vanilla button). enable ``caravan.movegoods_hider`` in `gui/control-panel` UI Overlays tab to use.
 
 ## Removed
 
