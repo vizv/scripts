@@ -75,11 +75,11 @@ end
 
 function TrackStopOverlay:getDumpDirection()
   local building = dfhack.gui.getSelectedBuilding()
-  local use_dump = building.use_dump
+  local use_dump = building.track_flags.use_dump
   local dump_x_shift = building.dump_x_shift
   local dump_y_shift = building.dump_y_shift
 
-  if use_dump == 0 then
+  if not use_dump then
     return NONE
   else
     if dump_x_shift == 0 and dump_y_shift == -1 then
@@ -98,23 +98,23 @@ function TrackStopOverlay:setDumpDirection(direction)
   local building = dfhack.gui.getSelectedBuilding()
 
   if direction == NONE then
-    building.use_dump = 0
+    building.track_flags.use_dump = false
     building.dump_x_shift = 0
     building.dump_y_shift = 0
   elseif direction == NORTH then
-    building.use_dump = 1
+    building.track_flags.use_dump = true
     building.dump_x_shift = 0
     building.dump_y_shift = -1
   elseif direction == EAST then
-    building.use_dump = 1
+    building.track_flags.use_dump = true
     building.dump_x_shift = 1
     building.dump_y_shift = 0
   elseif direction == SOUTH then
-    building.use_dump = 1
+    building.track_flags.use_dump = true
     building.dump_x_shift = 0
     building.dump_y_shift = 1
   elseif direction == WEST then
-    building.use_dump = 1
+    building.track_flags.use_dump = true
     building.dump_x_shift = -1
     building.dump_y_shift = 0
   end

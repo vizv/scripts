@@ -634,7 +634,7 @@ end
 local function make_trackstop_entry(direction, friction)
     local label, fields, transform = 'No Dump', {friction=friction}, nil
     if direction then
-        fields.use_dump = 1
+        ensure_key(fields, 'track_flags').use_dump = true
         for k,v in pairs(direction) do
             local trackstop_data_entry = trackstop_data[k][v]
             label = trackstop_data_entry.label

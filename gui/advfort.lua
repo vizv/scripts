@@ -1430,11 +1430,11 @@ function track_stop_configure(bld) --TODO: dedicated widget with nice interface 
         else
             dialog.showListPrompt("Dumping direction", "Choose dumping:",COLOR_WHITE,dump_choices,function ( index,choice)
                 if choice.x then
-                    bld.use_dump=1 --??
+                    bld.track_flags.use_dump=true
                     bld.dump_x_shift=choice.x
                     bld.dump_y_shift=choice.y
                 else
-                    bld.use_dump=0
+                    bld.track_flags.use_dump=false
                 end
             end)
         end

@@ -227,7 +227,7 @@ local function custom_stockpile(_, keys)
         props.wheelbarrows = nil
     end
     if props.links_only == 'true' then
-        db_entry.props.use_links_only = 1
+        ensure_key(db_entry.props, 'stockpile_flag').use_links_only = 1
         props.links_only = nil
     end
     if props.name then
