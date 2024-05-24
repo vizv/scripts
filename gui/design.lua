@@ -136,10 +136,8 @@ DESIGN_HELP_DEFAULT = {
 }
 
 CONSTRUCTION_HELP = {
-    'gui/design Help: Building Filters',
-    '===============================',
-    NEWLINE,
-    'Adding material filters to this tool is planned but not implemented at this time.',
+    'gui/design Help: Building filters',
+    '=================================',
     NEWLINE,
     'Use `buildingplan` to configure filters for the desired construction types. This tool will use the current buildingplan filters for a building type.'
 }
@@ -267,147 +265,6 @@ function DesignDebugWindow:init()
     end
 end
 
--- Generic options not specific to shapes
-GenericOptionsPanel = defclass(GenericOptionsPanel, widgets.ResizingPanel)
-GenericOptionsPanel.ATTRS {
-    name = DEFAULT_NIL,
-    autoarrange_subviews = true,
-    design_panel = DEFAULT_NIL,
-    on_layout_change = DEFAULT_NIL,
-}
-
-function GenericOptionsPanel:init()
-
-    self:addviews {
-
-
-        widgets.HotkeyLabel {
-            view_id = 'shape_place_extra_point',
-            key = 'CUSTOM_V',
-            label = function()
-                local msg = 'Place extra point: '
-                if #self.extra_points < #self.shape.extra_points then
-                    return msg .. self.shape.extra_points[#self.extra_points + 1].label
-                end
-
-                return msg .. 'N/A'
-            end,
-            active = true,
-            visible = function() return self.shape and #self.shape.extra_points > 0 end,
-            enabled = function()
-                if self.shape then
-                    return #self.extra_points < #self.shape.extra_points
-                end
-
-                return false
-            end,
-            show_tooltip = true,
-            on_activate = function()
-                if not self.placing_mark.active then
-                    self.placing_extra.active = true
-                    self.placing_extra.index = #self.extra_points + 1
-                elseif #self.marks then
-                    local mouse_pos = getMousePoint()
-                    if mouse_pos then table.insert(self.extra_points,
-                            mouse_pos)
-                    end
-                end
-                self.needs_update = true
-            end,
-        },
-        widgets.HotkeyLabel {
-            view_id = 'shape_toggle_placing_marks',
-            key = 'CUSTOM_B', --change
-            label = function()
-                return (self.placing_mark.active) and 'Stop placing' or 'Start placing'
-            end,
-            active = true,
-            visible = true,
-            enabled = function()
-                if not self.placing_mark.active and not self.prev_center then
-                    return not self.shape.max_points or
-                        #self.marks < self.shape.max_points
-                elseif not self.placing_extra.active and not self.prev_centerl then
-                    return true
-                end
-
-                return false
-            end,
-            show_tooltip = true,
-            on_activate = function()
-                self.placing_mark.active = not self.placing_mark.active
-                self.placing_mark.index = (self.placing_mark.active) and
-                    #self.marks + 1 or
-                    nil
-                if not self.placing_mark.active then
-                    table.remove(self.marks, #self.marks)
-                else
-                    self.placing_mark.continue = true
-                end
-
-                self.needs_update = true
-            end,
-        },
-        widgets.HotkeyLabel {
-            view_id = 'shape_clear_all_points',
-            key = 'CUSTOM_X',
-            label = 'Clear all points',
-            active = true,
-            enabled = function()
-                if #self.marks > 0 then return true
-                elseif self.shape then
-                    if #self.extra_points < #self.shape.extra_points then
-                        return true
-                    end
-                end
-
-                return false
-            end,
-            disabled = false,
-            show_tooltip = true,
-            on_activate = function()
-                self.marks = {}
-                self.placing_mark.active = true
-                self.placing_mark.index = 1
-                self.extra_points = {}
-                self.prev_center = nil
-                self.start_center = nil
-                self.needs_update = true
-            end,
-        },
-        widgets.HotkeyLabel {
-            view_id = 'shape_clear_extra_points',
-            key = 'CUSTOM_SHIFT_X',
-            label = 'Clear extra points',
-            active = true,
-            enabled = function()
-                if self.shape then
-                    if #self.extra_points > 0 then
-                        return true
-                    end
-                end
-
-                return false
-            end,
-            disabled = false,
-            visible = function() return self.shape and #self.shape.extra_points > 0 end,
-            show_tooltip = true,
-            on_activate = function()
-                if self.shape then
-                    self.extra_points = {}
-                    self.prev_center = nil
-                    self.start_center = nil
-                    self.placing_extra = { active = false, index = 0 }
-                    self:updateLayout()
-                    self.needs_update = true
-                end
-            end,
-        },
-
-    }
-end
-
-
 --
 -- Design
 --
@@ -415,9 +272,8 @@ end
 Design = defclass(Design, widgets.Window)
 Design.ATTRS {
     frame_title = 'Design',
-    frame={w=40, h=45, r=2, t=18},
+    frame={w=40, h=46, r=2, t=18},
     resizable=true,
-    resize_min={h=30},
     autoarrange_subviews=true,
     autoarrange_gap=1,
 }
@@ -436,10 +292,10 @@ function Design:init()
     self.needs_update = true
     self.marks = {}
     self.extra_points = {}
-    self.placing_extra = { active = false, index = nil }
-    self.placing_mark = { active = true, index = 1, continue = true }
+    self.placing_extra = {active=false, index=nil}
+    self.placing_mark = {active=true, index=1, continue=true}
     self.placing_mirror = false
-    self.mirror = { horizontal = false, vertical = false }
+    self.mirror = {horizontal=false, vertical=false}
 
     local mode_options = {
         {label='Dig', value=make_mode_option('d', 'dig', '-', ')', COLOR_BROWN, COLOR_GRAY, 0, 22, 4)},
@@ -858,7 +714,7 @@ function Design:init()
                     frame_style=gui.FRAME_INTERIOR,
                     subviews={
                         widgets.Panel{
-                            frame={t=0, b=3},
+                            frame={t=0, b=7},
                             autoarrange_subviews=true,
                             autoarrange_gap=1,
                             subviews={
@@ -872,6 +728,86 @@ function Design:init()
                                     text_to_wrap=self:callback('get_mark_text'),
                                 },
                             },
+                        },
+                        widgets.HotkeyLabel {
+                            frame={b=5, l=0},
+                            key='CUSTOM_V',
+                            label=function()
+                                local msg='Place extra point: '
+                                local shape = self.subviews.shape:getOptionValue()
+                                if #self.extra_points < #shape.extra_points then
+                                    return msg .. shape.extra_points[#self.extra_points + 1].label
+                                end
+                                return msg .. 'N/A'
+                            end,
+                            enabled=function() return #self.subviews.shape:getOptionValue().extra_points > 0 end,
+                            on_activate=function()
+                                if not self.placing_mark.active then
+                                    self.placing_extra.active=true
+                                    self.placing_extra.index=#self.extra_points + 1
+                                elseif #self.marks > 0 then
+                                    local mouse_pos = getMousePoint()
+                                    if mouse_pos then table.insert(self.extra_points, mouse_pos) end
+                                end
+                                self.needs_update = true
+                            end,
+                        },
+                        widgets.HotkeyLabel {
+                            frame={b=4, l=0},
+                            key='CUSTOM_B', --change
+                            label=function()
+                                return self.placing_mark.active and 'Stop placing' or 'Start placing'
+                            end,
+                            enabled=function()
+                                if not self.placing_mark.active and not self.prev_center then
+                                    local shape = self.subviews.shape:getOptionValue()
+                                    return not shape.max_points or #self.marks < shape.max_points
+                                elseif not self.placing_extra.active and not self.prev_centerl then
+                                    return true
+                                end
+                                return false
+                            end,
+                            on_activate=function()
+                                self.placing_mark.active = not self.placing_mark.active
+                                self.placing_mark.index = self.placing_mark.active and #self.marks + 1 or nil
+                                if not self.placing_mark.active then
+                                    table.remove(self.marks, #self.marks)
+                                else
+                                    self.placing_mark.continue = true
+                                end
+                                self.needs_update=true
+                            end,
+                        },
+                        widgets.HotkeyLabel {
+                            frame={b=3, l=0},
+                            key='CUSTOM_X',
+                            label='Clear all points',
+                            enabled=function()
+                                if #self.marks > 0 then return true end
+                                return #self.extra_points < #self.subviews.shape:getOptionValue().extra_points
+                            end,
+                            on_activate=function()
+                                self.marks = {}
+                                self.placing_mark.active = true
+                                self.placing_mark.index = 1
+                                self.extra_points = {}
+                                self.prev_center = nil
+                                self.start_center = nil
+                                self.needs_update = true
+                            end,
+                        },
+                        widgets.HotkeyLabel {
+                            frame={b=2, l=0},
+                            key='CUSTOM_SHIFT_X',
+                            label='Clear extra points',
+                            enabled=function() return #self.extra_points > 0 end,
+                            on_activate=function()
+                                self.extra_points = {}
+                                self.prev_center = nil
+                                self.start_center = nil
+                                self.placing_extra = {active=false, index=0}
+                                self.needs_update = true
+                            end,
                         },
                         widgets.ToggleHotkeyLabel{
                             view_id='autocommit',
@@ -887,7 +823,7 @@ function Design:init()
                             enabled=function() return #self.marks >= self.subviews.shape:getOptionValue().min_points end,
                             on_activate=function()
                                 self:commit()
-                                self.needs_update = true
+                                self.needs_update=true
                             end,
                         },
                     },
