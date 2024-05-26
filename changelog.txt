@@ -37,6 +37,7 @@ Template for new versions:
 - `item`: don't match uncollected spider webs when you search for "silk"
 - `assign-profile`: fix handling of unit option for setting target unit id
 - `gui/gm-unit`: correctly display skill levels above Legendary+5
+- `quickfort`: fix merge logic for disjoint stockpiles that are given the same label
 
 ## Misc Improvements
 - `gui/unit-info-viewer`: now displays a unit's weight, relative to either dwarves, elephants or cats
