@@ -92,21 +92,22 @@ function setTile(pos, target)
     local toValidOptionValue = function(value)
         return value ~= nil and (value and 1 or 0) or -1
     end
-    local shape          = toValidEnumValue(target.shape,    df.tiletype_shape,    df.tiletype_shape.NONE)
-    local material       = toValidEnumValue(target.material, df.tiletype_material, df.tiletype_material.NONE)
-    local special        = toValidEnumValue(target.special,  df.tiletype_special,  df.tiletype_special.NONE)
-    local variant        = toValidEnumValue(target.variant,  df.tiletype_variant,  df.tiletype_variant.NONE)
-    -- THESE ARE NOT CURRENTLY EXPOSED FROM C++
-    local dig            = toValidOptionValue(target.dig)
-    local hidden         = toValidOptionValue(target.hidden)
-    local light          = toValidOptionValue(target.light)
-    local subterranean   = toValidOptionValue(target.subterranean)
-    local skyview        = toValidOptionValue(target.skyview)
-    local aquifer        = toValidOptionValue(target.aquifer)
-    local stone_material = material == df.tiletype_material.STONE and target.stone_material or -1
-    local vein_type      = material ~= df.tiletype_material.STONE and -1 or toValidEnumValue(target.vein_type,  df.inclusion_type,  df.inclusion_type.CLUSTER)
+    local tiletype = {
+        shape          = toValidEnumValue(target.shape,    df.tiletype_shape,    df.tiletype_shape.NONE),
+        material       = toValidEnumValue(target.material, df.tiletype_material, df.tiletype_material.NONE),
+        special        = toValidEnumValue(target.special,  df.tiletype_special,  df.tiletype_special.NONE),
+        variant        = toValidEnumValue(target.variant,  df.tiletype_variant,  df.tiletype_variant.NONE),
+        dig            = toValidOptionValue(target.dig),
+        hidden         = toValidOptionValue(target.hidden),
+        light          = toValidOptionValue(target.light),
+        subterranean   = toValidOptionValue(target.subterranean),
+        skyview        = toValidOptionValue(target.skyview),
+        aquifer        = toValidOptionValue(target.aquifer),
+    }
+    tiletype.stone_material = tiletype.material == df.tiletype_material.STONE and target.stone_material or -1
+    tiletype.vein_type      = tiletype.material ~= df.tiletype_material.STONE and -1 or toValidEnumValue(target.vein_type,  df.inclusion_type,  df.inclusion_type.CLUSTER)
 
-    return plugin.tiletypes_setTile(pos, shape, material, special, variant)
+    return plugin.tiletypes_setTile(pos, tiletype)
 end
 
 local function generateDataLists()
