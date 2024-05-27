@@ -147,6 +147,13 @@ local function for_wildlife(fn, reverse)
     end, fn, reverse)
 end
 
+local function for_idle(fn, reverse)
+    for_iter(dfhack.units.getCitizens(true), function(unit)
+        local job = unit.job.current_job
+        return not job
+    end, fn, reverse)
+end
+
 local function count_units(for_fn, which)
     local count = 0
     for_fn(function() count = count + 1 end)
@@ -368,6 +375,13 @@ NOTIFICATIONS_BY_IDX = {
         default=false,
         fn=curry(summarize_units, for_wildlife),
         on_click=curry(zoom_to_next, for_wildlife),
+    },
+    {
+        name='idlers',
+        desc='Shows number of idle citizens.',
+        default=false,
+        fn=curry(count_units, for_idle, 'idle citizen'),
+        on_click=curry(zoom_to_next, for_idle),
     },
 }
 
