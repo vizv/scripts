@@ -75,7 +75,7 @@ function LegendsManager:onDestroy()
         dfhack.run_script('devel/pop-screen')
 
         -- disable autosaves for the remainder of this session
-        df.global.d_init.autosave = df.d_init_autosave.NONE
+        df.global.d_init.feature.autosave = df.d_init_autosave.NONE
     end
 end
 
