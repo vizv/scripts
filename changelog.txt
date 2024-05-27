@@ -47,6 +47,7 @@ Template for new versions:
 
 ## Removed
 - `max-wave`: merged into `pop-control`
+- `devel/find-offsets`, `devel/find-twbt`, `devel/prepare-save`: remove development scripts that are no longer useful
 
 # 50.13-r2
 
