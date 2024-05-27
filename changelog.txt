@@ -27,6 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
+- `pop-control`: (reinstated) limit the maximum size of migrant waves
 - `gui/sitemap`: list and zoom to nearby people, locations, and artifacts
 - `devel/tree-info`: print a visualization of tree_info data
 
@@ -45,6 +46,7 @@ Template for new versions:
 - `caravan`: optional overlay to hide vanilla bring trade goods to depot button (if you prefer to always use the DFHack version and don't want to accidentally click on the vanilla button). enable ``caravan.movegoods_hider`` in `gui/control-panel` UI Overlays tab to use.
 
 ## Removed
+- `max-wave`: merged into `pop-control`
 
 # 50.13-r2
 
