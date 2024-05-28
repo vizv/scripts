@@ -1,11 +1,9 @@
-
 modtools/outside-only
 =====================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
-
+    :summary: Set building inside/outside restrictions.
+    :tags: unavailable
 
 This allows you to specify certain custom buildings as outside only, or inside
 only. If the player attempts to build a building in an inappropriate location,

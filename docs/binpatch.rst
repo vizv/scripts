@@ -3,7 +3,7 @@ binpatch
 
 .. dfhack-tool::
     :summary: Applies or removes binary patches.
-    :tags: dev
+    :tags: unavailable
 
 See `binpatches` for more info.
 

@@ -1,15 +1,16 @@
-
 devel/modstate-monitor
 ======================
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Display changes in key modifier state.
     :tags: dev
 
+This tool will show changes in :kbd:`Ctrl`, :kbd:`Alt`, and :kbd:`Shift`
+modifier states.
 
-Display changes in key modifier state, i.e. :kbd:`Ctrl`/:kbd:`Alt`/:kbd:`Shift`.
+Usage
+-----
 
-Arguments:
+::
 
-:enable|start:  Begin monitoring
-:disable|stop:  End monitoring
+    enable devel/modstate-monitor

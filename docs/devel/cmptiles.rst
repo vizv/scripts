@@ -1,12 +1,18 @@
-
 devel/cmptiles
 ==============
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
+    :summary: List or compare two tiletype material groups.
+    :tags: unavailable
 
+Lists and/or compares two tiletype material groups. You can see the list of
+valid material groups by running::
 
-Lists and/or compares two tiletype material groups.
+    :lua @df.tiletype_material
 
-Usage: ``devel/cmptiles material1 [material2]``
+Usage
+-----
+
+::
+
+    devel/cmptiles material1 [material2]

@@ -97,7 +97,7 @@ function check_block_items(fix)
     end
 
     -- Check if any items are missing from blocks
-    for _,item in ipairs(df.global.world.items.all) do
+    for _,item in ipairs(df.global.world.items.other.IN_PLAY) do
         if item.flags.on_ground and not found[item.id] then
             can_fix = false
             if not found_somewhere[item.id] then

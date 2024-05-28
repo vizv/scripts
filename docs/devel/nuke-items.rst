@@ -1,11 +1,16 @@
-
 devel/nuke-items
 ================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev fps items
+    :summary: Deletes all free items in the game.
+    :tags: unavailable
 
-
-Deletes ALL items not held by units, buildings or jobs.
+This tool deletes **ALL** items not referred to by units, buildings, or jobs.
 Intended solely for lag investigation.
+
+Usage
+-----
+
+::
+
+    devel/nuke-items

@@ -9,8 +9,16 @@ if not dfhack_flags.module then
     qerror('this script cannot be called directly')
 end
 
-local stockflow = require('plugins.stockflow')
 local quickfort_common = reqscript('internal/quickfort/common')
+
+-- local ok, stockflow = pcall(require, 'plugins.stockflow')
+-- if not ok then
+--     stockflow = nil
+-- end
+
+-- use our own copy of stockflow logic until stockflow becomes available again
+local stockflow = reqscript('internal/quickfort/stockflow')
+
 local log = quickfort_common.log
 
 local function inc_order_spec(order_specs, quantity, reactions, label)
@@ -120,14 +128,28 @@ local function get_num_items(b)
     return math.floor(num_tiles/4) + 1
 end
 
+local function create_order(ctx, label, order_spec)
+    local quantity = math.ceil(order_spec.quantity)
+    log('ordering %d %s', quantity, label)
+    if not ctx.dry_run and stockflow then
+        stockflow.create_orders(order_spec.order, quantity)
+        table.insert(ctx.stats, {label=('Ordered '..label), value=quantity, is_order=true})
+    else
+        table.insert(ctx.stats, {label=('Would order '..label), value=quantity, is_order=true})
+    end
+end
+
+-- sort by quantity so workshops that have smaller numbers of allowed general orders
+-- can contribute to the larger item orders
 function create_orders(ctx)
-    for k,order_spec in pairs(ctx.order_specs or {}) do
-        local quantity = math.ceil(order_spec.quantity)
-        log('ordering %d %s', quantity, k)
-        if not ctx.dry_run then
-            stockflow.create_orders(order_spec.order, quantity)
-        end
-        table.insert(ctx.stats, {label=k, value=quantity, is_order=true})
+    if not ctx.order_specs then return end
+    local orders = {}
+    for label,spec in pairs(ctx.order_specs) do
+        table.insert(orders, {label=label, spec=spec})
+    end
+    table.sort(orders, function(a,b) return a.spec.quantity > b.spec.quantity end)
+    for _,order in ipairs(orders) do
+        create_order(ctx, order.label, order.spec)
     end
 end
 
@@ -135,7 +157,7 @@ end
 -- care about the built-in reactions, not the mod-added ones.
 -- note that we also shouldn't reinit this because it contains allocated memory
 local function get_reactions()
-    g_reactions = g_reactions or stockflow.collect_reactions()
+    g_reactions = g_reactions or (stockflow and stockflow.collect_reactions()) or {}
     return g_reactions
 end
 
@@ -150,11 +172,11 @@ function enqueue_additional_order(ctx, label)
     inc_order_spec(order_specs, 1, get_reactions(), label)
 end
 
-function enqueue_building_orders(buildings, building_db, ctx)
+function enqueue_building_orders(buildings, ctx)
     local order_specs = ensure_order_specs(ctx)
     local reactions = get_reactions()
     for _, b in ipairs(buildings) do
-        local db_entry = building_db[b.type]
+        local db_entry = b.db_entry
         log('processing %s, defined from spreadsheet cell(s): %s',
             db_entry.label, table.concat(b.cells, ', '))
         local filters = dfhack.buildings.getFiltersByType(
@@ -174,8 +196,8 @@ function enqueue_building_orders(buildings, building_db, ctx)
             if filter.quantity == -1 then filter.quantity = get_num_items(b) end
             if filter.flags2 and filter.flags2.building_material then
                 -- rock blocks get produced at a ratio of 4:1
-                filter.quantity = filter.quantity or 1
-                filter.quantity = filter.quantity / 4
+                -- note that this can be a fraction; math.ceil() is used in create_orders to compensate
+                filter.quantity = (filter.quantity or 1) / 4
             end
             process_filter(order_specs, filter, reactions)
         end

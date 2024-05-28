@@ -3,14 +3,15 @@ gui/advfort
 
 .. dfhack-tool::
     :summary: Perform fort-like jobs in adventure mode.
-    :tags: adventure gameplay
+    :tags: unavailable
 
 This script allows performing jobs in adventure mode. For interactive help,
 press :kbd:`?` while the script is running.
 
 .. warning::
-    Note that changes are only persisted for non-procedural sites, i.e. caves,
-    camps, and player forts.
+    Note that changes are only saved for non-procedural sites, i.e. caves,
+    camps, and player forts. Other sites will lose the changes you make when you
+    leave the area.
 
 Usage
 -----

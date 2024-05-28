@@ -21,6 +21,6 @@ Examples
 --------
 
 ``list-agreements``
-    List outstanding, unfullfilled location agreements.
+    List outstanding, unfulfilled location agreements.
 ``list-agreements all``
     Lists all location agreements, whether satisfied, denied, or expired.

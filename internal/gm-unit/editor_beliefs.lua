@@ -8,7 +8,7 @@ local setbelief = reqscript("modtools/set-belief")
 local setneed = reqscript("modtools/set-need")
 
 Editor_Beliefs = defclass(Editor_Beliefs, base_editor.Editor)
-Editor_Beliefs.ATTRS = {
+Editor_Beliefs.ATTRS{
   frame_title = "Beliefs editor"
 }
 
@@ -67,9 +67,8 @@ function Editor_Beliefs:edit(index, choice)
   )
 end
 
-function Editor_Beliefs:close()
+function Editor_Beliefs:onClose()
   setneed.rebuildNeeds(self.target_unit)
-  self:dismiss()
 end
 
 function Editor_Beliefs:init(args)
@@ -79,27 +78,25 @@ function Editor_Beliefs:init(args)
 
   self:addviews{
     widgets.List{
-      frame = {t=0, b=2,l=1},
+      frame = {t=0, b=5,l=0},
       view_id = "beliefs",
       on_submit = self:callback("edit"),
-      on_submit2 = self:callback("average")
     },
     widgets.Label{
-      frame = {b=1, l=1},
+      frame = {b=0, l=0},
       text = {
-        {text = ": exit editor ", key = "LEAVESCREEN", on_activate = self:callback("close")},
         {text = ": edit value ", key = "SELECT"},
         {text = ": randomise selected ", key = "CUSTOM_R", on_activate = self:callback("randomiseSelected")},
-        {text = ": raise ", key = "CURSOR_RIGHT", on_activate = self:callback("step", 1)},
-        {text = ": reduce", key = "CURSOR_LEFT", on_activate = self:callback("step", -1)},
-      },
-    },
-    widgets.Label{
-      frame = {b = 0, l = 1},
-      text = {
+        NEWLINE,
+        {text = ": raise ", key = "KEYBOARD_CURSOR_RIGHT", on_activate = self:callback("step", 1)},
+        {text = ": reduce", key = "KEYBOARD_CURSOR_LEFT", on_activate = self:callback("step", -1)},
+        NEWLINE,
         {text = "* denotes cultural default "},
-        {text = ": set to cultural default", key = "SEC_SELECT"}
-      }
+        NEWLINE,
+        {text = ": set to cultural default", key = "STRING_A047", on_activate = function()
+            self:average(self.subviews.beliefs:getSelected())
+         end}
+      },
     },
   }
 

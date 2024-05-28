@@ -1,14 +1,12 @@
-
 devel/sc
 ========
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Scan DF structures for errors.
     :tags: dev
 
-
-Size Check: scans structures for invalid vectors, misaligned structures,
-and unidentified enum values.
+Size Check: scans structures for invalid vectors, misaligned structures, and
+unidentified enum values.
 
 .. note::
 
@@ -16,16 +14,12 @@ and unidentified enum values.
     unresponsive while it is running. You can use `kill-lua` to interrupt
     this script.
 
-Examples:
+Usage
+-----
 
-* scan world::
-
-    devel/sc
-
-* scan all globals::
-
-    devel/sc -all
-
-* scan result of expression::
-
-    devel/sc [expr]
+``devel/sc``
+    Scan ``world``.
+``devel/sc -all``
+    Scan all globals.
+``devel/sc <expr>``
+    Scan the result of the given expression.

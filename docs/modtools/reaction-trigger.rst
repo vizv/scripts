@@ -1,11 +1,9 @@
-
 modtools/reaction-trigger
 =========================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
-
+    :summary: Run DFHack commands when custom reactions complete.
+    :tags: unavailable
 
 Triggers dfhack commands when custom reactions complete, regardless of whether
 it produced anything, once per completion.  Arguments::
@@ -29,7 +27,7 @@ it produced anything, once per completion.  Arguments::
         when selecting targets in range, include creatures that are inactive
         dead creatures count as inactive
     -range [ x y z ]
-        controls how far elligible targets can be from the workshop
+        controls how far eligible targets can be from the workshop
         defaults to [ 0 0 0 ] (on a workshop tile)
         negative numbers can be used to ignore outer squares of the workshop
         line of sight is not respected, and the worker is always within range

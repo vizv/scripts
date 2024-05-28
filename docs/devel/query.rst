@@ -1,4 +1,3 @@
-
 devel/query
 ===========
 
@@ -6,166 +5,128 @@ devel/query
     :summary: Search/print data algorithmically.
     :tags: dev inspection
 
-
 Query is a useful script for finding and reading values of data structure
-fields. You can use it to explore data structures, list contents of known
-structures, and you could even integrate it into a script to simply print
-some data out for a player.
+fields. Players can use it to explore data structures or list elements of enums
+that they might need for another command. Developers can even integrate this
+script into another script to print data out for a player.
 
-This script takes your data selection eg.{table,unit,item,tile,etc.} then
-recursively iterates through it, outputting names and values of what it finds.
+This script takes your data selection (e.g. a data table, unit, item, tile,
+etc.) and recursively iterates through it, outputting names and values of what
+it finds.
 
-As it iterates you can have it do other things, like search for a specific
-structure pattern (see lua patterns) or set the value of fields matching the
-selection and any search pattern specified.
-
-.. Note::
-
-    This is a recursive search function. The data structures are also recursive.
-    So there are a few things that the algorithm must consider while recursing (in order):
-
-        - Is the search depth too high? (Default: 7)
-        - Is the data capable of being iterated, or does it only have a value?
-        - How can the data be iterated?
-        - Is the iteration count for the data too high? (Default: 2048)
-        - Does the user want to exclude the data's type?
-        - Is the data recursively indexing (eg. A.B.C.A.*)?
-        - Does the data match the search pattern?
+As it iterates, you can have it do other things, like search for fields that
+match a `Lua pattern <https://www.lua.org/manual/5.3/manual.html#6.4.1>`__ or
+set the value of specific fields.
 
 .. Warning::
 
-  This is a recursive script that's primary use is to search recursive data
-  structures. You can, fairly easily, cause an infinite loop. You can even
-  more easily run a query that simply requires an inordinate amount of time
-  to complete.
+    This script searches recursive data structures. You can, fairly easily,
+    cause an infinite loop. You can even more easily run a query that simply
+    requires an inordinate amount of time to complete. Set your limits wisely!
 
 .. Tip::
 
-  Should the need arise, you can kill the command from another shell with
-  `kill-lua`, e.g. by running it with `dfhack-run` from another terminal.
+    Should the need arise, you can stop ``devel/query`` from another shell with
+    `kill-lua`, e.g. by running ``dfhack-run kill-lua`` from another terminal.
 
-Usage examples::
+Usage
+-----
 
-  devel/query --unit --getfield id
-  devel/query --unit --search STRENGTH
-  devel/query --unit --search physical_attrs -maxdepth 2
-  devel/query --tile --search dig
-  devel/query --tile --search "occup.*carv"
-  devel/query --table df -maxdepth 2
-  devel/query --table df -maxdepth 2 --excludekinds s --excludetypes fsu --oneline
-  devel/query --table df.profession --findvalue FISH
-  devel/query --table df.global.ui.main --maxdepth 0
-  devel/query --table df.global.ui.main --maxdepth 0 --oneline
-  devel/query --table df.global.ui.main --maxdepth 0 -1
+::
 
-**Selection options:**
+    devel/query <source option> <query options> [<additional options>]
+
+Examples
+--------
+
+``devel/query --unit --getfield id``
+    Prints the id of the selected unit.
+``devel/query --unit --search STRENGTH --maxdepth 3``
+    Prints out information about the selected unit's ``STRENGTH`` attribute.
+``devel/query --unit --search physical_attrs --maxdepth 3``
+    Prints out information about all of the selected unit's physical attributes.
+``devel/query --tile --search designation``
+    Prints out information about the selected tile's designation structure.
+``devel/query --tile --search "occup.*carv"``
+    Prints out information about the carving configuration for the selected
+    tile.
+``devel/query --table df --maxdepth 0``
+    List the top-level fields in the ``df`` data structure.
+``devel/query --table df.profession --findvalue FISH``
+    Lists the enum values in the ``df.profession`` table that contain the
+    substring ``FISH``.
+
+Source options
+--------------
 
 ``--table <identifier>``
-  Selects the specified table.
-
-  .. Note::
-
-    You must use dot notation to denote sub-tables.
-    eg. ``df.global.world``
-
+    Selects the specified table. You must use dot notation to denote sub-tables,
+    e.g. ``df.global.world``.
 ``--block``
-  Selects the highlighted tile's block.
-
+    Selects the highlighted tile's block.
 ``--building``
-  Selects the highlighted building.
-
+    Selects the highlighted building.
 ``--item``
-  Selects the highlighted item.
-
+    Selects the highlighted item.
 ``--job``
-  Selects the highlighted job.
-
-``--json <file>``
-  Loads the specified json file as a table to query.
-
-  .. Note::
-
-    The path starts at the DF root directory.
-    eg. -json /hack/scripts/dwarf_profiles.json
-
+    Selects the highlighted job.
 ``--plant``
-  Selects the highlighted plant.
-
-``--script <script>``
-  Selects the specified script (which must support being included with ``reqscript()``).
-
+    Selects the highlighted plant.
 ``--tile``
-  Selects the highlighted tile's block, and then
-  uses the tile's local position to index the 2D data.
-
+    Selects the highlighted tile's block, and then uses the tile's local
+    position to index the 2D data.
 ``--unit``
-  Selects the highlighted unit
+    Selects the highlighted unit.
+``--script <script>``
+    Selects the specified script (which must support being included with
+    `reqscript() <reqscript>`).
+``--json <file>``
+    Loads the specified json file as a table to query. The path starts at the DF
+    root directory, e.g. :file:`hack/scripts/dwarf_profiles.json`.
 
-**Query options:**
+Query options
+-------------
 
 ``--getfield <field>``
-  Gets the specified field from the selection.
-
-``--search <pattern>``
-  Searches the selection for field names with substrings
-  matching the specified value.
-
-  Usage::
-
-    devel/query -table dfhack -search pattern
-    devel/query -table dfhack -search [ pattern1 pattern2 ]
-
+    Gets the specified field from the source.
+``--search <pattern> [<pattern>]``
+    Searches the source for field names with substrings matching any of the
+    specified patterns.
 ``--findvalue <value>``
-  Searches the selection for field values matching the specified value.
-
+    Searches the source for field values matching the specified value.
 ``--maxdepth <value>``
-  Limits the field recursion depth (default: 7)
-
+    Limits the field recursion depth (default: 7).
 ``--maxlength <value>``
-  Limits the table sizes that will be walked (default: 2048)
-
+    Limits the number of items that the script will iterate through in a list
+    (default: 2048).
 ``--excludetypes [a|bfnstu0]``
-  Excludes native Lua data types. Single letters correspond to (in order):
-  All types listed here, Boolean, Function, Number, String, Table, Userdata, nil
-
+    Excludes native Lua data types. Single letters correspond to (in order):
+    (a)ll types listed here, (b)oolean, (f)unction, (n)umber, (s)tring, (t)able,
+    (u)serdata, nil values.
 ``--excludekinds [a|bces]``
-  Excludes DF data types. Single letters correspond to (in order):
-  All types listed here, Bitfield-type, Class-type, Enum-type, Struct-type
-
+    Excludes DF data types. Single letters correspond to (in order): (a)ll types
+    listed here, (b)itfields, (c)lasses, (e)nums, (s)tructs.
 ``--dumb``
-  Disables intelligent checking for recursive data
-  structures (loops) and increases the ``--maxdepth`` to 25 if a
-  value is not already present
+    Disables intelligent checking for recursive data structures (loops) and
+    increases the ``--maxdepth`` to 25 if a value is not already present.
 
-**General options:**
+General options
+---------------
 
 ``--showpaths``
-  Displays the full path of a field instead of indenting.
-
+    Displays the full path of a field instead of indenting.
 ``--setvalue <value>``
-  Attempts to set the values of any printed fields.
-  Supported types: boolean, string, integer
-
-``--oneline``, ``-1``
-  Reduces output to one line, except with ``--debugdata``.
-  Most data is already using one line, but some types have additional information.
-
+    Attempts to set the values of any printed fields. Supported types: boolean,
+    string, integer.
+``--oneline``
+    Reduces output to one line (except with ``--debugdata``) in cases where
+    multiple lines of information is displayed for a field.
 ``--alignto <value>``
-  Specifies the alignment column.
-
+    Specifies the alignment column.
 ``--nopointers``
-  Disables printing values which contain memory addresses.
-
-``--disableprint``
-  Disables printing. Might be useful if you are debugging
-  this script. Or to see if a query will crash (faster) but
-  not sure what else you could use it for.
-
+    Disables printing values which contain memory addresses.
 ``--debug <value>``
-  Enables debug log lines equal to or less than the value provided.
-
+    Enables debug log verbosity for entries equal to or less than the value
+    provided (valid values: 0-3).
 ``--debugdata``
-  Enables debugging data. Prints type information under each field.
-
-``--help``
-  Prints this help information.
+    Prints type information under each field.

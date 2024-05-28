@@ -19,5 +19,11 @@ Usage
 Options
 -------
 
+``-u``, ``--include-unreachable``
+    Allows the tool to unforbid unreachable items.
+
 ``-q``, ``--quiet``
     Suppress non-error console output.
+
+``-X``, ``--include-worn``
+    Include worn (X) and tattered (XX) items when unforbidding.

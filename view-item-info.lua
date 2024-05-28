@@ -67,8 +67,9 @@ function add_lines_to_list(t1,t2)
 end
 
 function GetMatPlant (item)
-    if dfhack.matinfo.decode(item).mode == "plant" then
-        return dfhack.matinfo.decode(item).plant
+    local matinfo = dfhack.matinfo.decode(item)
+    if matinfo and matinfo.mode == "plant" then
+        return matinfo.plant
     end
 end
 
@@ -78,8 +79,12 @@ end
 
 function GetMatPropertiesStringList (item)
     local item = item --as:df.item_actual
-    local mat = dfhack.matinfo.decode(item).material
     local list = {}
+    local matinfo = dfhack.matinfo.decode(item)
+    if not matinfo then
+        return list
+    end
+    local mat = matinfo.material
     local deg_U = item.temperature.whole
     local deg_C = math.floor((deg_U-10000)*5/9)
     append(list,"Temperature: "..deg_C.."\248C ("..deg_U.."U)")
@@ -123,7 +128,6 @@ end
 
 function GetArmorPropertiesStringList (item)
     local item = item --as:df.item_armorst
-    local mat = dfhack.matinfo.decode(item).material
     local list = {}
     append(list,"Armor properties: ")
     append(list,"Thickness: "..item.subtype.props.layer_size,1)
@@ -137,7 +141,6 @@ end
 
 function GetShieldPropertiesStringList (item)
     local item = item --as:df.item_shieldst
-    local mat = dfhack.matinfo.decode(item).material
     local list = {}
     append(list,"Shield properties:")
     append(list,"Base block chance: "..item.subtype.blockchance,1)
@@ -149,7 +152,6 @@ function GetShieldPropertiesStringList (item)
 end
 
 function GetWeaponPropertiesStringList (item)
-    local mat = dfhack.matinfo.decode(item).material
     local list = {}
     if item._type == df.item_toolst and #item.subtype.attacks < 1 then --hint:df.item_toolst
         return list
@@ -201,7 +203,6 @@ function GetWeaponPropertiesStringList (item)
 end
 
 function GetAmmoPropertiesStringList (item)
-    local mat = dfhack.matinfo.decode(item).material
     local list = {}
     if item._type == df.item_toolst and #item.subtype.attacks < 1 then --hint:df.item_toolst
         return list

@@ -5,8 +5,9 @@ assign-skills
     :summary: Adjust a unit's skills.
     :tags: fort armok units
 
-Skills are defined by their token and their rank. Skills tokens can be found
-here: https://dwarffortresswiki.org/index.php/DF2014:Skill_token
+Skills are defined by their token and their rank. You can see a list of valid
+skill tokens by running ``devel/query --table df.job_skill`` or by browsing the
+:wiki:`wiki <Skill_token>`.
 
 Usage
 -----

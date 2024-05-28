@@ -1,79 +1,5 @@
 -- Cause selected item types to quickly rot away
 --@module = true
---[====[
-
-deteriorate
-===========
-
-Causes the selected item types to rot away. By default, items disappear after a
-few months, but you can choose to slow this down or even make things rot away
-instantly!
-
-Now all those slightly worn wool shoes that dwarves scatter all over the place
-or the toes, teeth, fingers, and limbs from the last undead siege will
-deteriorate at a greatly increased rate, and eventually just crumble into
-nothing. As warm and fuzzy as a dining room full of used socks makes your
-dwarves feel, your FPS does not like it!
-
-To always have deteriorate running in your forts, add a line like this to your
-``onMapLoad.init`` file (use your preferred options, of course)::
-
-    deteriorate start --types=corpses
-
-Usage::
-
-    deteriorate <command> [<options>]
-
-**<command>** is one of:
-
-:start:   Starts deteriorating items while you play.
-:stop:    Stops running.
-:status:  Shows the item types that are currently being monitored and their
-          deterioration frequencies.
-:now:     Causes all items (of the specified item types) to rot away within a
-          few ticks.
-
-You can control which item types are being monitored and their rotting rates by
-running the command multiple times with different options.
-
-**<options>** are:
-
-``-f``, ``--freq``, ``--frequency <number>[,<timeunits>]``
-    How often to increment the wear counters. ``<timeunits>`` can be one of
-    ``days``, ``months``, or ``years`` and defaults to ``days`` if not
-    specified. The default frequency of 1 day will result in items disappearing
-    after several months. The number does not need to be a whole number. E.g.
-    ``--freq=0.5,days`` is perfectly valid.
-``-q``, ``--quiet``
-    Silence non-error output.
-``-t``, ``--types <types>``
-    The item types to affect. This option is required for ``start``, ``stop``,
-    and ``now`` commands. See below for valid types.
-
-**<types>** is any of:
-
-:clothes:  All clothing types that have an armor rating of 0, are on the ground,
-           and are already starting to show signs of wear.
-:corpses:  All non-dwarf corpses and body parts. This includes potentially
-           useful remains such as hair, wool, hooves, bones, and skulls. Use
-           them before you lose them!
-:food:     All food and plants, regardles of whether they are in barrels or
-           stockpiles. Seeds are left untouched.
-
-You can specify multiple types by separating them with commas, e.g.
-``deteriorate start --types=clothes,food``.
-
-Examples:
-
-* Deteriorate corpses at twice the default rate::
-
-    deteriorate start --types=corpses --freq=0.5,days
-
-* Deteriorate corpses quickly but food slowly::
-
-    deteriorate start -tcorpses -f0.1
-    deteriorate start -tfood -f3,months
-]====]
 
 local argparse = require('argparse')
 local utils = require('utils')
@@ -109,11 +35,45 @@ local function is_valid_clothing(item)
             and item.wear > 0
 end
 
-local function is_valid_corpse(item)
-    return not item.flags.dead_dwarf
+local function keep_usable(opts, item)
+    return opts.keep_usable and (
+                not item.corpse_flags.unbutchered and (
+                    item.corpse_flags.bone or
+                    item.corpse_flags.horn or
+                    item.corpse_flags.leather or
+                    item.corpse_flags.skull2 or
+                    item.corpse_flags.tooth) or (
+                item.corpse_flags.hair_wool or
+                item.corpse_flags.pearl or
+                item.corpse_flags.plant or
+                item.corpse_flags.shell or
+                item.corpse_flags.silk or
+                item.corpse_flags.yarn) )
 end
 
-local function is_valid_food(item)
+local function is_valid_corpse(opts, item)
+    -- check if the corpse is a resident of the fortress and is not keep_usable
+    local unit = df.unit.find(item.unit_id)
+    if not unit then
+        return not keep_usable(opts, item)
+    end
+    local hf = df.historical_figure.find(unit.hist_figure_id)
+    if not hf then
+        return not keep_usable(opts, item)
+    end
+    for _,link in ipairs(hf.entity_links) do
+        if link.entity_id == df.global.plotinfo.group_id and df.histfig_entity_link_type[link:getType()] == 'MEMBER' then
+            return false
+        end
+    end
+    return not keep_usable(opts, item)
+end
+
+local function is_valid_remains(opts, item)
+    return true
+end
+
+local function is_valid_food(opts, item)
     return true
 end
 
@@ -143,11 +103,11 @@ local function increment_food_wear(item)
     return increment_generic_wear(item, 24)
 end
 
-local function deteriorate(get_item_vectors_fn, is_valid_fn, increment_wear_fn)
+local function deteriorate(opts, get_item_vectors_fn, is_valid_fn, increment_wear_fn)
     local count = 0
     for _,v in ipairs(get_item_vectors_fn()) do
         for _,item in ipairs(v) do
-            if is_valid_fn(item) and increment_wear_fn(item)
+            if is_valid_fn(opts, item) and increment_wear_fn(item)
                     and not item.flags.garbage_collect then
                 item.flags.garbage_collect = true
                 item.flags.hidden = true
@@ -162,20 +122,20 @@ local function always_worn()
     return true
 end
 
-local function deteriorate_clothes(now)
-    return deteriorate(get_clothes_vectors, is_valid_clothing,
+local function deteriorate_clothes(opts, now)
+    return deteriorate(opts, get_clothes_vectors, is_valid_clothing,
                        now and always_worn or increment_clothes_wear)
 end
 
-local function deteriorate_corpses(now)
-    return deteriorate(get_corpse_vectors, is_valid_corpse,
+local function deteriorate_corpses(opts, now)
+    return deteriorate(opts, get_corpse_vectors, is_valid_corpse,
                        now and always_worn or increment_corpse_wear)
-            + deteriorate(get_remains_vectors, is_valid_corpse,
+            + deteriorate(opts, get_remains_vectors, is_valid_remains,
                           now and always_worn or increment_remains_wear)
 end
 
-local function deteriorate_food(now)
-    return deteriorate(get_food_vectors, is_valid_food,
+local function deteriorate_food(opts, now)
+    return deteriorate(opts, get_food_vectors, is_valid_food,
                        now and always_worn or increment_food_wear)
 end
 
@@ -215,7 +175,7 @@ local function make_timeout_cb(item_type, opts)
             return
         end
         if not first_time then
-            local count = type_fns[item_type]()
+            local count = type_fns[item_type](opts)
             if count > 0 then
                 print(('Deteriorated %d %s'):format(count, item_type))
             end
@@ -260,7 +220,7 @@ end
 
 local function now(opts)
     for _,v in ipairs(opts.types) do
-        local count = type_fns[v](true)
+        local count = type_fns[v](opts, true)
         if not opts.quiet then
             print(('Deteriorated %d %s'):format(count, v))
         end
@@ -319,6 +279,7 @@ local opts = {
     mode = 'days',
     quiet = false,
     types = {},
+    keep_usable = false,
     help = false,
 }
 
@@ -327,6 +288,7 @@ local nonoptions = argparse.processArgsGetopt({...}, {
          handler=function(optarg) opts.time,opts.mode = parse_freq(optarg) end},
         {'h', 'help', handler=function() opts.help = true end},
         {'q', 'quiet', handler=function() opts.quiet = true end},
+        {'k', 'keep-usable', handler=function() opts.keep_usable = true end},
         {'t', 'types', hasArg=true,
          handler=function(optarg) opts.types = parse_types(optarg) end}})
 

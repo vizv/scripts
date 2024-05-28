@@ -326,7 +326,7 @@ end
 
 -- Returns the currently active adventurer
 function get_adventurer_unit()
-  local nemesis = df.nemesis_record.find(df.global.ui_advmode.player_id)
+  local nemesis = df.nemesis_record.find(df.global.adventure.player_id)
   local unit = df.unit.find(nemesis.unit_id)
 
   return unit
@@ -416,9 +416,10 @@ dfhack.onStateChange["fire-rate"] = function(code)
   if code == SC_WORLD_UNLOADED then
     reset()
   elseif code == SC_WORLD_LOADED then
-    if ( not initialized ) then
-      init()
-    end
+-- Disable until this script is updated for v50
+--    if ( not initialized ) then
+--      init()
+--    end
   end
 end
 

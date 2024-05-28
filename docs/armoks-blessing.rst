@@ -21,7 +21,7 @@ Usage
 ``armoks-blessing list``
     Prints list of all skills.
 ``armoks-blessing classes``
-    Prints list of all classes.
+    Prints list of all skill classes (i.e. named groups of skills).
 ``armoks-blessing <skill name>``
     Set a specific skill for all dwarves to legendary.
 ``armoks-blessing <class name>``

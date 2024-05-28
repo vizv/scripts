@@ -6,7 +6,7 @@ autonick
     :tags: fort productivity units
 
 Names are chosen randomly from the ``dfhack-config/autonick.txt`` config file,
-which you can edit with your own perferred names, if you like.
+which you can edit with your own preferred names, if you like.
 
 Dwarves who already have nicknames will keep the nicknames they have, and no
 other dwarf will be assigned that nickname.

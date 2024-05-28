@@ -9,8 +9,7 @@ Attributes are divided into tiers from -4 to 4. Tier 0 is the standard level and
 represents the average values for that attribute, tier 4 is the maximum level,
 and tier -4 is the minimum level.
 
-For more information on attributes, please see:
-https://dwarffortresswiki.org/index.php/DF2014:Attribute
+For more information on attributes, please see the :wiki:`wiki <Attribute>`.
 
 Usage
 -----
@@ -18,6 +17,12 @@ Usage
 ::
 
     assign-attributes [--unit <id>] <options>
+
+Please run::
+
+    devel/query --table df --maxdepth 1 --search [ physical_attribute_type mental_attribute_type ]
+
+to see the list of valid attribute tokens.
 
 Example
 -------

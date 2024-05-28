@@ -5,8 +5,8 @@ assign-minecarts
     :summary: Assign minecarts to hauling routes.
     :tags: fort productivity
 
-This script allows you to assign minecarts to hauling routes without having to
-use the in-game interface.
+This script allows you to quickly assign minecarts to hauling routes without
+having to go through the in-game interface.
 
 Note that a hauling route must have at least one stop defined before a minecart
 can be assigned to it.

@@ -1,13 +1,16 @@
-
 devel/click-monitor
 ===================
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Displays the grid coordinates of mouse clicks in the console.
     :tags: dev
 
+This tool will watch for mouse activity and print relevant information to the
+console. Useful for plugin/script development.
 
-Displays the grid coordinates of mouse clicks in the console.
-Useful for plugin/script development.
+Usage
+-----
 
-Usage: ``devel/click-monitor start|stop``
+::
+
+    enable devel/click-monitor

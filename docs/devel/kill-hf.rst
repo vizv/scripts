@@ -1,28 +1,28 @@
-
 devel/kill-hf
 =============
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
+    :summary: Kill a historical figure.
+    :tags: unavailable
 
+This tool can kill the specified historical figure, even if off-site, or
+terminate a pregnancy. Useful for working around :bug:`11549`.
 
+Usage
+-----
 
-Kills the specified historical figure, even if off-site, or terminates a
-pregnancy. Useful for working around :bug:`11549`.
+::
 
-Usage::
+    devel/kill-hf [-p|--pregnancy] [-n|--dry-run] <histfig_id>
 
-    devel/kill-hf [-p|--pregnancy] [-n|--dry-run] HISTFIG_ID
+Options
+-------
 
-Arguments:
-
-``histfig_id``:
-    the ID of the historical figure to target
-
-``-p``, ``--pregnancy``:
-    if specified, and if the historical figure is pregnant, terminate the
-    pregnancy instead of killing the historical figure
-
-``-n``, ``--dry-run``:
-    if specified, only print the name of the historical figure
+``histfig_id``
+    The ID of the historical figure to target.
+``-p``, ``--pregnancy``
+    If specified, and if the historical figure is pregnant, terminate the
+    pregnancy instead of killing the historical figure.
+``-n``, ``--dry-run``
+    If specified, only print the name of the historical figure instead of making
+    any changes.

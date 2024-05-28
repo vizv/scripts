@@ -19,5 +19,6 @@ Usage
 ::
 
     enable hermit
+    hermit [status]
 
-.. _hermit challenge: http://dwarffortresswiki.org/index.php/DF2014:Playstyle_challenge#Hermit
+.. _hermit challenge: http://dwarffortresswiki.org/index.php/Playstyle_challenge#Hermit

@@ -1,13 +1,11 @@
-
 modtools/invader-item-destroyer
 ===============================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
+    :summary: Destroy invader items when they die.
+    :tags: unavailable
 
-
-This tool configurably destroys invader items to prevent clutter or to prevent
+This tool can destroy invader items to prevent clutter or to prevent
 the player from getting tools exclusive to certain races.
 
 Arguments::

@@ -6,8 +6,8 @@ assign-facets
     :tags: fort armok units
 
 Facets are defined with a token and a number from -3 to 3, which describes
-the different levels of facet strength, as explained here:
-https://dwarffortresswiki.org/index.php/DF2014:Personality_trait#Facets
+the different levels of facet strength, as explained on the
+:wiki:`wiki <Personality_trait>`
 
 Usage
 -----
@@ -15,6 +15,9 @@ Usage
 ::
 
     assign-facets [--unit <id>] <options>
+
+Please run ``devel/query --table df.personality_facet_type`` to see a list of
+valid facet tokens.
 
 Example
 -------
@@ -54,7 +57,7 @@ Options
 Facet strengths
 ---------------
 
-The facet strengh corresponds to the text that DF will use to describe a unit's
+The facet strength corresponds to the text that DF will use to describe a unit's
 facets:
 
 ========  =========

@@ -1,95 +1,15 @@
 -- workorder allows queuing manager jobs; it's smart about shear and milk creature jobs.
 
--- place this file in your /df/hack/scripts folder.
-
 -- This script is inspired by stockflow.
 -- It wouldn't've been possible w/o the df-ai by jjyg (https://github.com/jjyg/df-ai)
 -- which is a great place to look up stuff like "How the hell do I find out if
 -- a creature can be sheared?!!"
 
---initialized = false -- uncomment this when working with the code
-if not initialized then
-    initialized = true
+--@ module=true
+
 
 local function print_help()
-    print [====[
-
-workorder
-=========
-``workorder`` is a script to queue work orders as in ``j-m-q`` menu.
-It can automatically count how many creatures can be milked or sheared.
-
-The most simple and obvious usage is automating shearing and milking of creatures
-using ``repeat``::
-
-  repeat -time 14 -timeUnits days -command [ workorder ShearCreature ] -name autoShearCreature
-  repeat -time 14 -timeUnits days -command [ workorder MilkCreature ] -name autoMilkCreature
-
-It is also possible to define complete work orders using ``json``. It is very similar to
-what ``orders import filename`` does, with a few key differences. ``workorder`` is a planning
-tool aiming to provide scripting support for vanilla manager. As such it will ignore work order
-state like ``amount_left`` or ``is_active`` and can optionally take current orders into account.
-See description of ``<json>``-parameter for more details.
-
-**Examples**:
-
-  * ``workorder ShearCreature 10`` add an order to "Shear Animal" 10 times.
-  * ``workorder ShearCreature`` same, but calculate amount automatically (can be 0).
-  * ``workorder MilkCreature`` same, but "Milk Animal".
-
-**Advanced examples**:
-
- * ``workorder "{\"job\":\"EncrustWithGems\",\"item_category\":[\"finished_goods\"],\"amount_total\":5}"``
-    add an order to ``EncrustWithGems`` ``finished_goods`` using any material (since not specified).
-
- * ``workorder "{\"job\":\"MilkCreature\",\"item_conditions\":[{\"condition\":\"AtLeast\",\"value\":2,\"flags\":[\"empty\"],\"item_type\":\"BUCKET\"}]}"``
-    same as ``workorder MilkCreature`` but with an item condition ("at least 2 empty buckets").
-
-**Usage**:
-
-``workorder [ --<command> | <jobtype> [<amount>] | <json> | --file <file> ]``
-
-:<command>:  one of ``help``, ``listtypes``, ``verbose``, ``very-verbose``
-
---help              this help.
---listtypes filter  print all values for all used DF types (``job_type``, ``item_type`` etc.).
-                    ``<filter>`` is optional and is applied to type name (using ``Lua``'s ``string.find``),
-                    f.e. ``workorder -l "manager"`` is useful.
-
-:<jobtype>:  number or name from ``df.job_type``.
-:<amount>:   optional number; if omitted, the script will try to determine amount automatically
-             for some jobs. Currently supported are ``MilkCreature`` and ``ShearCreature`` jobs.
-:<json>:     json-representation of a workorder. Must be a valid Lua string literal
-             (see advanced examples: note usage of ``\``).
-             Use ``orders export some_file_name`` to get an idea how does the ``json``-structure
-             look like.
-
-             It's important to note this script behaves differently compared to
-             ``orders import some_file_name``: ``workorder`` is meant as a planning
-             tool and as such it **will ignore** some fields like ``amount_left``,
-             ``is_active`` or ``is_validated``.
-
-             This script doesn't need values in all fields:
-              * ``id`` is only used for order conditions;
-              * ``frequency`` is set to ``OneTime`` by default;
-              * ``amount_total`` can be missing, a function name from this script (one of
-                ``calcAmountFor_MilkCreature`` or ``calcAmountFor_ShearCreature``) or ``Lua``
-                code called as ``load(code)(order, orders)``. Missing ``amount_total`` is
-                equivalent to ``calcAmountFor_<order.job>``.
-
-             A custom field ``__reduce_amount`` can be set if existing open orders should
-             be taken into account reducing new order's ``total_amount`` (possibly all the
-             way to ``0``). An empty ``amount_total`` implies ``"__reduce_amount": true``.
-
---file filename    loads the json-representation of a workorder from a file in ``dfhack-config/workorder/``.
-
-**Debugging**:
-
---verbose        toggle script's verbosity.
---very-verbose   toggle script's very verbose mode.
---reset          reset script environment for next execution.
-
-]====]
+    print(dfhack.script_help())
 end
 
 local utils = require 'utils'
@@ -174,27 +94,22 @@ local function orders_match(a, b)
     return true
 end
 
--- Reduce the quantity by the number of matching orders in the queue.
-local function order_quantity(order, quantity)
-    local amount = quantity
-    for _, managed in ipairs(world.manager_orders) do
+-- Get the remaining quantity for open matching orders in the queue.
+local function cur_order_quantity(order)
+    local amount, cur_order, cur_idx = 0, nil, nil
+    for idx, managed in ipairs(world.manager_orders) do
         if orders_match(order, managed) then
             -- if infinity, don't plan anything
             if 0 == managed.amount_total then
-                return -1
+                return 0, managed, idx
             end
-            -- if ordered infinity don't reduce
-            if 0 ~= quantity then
-                amount = amount - managed.amount_left
-                if amount <= 0 then
-                    return -1
-                end
-            end
+            amount = amount + managed.amount_left
+            cur_order = cur_order or managed
+            cur_idx = cur_idx or idx
         end
     end
-    return amount
+    return amount, cur_order, cur_idx
 end
--- ]]
 
 -- make sure we have 'WEAPON' not 24.
 local function ensure_df_string(df_list, key)
@@ -269,7 +184,7 @@ end
 
 -- creates a df.manager_order from it's definition.
 -- this is translated orders.cpp to Lua,
-local function create_orders(orders)
+function create_orders(orders)
     -- is dfhack.with_suspend necessary?
 
     -- we need id mapping to restore saved order_conditions
@@ -298,8 +213,8 @@ local function create_orders(orders)
         end
 
         if it["item_type"] then
-            local tmp = ensure_df_id(df.job_type, it["item_type"])
-            if not tmp or tmp == ensure_df_id(df.job_type, 'NONE') then
+            local tmp = ensure_df_id(df.item_type, it["item_type"])
+            if not tmp or tmp == ensure_df_id(df.item_type, 'NONE') then
                 qerror("Invalid item type for manager order: " .. it["item_type"])
             end
             order.item_type = tmp
@@ -487,24 +402,41 @@ local function create_orders(orders)
 
         local amount = it.amount_total
         if it.__reduce_amount then
-            -- reduce if there are identical orders
-            -- with some amount_left.
-            amount = order_quantity(order, amount)
+            -- modify existing order if possible
+            local cur_amount, cur_order, cur_order_idx = cur_order_quantity(order)
+            if cur_order then
+                if 0 == cur_amount then
+                    amount = -1
+                elseif 0 ~= amount then
+                    local diff = amount - cur_order.amount_left
+                    amount = -1
+                    if verbose then print('adjusting existing order by', diff) end
+                    cur_order.amount_left = cur_order.amount_left + diff
+                    cur_order.amount_total = cur_order.amount_total + diff
+                    if cur_order.amount_left <= 0 then
+                        if verbose then print('negative amount; removing existing order') end
+                        world.manager_orders:erase(cur_order_idx)
+                        cur_order:delete()
+                    end
+                end
+            end
         end
 
         if amount < 0 then
             if verbose then
-                print(string.format(
-                    "Order %s (%s) not queued: amount reduced from %s to %s.",
-                    it.id, df.job_type[order.job_type], tostring(it.amount_total), tostring(amount)
-                ))
+                print(string.format("Order %s (%s) not queued.",
+                    it.id, df.job_type[order.job_type]))
             end
             order:delete()
         else
             order.amount_left = amount
             order.amount_total = amount
 
-            print("Queuing " .. df.job_type[order.job_type]
+            local job_type = df.job_type[order.job_type]
+            if job_type == "CustomReaction" then
+                job_type  = job_type .. " '" .. order.reaction_name .. "'"
+            end
+            print("Queuing " .. job_type
                 .. (amount==0 and " infinitely" or " x"..amount))
             world.manager_orders:insert('#', order)
         end
@@ -513,7 +445,7 @@ local function create_orders(orders)
 end
 
 -- set missing values, process special `amount_total` value
-local function preprocess_orders(orders)
+function preprocess_orders(orders)
     -- if called with single order make an array
     if orders.job then
         orders = {orders}
@@ -569,7 +501,9 @@ local function preprocess_orders(orders)
             print(string.format("order.id<json>: %s; job: %s; .amount_total: %s; .__reduce_amount: %s",
             order.id, df.job_type[ order.job ], order.amount_total, order.__reduce_amount))
         end
-        if order.amount_total >= 0 then ret[#ret + 1] = order end
+        if order.amount_total >= 0 or order.__reduce_amount then
+            ret[#ret + 1] = order
+        end
     end
 
     return ret
@@ -579,7 +513,7 @@ local order_defaults = {
     frequency = 'OneTime'
 }
 local _order_mt = {__index = order_defaults}
-local function fillin_defaults(orders)
+function fillin_defaults(orders)
     for _, order in ipairs(orders) do
         setmetatable(order, _order_mt)
     end
@@ -627,36 +561,31 @@ default_action = function (...)
     create_orders(orders)
 end
 
--- see https://github.com/jjyg/df-ai/blob/master/ai/population.rb
--- especially `update_pets`
-
 local uu = dfhack.units
-local function isValidUnit(u)
+local function isValidAnimal(u)
+    -- this should also check for the absence of misc trait 55 (as of 50.09), but we don't
+    -- currently have an enum definition for that value yet
     return uu.isOwnCiv(u)
         and uu.isAlive(u)
         and uu.isAdult(u)
-        and u.flags1.tame -- no idea if this is needed...
-        and not u.flags1.merchant
-        and not u.flags1.forest -- no idea what this is
-        and not u.flags2.for_trade
-        and not u.flags2.slaughter
+        and uu.isActive(u)
+        and uu.isFortControlled(u)
+        and uu.isTame(u)
+        and not uu.isMarkedForSlaughter(u)
+        and not uu.getMiscTrait(u, df.misc_trait_type.Migrant, false)
 end
 
-local MilkCounter = df.misc_trait_type["MilkCounter"]
 calcAmountFor_MilkCreature = function ()
     local cnt = 0
     if debug_verbose then print "Milkable units:" end
     for i, u in pairs(world.units.active) do
-        if isValidUnit(u)
-        and uu.isMilkable(u)
-        --and uu.getMiscTrait(u, MilkCounter, false) -- aka "was milked"; but we could use its .value for something.
-        then
-            local mt_milk = uu.getMiscTrait(u, MilkCounter, false)
+        if isValidAnimal(u) and uu.isMilkable(u) and not uu.isPet(u) then
+            local mt_milk = uu.getMiscTrait(u, df.misc_trait_type.MilkCounter, false)
             if not mt_milk then cnt = cnt + 1 end
 
             if debug_verbose then
                 local mt_milk_val = mt_milk and mt_milk.value or "not milked recently"
-                print(i, uu.getRaceName(u), mt_milk_val)
+                print(u.id, uu.getRaceName(u), mt_milk_val)
             end
         end
     end
@@ -693,8 +622,7 @@ calcAmountFor_ShearCreature = function ()
     local cnt = 0
     if debug_verbose then print "Shearable units:" end
     for i, u in pairs(world.units.active) do
-        if isValidUnit(u)
-        then
+        if isValidAnimal(u) then
             local can, info = canShearCreature(u)
             if can then cnt = cnt + 1 end
 
@@ -727,7 +655,9 @@ actions = {
     ["--reset"] = function() initialized = false end,
 }
 
-end -- `if not initialized `
+if dfhack_flags.module then
+    return
+end
 
 -- Lua is beautiful.
 (actions[ (...) or "?" ] or default_action)(...)

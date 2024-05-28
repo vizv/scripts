@@ -1,11 +1,9 @@
-
 modtools/moddable-gods
 ======================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
-
+    :summary: Create deities.
+    :tags: unavailable
 
 This is a standardized version of Putnam's moddableGods script. It allows you
 to create gods on the command-line.

@@ -3,7 +3,7 @@ dwarf-op
 
 .. dfhack-tool::
     :summary: Tune units to perform underrepresented job roles in your fortress.
-    :tags: fort armok units
+    :tags: unavailable
 
 ``dwarf-op`` examines the distribution of skills and attributes across the
 dwarves in your fortress and can rewrite the characteristics of a dwarf (or
@@ -14,7 +14,7 @@ It uses a library of profiles to define job classes, and generates dwarves with
 random variation so each dwarf is unique.
 
 ``dwarf-op`` can also be used in a mode more similar to `assign-profile`, where
-you can specify precisely what archtype you want a for given dwarf, and
+you can specify precisely what archetype you want a for given dwarf, and
 ``dwarf-op`` can generate a random dwarf that matches that archetype.
 
 Usage
@@ -161,7 +161,7 @@ inspected with ``dwarf-op --list <table name>``.
     In addition to a bell shaped p-value curve for the levels, there is
     additionally a standard deviation used to generate the value once a
     level has been selected, this makes the bell curve not so bell shaped in
-    the end. Labours do not follow the same stat system and are more uniformly
+    the end. Labors do not follow the same stat system and are more uniformly
     random, which are compensated for in the description of jobs/professions.
 
 ``jobs``

@@ -3,13 +3,14 @@ lua
 
 .. dfhack-tool::
     :summary: Run Lua script commands.
-    :tags: dev
+    :tags: dfhack dev
 
 Usage
 -----
 
 ``lua``
-   Start an interactive lua interpreter.
+   Start an interactive lua interpreter. Type ``quit`` on an empty line and hit
+   enter to exit the interpreter.
 ``lua -f <filename>``, ``lua --file <filename>``
    Load the specified file and run the lua script within. The filename is
    interpreted relative to the Dwarf Fortress game directory.
@@ -33,4 +34,13 @@ Examples
 --------
 
 ``:lua !df.global.window_z``
-   Print out the current z-level.
+   Print out the current z-level (as distinct from the displayed elevation).
+
+``:lua !unit.id``
+   Print out the id of the currently selected unit.
+
+``:lua ~item.flags``
+   Print out the toggleable flags for the currently selected item.
+
+``:lua @df.profession``
+   Print out the valid internal profession names.

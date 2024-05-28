@@ -3,7 +3,7 @@ setfps
 
 .. dfhack-tool::
     :summary: Set the graphics FPS cap.
-    :tags: fps
+    :tags: dfhack fps
 
 This command can set the FPS cap at runtime. This is useful for when you want to
 speed up the game or watch combat in slow motion.

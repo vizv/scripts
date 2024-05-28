@@ -6,7 +6,7 @@ animal-control
     :tags: fort productivity animals
 
 Animal control is useful for browsing through your animals and deciding which
-to butcher or geld.
+to butcher or geld based on their stats.
 
 Usage
 -----

@@ -62,8 +62,10 @@ local function help()
     end
 end
 
-local function make_handler_fn(registry_entry, freq)
+local function make_handler_fn(registry_entry, handler_name, freq)
     return function(...)
+        local handler = handlers[handler_name]
+        handler.count = handler.count + 1
         print(('eventful-client: %s received %s event (freq=%d)')
               :format(os.date("%X"), registry_entry.etype, freq))
         print('  params:', ...)
@@ -80,7 +82,7 @@ local function add_one(registry_entry, freq)
     end
     eventful.enableEvent(eventful.eventType[registry_entry.etype], freq)
     local handler_name = 'eventful-client.'..tostring(rng:random())
-    local handler = make_handler_fn(registry_entry, freq)
+    local handler = make_handler_fn(registry_entry, handler_name, freq)
     print(('eventful-client registering new %s handler at freq %d: %s')
           :format(registry_entry.etype, freq, handler_name))
     eventful[registry_entry.fn][handler_name] = handler

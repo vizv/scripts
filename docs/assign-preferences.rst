@@ -9,8 +9,7 @@ You will need to know the token of the object you want your dwarf to like.
 You can find them in the wiki, otherwise in the folder "/raw/objects/" under
 the main DF directory you will find all the raws defined in the game.
 
-For more information, please see:
-https://dwarffortresswiki.org/index.php/DF2014:Preferences
+For more information, please see the :wiki:`wiki <Preferences>`.
 
 Note the last three types of preferences ("like poetic form", "like musical
 form", and "like dance form") are not supported by this script.
@@ -27,39 +26,39 @@ Examples
 
 * "likes alabaster and willow wood"::
 
-    assign-preferences -reset -likematerial [ INORGANIC:ALABASTER PLANT:WILLOW:WOOD ]
+    assign-preferences --reset --likematerial [ INORGANIC:ALABASTER PLANT:WILLOW:WOOD ]
 
 * "likes sparrows for their ..."::
 
-    assign-preferences -reset -likecreature SPARROW
+    assign-preferences --reset --likecreature SPARROW
 
-* "prefers to consume dwarven wine and olives"::
+* "prefers to consume dwarven wine, olives and yak"::
 
-    assign-preferences -reset -likefood [ PLANT:MUSHROOM_HELMET_PLUMP:DRINK PLANT:OLIVE:FRUIT ]
+    assign-preferences --reset --likefood [ PLANT:MUSHROOM_HELMET_PLUMP:DRINK PLANT:OLIVE:FRUIT CREATURE_MAT:YAK:MUSCLE ]
 
 * "absolutely detests jumping spiders::
 
-    assign-preferences -reset -hatecreature SPIDER_JUMPING
+    assign-preferences --reset --hatecreature SPIDER_JUMPING
 
 * "likes logs and battle axes"::
 
-    assign-preferences -reset -likeitem [ WOOD ITEM_WEAPON:ITEM_WEAPON_AXE_BATTLE ]
+    assign-preferences --reset --likeitem [ WOOD ITEM_WEAPON:ITEM_WEAPON_AXE_BATTLE ]
 
 * "likes strawberry plants for their ..."::
 
-    assign-preferences -reset -likeplant BERRIES_STRAW
+    assign-preferences --reset --likeplant BERRIES_STRAW
 
 * "likes oaks for their ..."::
 
-    assign-preferences -reset -liketree OAK
+    assign-preferences --reset --liketree OAK
 
 * "likes the color aqua"::
 
-    assign-preferences -reset -likecolor AQUA
+    assign-preferences --reset --likecolor AQUA
 
 * "likes stars"::
 
-    assign-preferences -reset -likeshape STAR
+    assign-preferences --reset --likeshape STAR
 
 Options
 -------
@@ -103,7 +102,7 @@ brackets can be omitted.
     The item tokens can be found here:
     https://dwarffortresswiki.org/index.php/DF2014:Item_token
     If you want to specify an item subtype, look into the files listed under the
-    column "Subtype" of the wiki page (they are in the "/raw/ojects/" folder),
+    column "Subtype" of the wiki page (they are in the "/raw/objects/" folder),
     then specify the items using the full tokens found in those files (see
     examples in this help).
 ``--likeplant [ <token> [<token> ...] ]``
@@ -112,11 +111,11 @@ brackets can be omitted.
 ``--likecolor [ <token> [<token> ...] ]``
     You can find the color tokens here:
     https://dwarffortresswiki.org/index.php/DF2014:Color#Color_tokens
-    or inside the "descriptor_color_standard.txt" file (in the "/raw/ojects/"
+    or inside the "descriptor_color_standard.txt" file (in the "/raw/objects/"
     folder). You can use the full token or just the color name.
 ``--likeshape [ <token> [<token> ...] ]``
     I couldn't find a list of shape tokens in the wiki, but you can find them
-    inside the "descriptor_shape_standard.txt" file (in the "/raw/ojects/"
+    inside the "descriptor_shape_standard.txt" file (in the "/raw/objects/"
     folder). You can use the full token or just the shape name.
 ``--reset``
     Clear all preferences. If the script is called with both this option and one

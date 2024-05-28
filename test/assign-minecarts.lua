@@ -10,10 +10,10 @@ config.wrapper = function(test_fn)
 
     local mock_df = {}
     mock_df.global = {}
-    mock_df.global.ui = {}
-    mock_df.global.ui.hauling = {}
-    mock_df.global.ui.hauling.routes = mock_routes
-    mock_df.global.ui.hauling.vehicles = mock_vehicles
+    mock_df.global.plotinfo = {}
+    mock_df.global.plotinfo.hauling = {}
+    mock_df.global.plotinfo.hauling.routes = mock_routes
+    mock_df.global.plotinfo.hauling.vehicles = mock_vehicles
 
     mock_apply_blueprint, mock_print = mock.func(), mock.func()
     mock_script_help = mock.func()
@@ -83,7 +83,7 @@ function test.assign_minecart_to_last_route_no_stops_output()
         function() expect.false_(am.assign_minecart_to_last_route(false)) end)
 end
 
-function test.assign_minecart_to_last_route_no_minecarts()
+function test.assign_minecart_to_last_route_no_minecarts_quiet()
     mock_routes[1] = {stops={[1]={}}, vehicle_ids={}}
     mock_routes[0] = mock_routes[1] -- simulate 0-based index
     expect.false_(am.assign_minecart_to_last_route(true))

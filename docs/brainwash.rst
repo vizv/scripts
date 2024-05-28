@@ -5,7 +5,7 @@ brainwash
     :summary: Set the personality of a dwarf to an ideal.
     :tags: fort armok units
 
-Modify the traits of the selected dwarf to match an idealised personality: as
+Modify the traits of the selected dwarf to match an idealized personality: as
 stable and reliable as possible to prevent tantrums even after months of misery.
 
 Usage

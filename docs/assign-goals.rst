@@ -6,9 +6,9 @@ assign-goals
     :tags: fort armok units
 
 Goals are defined with a goal token and a flag indicating whether the goal has
-been achieved. For now, this flag should alwyas be set to false. For a list of
-possible goals, please see:
-https://dwarffortresswiki.org/index.php/DF2014:Personality_trait#Goals
+been achieved. For now, this flag should always be set to false. For a list of
+possible goals, please run ``devel/query --table df.goal_type`` or see the
+:wiki:`wiki <Personality_trait>`.
 
 Bear in mind that nothing will stop you from assigning zero or multiple goals,
 but it's not clear how that will affect the game.

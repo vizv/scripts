@@ -1,13 +1,16 @@
-
 modtools/projectile-trigger
 ===========================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
+    :summary: Run DFHack commands when projectiles hit their targets.
+    :tags: unavailable
 
+This triggers dfhack commands when projectiles hit their targets.
 
-This triggers dfhack commands when projectiles hit their targets.  Usage::
+Usage
+-----
+
+::
 
     -clear
         unregister all triggers

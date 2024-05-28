@@ -1,12 +1,15 @@
-
 devel/watch-minecarts
 =====================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
+    :summary: Inspect minecart coordinates and speeds.
+    :tags: unavailable
 
+When running, this tool will log minecart coordinates and speeds to the console.
 
-Logs minecart coordinates and speeds to console.
+Usage
+-----
 
-Usage:  ``devel/watch-minecarts start|stop``
+::
+
+    devel/watch-minecarts start|stop

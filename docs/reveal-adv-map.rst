@@ -6,7 +6,7 @@ reveal-adv-map
     :tags: adventure armok map
 
 This tool can be used to either reveal or hide all tiles on the world map in
-adventure mode (visible when viewing the quest log or fast travelling).
+adventure mode (visible when viewing the quest log or fast traveling).
 
 Note that hidden lairs, camps, etc. are not revealed. Please see
 `reveal-hidden-sites` for that functionality.

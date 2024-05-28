@@ -84,17 +84,17 @@ sub generate_dt_ini($$$$) {
     emit_addr 'language_vector',%globals,'world','world.raws.language.words';
     emit_addr 'creature_vector',%globals,'world','world.units.all';
     emit_addr 'active_creature_vector',%globals,'world','world.units.active';
-    emit_addr 'dwarf_race_index',%globals,'ui','ui.race_id';
+    emit_addr 'dwarf_race_index',%globals,'plotinfo','plotinfo.race_id';
     emit_addr 'squad_vector',%globals,'world','world.squads.all';
     emit_addr 'current_year',%globals,'cur_year','cur_year';
     emit_addr 'cur_year_tick',%globals,'cur_year_tick','cur_year_tick';
-    emit_addr 'dwarf_civ_index',%globals,'ui','ui.civ_id';
+    emit_addr 'dwarf_civ_index',%globals,'plotinfo','plotinfo.civ_id';
     emit_addr 'races_vector',%globals,'world','world.raws.creatures.all';
     emit_addr 'reactions_vector',%globals,'world','world.raws.reactions';
     emit_addr 'events_vector',%globals,'world','world.history.events';
     emit_addr 'historical_figures_vector',%globals,'world','world.history.figures';
     emit_addr 'fake_identities_vector',%globals,'world','world.identities.all';
-    emit_addr 'fortress_entity',%globals,'ui','ui.main.fortress_entity';
+    emit_addr 'fortress_entity',%globals,'plotinfo','plotinfo.main.fortress_entity';
     emit_addr 'historical_entities_vector',%globals,'world','world.entities.all';
     emit_addr 'itemdef_weapons_vector',%globals,'world','world.raws.itemdefs.weapons';
     emit_addr 'itemdef_trap_vector',%globals,'world','world.raws.itemdefs.trapcomps';
@@ -386,7 +386,7 @@ sub generate_dt_ini($$$$) {
     emit_addr 'goals',%all,'unit_personality','dreams';
     emit_addr 'goal_realized',%all,'unit_personality::anon5','unk8';
     emit_addr 'traits',%all,'unit_personality','traits';
-    emit_addr 'stress_level',%all,'unit_personality','stress_level';
+    emit_addr 'stress',%all,'unit_personality','stress';
 
     emit_header 'emotion_offsets';
     emit_addr 'emotion_type',%all,'unit_personality::anon4','type';

@@ -1,31 +1,60 @@
--- Test lua viewscreens.
---[====[
+-- A basic example to start your own gui script from.
+--@ module = true
 
-devel/hello-world
-=================
-A basic example for testing, or to start your own script from.
+local gui = require('gui')
+local widgets = require('gui.widgets')
 
-]====]
-local gui = require 'gui'
-
-local text = 'Woohoo, lua viewscreen :)'
-
-local screen = gui.FramedScreen{
-    frame_style = gui.GREY_LINE_FRAME,
-    frame_title = 'Hello World',
-    frame_width = #text,
-    frame_height = 1,
-    frame_inset = 1,
+local HIGHLIGHT_PEN = dfhack.pen.parse{
+    ch=string.byte(' '),
+    fg=COLOR_LIGHTGREEN,
+    bg=COLOR_LIGHTGREEN,
 }
 
-function screen:onRenderBody(dc)
-    dc:string(text, COLOR_LIGHTGREEN)
+HelloWorldWindow = defclass(HelloWorldWindow, widgets.Window)
+HelloWorldWindow.ATTRS{
+    frame={w=20, h=14},
+    frame_title='Hello World',
+    autoarrange_subviews=true,
+    autoarrange_gap=1,
+}
+
+function HelloWorldWindow:init()
+    self:addviews{
+        widgets.Label{text={{text='Hello, world!', pen=COLOR_LIGHTGREEN}}},
+        widgets.HotkeyLabel{
+            frame={l=0, t=0},
+            label='Click me',
+            key='CUSTOM_CTRL_A',
+            on_activate=self:callback('toggleHighlight'),
+        },
+        widgets.Panel{
+            view_id='highlight',
+            frame={w=10, h=5},
+            frame_style=gui.INTERIOR_FRAME,
+        },
+    }
 end
 
-function screen:onInput(keys)
-    if keys.LEAVESCREEN or keys.SELECT then
-        self:dismiss()
-    end
+function HelloWorldWindow:toggleHighlight()
+    local panel = self.subviews.highlight
+    panel.frame_background = not panel.frame_background and HIGHLIGHT_PEN or nil
 end
 
-screen:show()
+HelloWorldScreen = defclass(HelloWorldScreen, gui.ZScreen)
+HelloWorldScreen.ATTRS{
+    focus_path='hello-world',
+}
+
+function HelloWorldScreen:init()
+    self:addviews{HelloWorldWindow{}}
+end
+
+function HelloWorldScreen:onDismiss()
+    view = nil
+end
+
+if dfhack_flags.module then
+    return
+end
+
+view = view and view:raise() or HelloWorldScreen{}:show()

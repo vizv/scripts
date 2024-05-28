@@ -1,22 +1,20 @@
-
 devel/spawn-unit-helper
 =======================
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Prepares the game for spawning creatures by switching to arena.
     :tags: dev
 
+This script initializes game state to allow you to switch to arena mode, spawn
+creatures, and then switch back to fortress mode.
 
-Setup stuff to allow arena creature spawn after a mode change.
+Usage
+-----
 
-With Arena spawn data initialized:
-
-- enter the :kbd:`k` menu and change mode using
-  ``rb_eval df.gametype = :DWARF_ARENA``
-
-- spawn creatures (:kbd:`c` ingame)
-
-- revert to game mode using ``rb_eval df.gametype = #{df.gametype.inspect}``
-
-- To convert spawned creatures to livestock, select each one with
-  the :kbd:`v` menu, and enter ``rb_eval df.unit_find.civ_id = df.ui.civ_id``
+1. Enter the :kbd:`k` menu and change mode using
+    ``rb_eval df.gametype = :DWARF_ARENA``
+2. Spawn creatures with the normal arena mode UI (:kbd:`c` ingame)
+3. Revert to forgress mode using
+    ``rb_eval df.gametype = #{df.gametype.inspect}``
+4. To convert spawned creatures to livestock, select each one with the :kbd:`v`
+    menu, and enter ``rb_eval df.unit_find.civ_id = df.ui.civ_id``

@@ -2,10 +2,8 @@ modtools/change-build-menu
 ==========================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
-
-
+    :summary: Add or remove items from the build sidebar menus.
+    :tags: unavailable
 
 Change the build sidebar menus.
 
@@ -19,17 +17,14 @@ your changes each time the world loads.
 Just to be clear: You CANNOT use this script AT ALL if there is no world
 loaded!
 
-**Usage:**
-
-``modtools/change-build-menu start|enable``:
+Usage
+-----
 
 ``enable modtools/change-build-menu``:
 
     Start the ticker. This needs to be done before any changes will take
     effect. Note that you can make changes before or after starting the
-    ticker, both options should work equally well.
-
-``modtools/change-build-menu stop|disable``:
+    ticker.
 
 ``disable modtools/change-build-menu``:
 
@@ -98,7 +93,8 @@ loaded!
     changes you no longer want/need.
 
 
-**Module Usage:**
+Module Usage
+------------
 
 To use this script as a module put the following somewhere in your own script:
 

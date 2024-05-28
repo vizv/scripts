@@ -2,16 +2,8 @@ devel/luacov
 ============
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
-
-
-
-Lua script coverage report generator
-
-Usage:
-
-    luacov [options] [pattern...]
+    :summary: Lua script coverage report generator.
+    :tags: unavailable
 
 This script generates a coverage report from collected statistics. By default it
 reports on every Lua file in all of DFHack. To filter filenames, specify one or
@@ -35,19 +27,27 @@ Also note that enabling both coverage monitoring and lua profiling via the
 each other. Usage of the "kill-lua" command will likewise override the luacov
 interceptor hook and may prevent coverage statistics from being collected.
 
-Options:
+Usage
+-----
 
--c, --clear
+::
+
+    luacov [options] [pattern...]
+
+Examples
+--------
+
+``devel/luacov``
+    Report on all DFHack lua scripts.
+``devel/luacov -c quickfort``
+    Report only on quickfort source files and then clear the stats. This is
+    useful to run between test runs to see the coverage of your test changes.
+``devel/luacov quickfort hack/lua``
+    Report only on quickfort and DFHack library lua source files.
+
+Options
+-------
+
+``-c``, ``--clear``
     Remove accumulated metrics after generating the report, ensuring the next
     report starts from a clean slate.
--h, --help
-    Show this help message and exit.
-
-Examples:
-
-devel/luacov
-    Report on all DFHack lua scripts.
-devel/luacov -c quickfort
-    Report only on quickfort source files and clear stats.
-devel/luacov quickfort hack/lua
-    Report only on quickfort and DFHack library lua source files.

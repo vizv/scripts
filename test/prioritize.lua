@@ -380,7 +380,7 @@ end
 function test.print_current_jobs_empty()
     p.print_current_jobs({})
     expect.eq(1, mock_print.call_count)
-    expect.eq('No current jobs.', mock_print.call_args[1][1])
+    expect.eq('No current unclaimed jobs.', mock_print.call_args[1][1])
 end
 
 function test.print_current_jobs_full()
@@ -395,7 +395,7 @@ function test.print_current_jobs_full()
                            reaction_name='TAN_A_HIDE', flags={}}, flags={}}}
     p.print_current_jobs({})
     expect.eq(5, mock_print.call_count)
-    expect.eq('Current job counts by type:', mock_print.call_args[1][1])
+    expect.eq('Current unclaimed jobs:', mock_print.call_args[1][1])
     local result = {}
     for i,v in ipairs(mock_print.call_args) do
         if i == 1 then goto continue end
@@ -419,7 +419,7 @@ function test.print_current_jobs_filtered()
                      {job={job_type=REST}, flags={dead=true}}}
     p.print_current_jobs({[EAT]=true})
     expect.eq(2, mock_print.call_count)
-    expect.eq('Current job counts by type:', mock_print.call_args[1][1])
+    expect.eq('Current unclaimed jobs:', mock_print.call_args[1][1])
     local result = {}
     for i,v in ipairs(mock_print.call_args) do
         if i == 1 then goto continue end

@@ -1,17 +1,15 @@
-
 devel/pop-screen
 ================
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Forcibly closes the current screen.
     :tags: dev interface
 
-
-Forcibly closes the current screen. This is usually equivalent to pressing
-:kbd:`Esc` (``LEAVESCREEN``), but will bypass the screen's input handling. This is
-intended primarily for development, if you have created a screen whose input
-handling throws an error before it handles :kbd:`Esc` (or if you have forgotten
-to handle :kbd:`Esc` entirely).
+Running this tool is usually equivalent to pressing :kbd:`Esc`
+(``LEAVESCREEN``), but will bypass the screen's input handling. This is intended
+primarily for development, if you have created a screen whose input handling
+throws an error before it handles :kbd:`Esc` (or if you have forgotten to
+handle :kbd:`Esc` entirely).
 
 .. warning::
 
@@ -22,3 +20,10 @@ to handle :kbd:`Esc` entirely).
     * The main adventure mode screen (``viewscreen_dungeonmodest``)
     * The main legends mode screen (``viewscreen_legendsst``)
     * The title screen (``viewscreen_titlest``)
+
+Usage
+-----
+
+::
+
+    devel/pop-screen

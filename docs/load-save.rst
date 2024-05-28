@@ -3,7 +3,7 @@ load-save
 
 .. dfhack-tool::
     :summary: Load a savegame.
-    :tags: dfhack
+    :tags: unavailable
 
 When run on the Dwarf Fortress title screen or "load game" screen, this script
 will load the save with the given folder name without requiring interaction.
@@ -22,13 +22,13 @@ Examples
 --------
 
 ``load-save region1``
-    Load the savegame in the ``data/save/region1`` directory.
+    Load the savegame in the ``save/region1`` directory.
 
 Autoloading a game on DF start
 ------------------------------
 
 It is useful to run this script from the commandline when starting Dwarf
-Fortress. For exmaple, on Linux/MacOS you could start Dwarf Fortress with::
+Fortress. For example, on Linux/MacOS you could start Dwarf Fortress with::
 
     ./dfhack +load-save region1
 

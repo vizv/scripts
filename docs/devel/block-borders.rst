@@ -1,12 +1,16 @@
-
 devel/block-borders
 ===================
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Outline map blocks on the map screen.
     :tags: dev map
 
+This tool displays an overlay that highlights the borders of map blocks. See
+:doc:`/docs/api/Maps` for details on map blocks.
 
+Usage
+-----
 
-An overlay that draws borders of map blocks. See :doc:`/docs/api/Maps` for
-details on map blocks.
+::
+
+    devel/block-borders

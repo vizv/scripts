@@ -1,11 +1,15 @@
-
 devel/all-bob
 =============
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Changes the first name of all units to "Bob"..
     :tags: dev
 
-
-Changes the first name of all units to "Bob".
 Useful for testing `modtools/interaction-trigger` events.
+
+Usage
+-----
+
+::
+
+    devel/all-bob

@@ -3,15 +3,15 @@ assign-profile
 
 .. dfhack-tool::
     :summary: Adjust characteristics of a unit according to saved profiles.
-    :tags: fort armok units
+    :tags: unavailable
 
 This tool can load a profile stored in a JSON file and apply the
-characterisitics to a unit.
+characteristics to a unit.
 
 A profile can describe which attributes, skills, preferences, beliefs, goals,
 and facets a unit will have. The script relies on the presence of the other
 ``assign-...`` modules in this collection; please refer to the other modules'
-documentation for more information on the kinds of characterisitics you can set.
+documentation for more information on the kinds of characteristics you can set.
 
 See the "hack/scripts/dwarf_profiles.json" file for examples of the json schema.
 Please make a new file with your own additions, though, since the example file

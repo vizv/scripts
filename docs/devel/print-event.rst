@@ -1,10 +1,16 @@
-
 devel/print-event
 =================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
+    :summary: Show historical events.
+    :tags: unavailable
 
+This tool displays the description of a historical event.
 
-Prints the description of an event by ID or index.
+Usage
+-----
+
+``devel/print-event --index <num>``
+    Displays the historical event at the given index.
+``devel/print-event --id <id>``
+    Displays the historical event by the given id.

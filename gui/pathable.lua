@@ -1,99 +1,97 @@
 -- View whether tiles on the map can be pathed to
+--@module=true
 
---[====[
+local gui = require('gui')
+local plugin = require('plugins.pathable')
+local widgets = require('gui.widgets')
 
-gui/pathable
-============
-
-Highlights each visible map tile to indicate whether it is possible to path to
-from the tile at the cursor - green if possible, red if not, similar to
-`gui/siege-engine`. A few options are available:
-
-* :kbd:`l`: Lock cursor: when enabled, the movement keys move around the map
-  instead of moving the cursor. This is useful to check whether parts of the map
-  far away from the cursor can be pathed to from the cursor.
-* :kbd:`d`: Draw: allows temporarily disabling the highlighting entirely.
-* :kbd:`u`: Skip unrevealed: when enabled, unrevealed tiles will not be
-  highlighed at all. (These would otherwise be highlighted in red.)
-
-.. note::
-    This tool uses a cache used by DF, which currently does *not* account for
-    climbing. If an area of the map is only accessible by climbing, this tool
-    may report it as inaccessible. Care should be taken when digging into the
-    upper levels of caverns, for example.
-
-]====]
-
-local guidm = require 'gui.dwarfmode'
-local plugin = require 'plugins.pathable'
-
-opts = opts or {
-    lock_cursor = false,
-    draw = true,
-    skip_unrevealed = false,
+Pathable = defclass(Pathable, gui.ZScreen)
+Pathable.ATTRS{
+    focus_path='pathable',
+    pass_movement_keys=true,
 }
 
-function render_toggle(p, key, text, state)
-    p:key_string(key, text .. ': ')
-    p:string(state and 'Yes' or 'No', state and COLOR_GREEN or COLOR_RED)
+function Pathable:init()
+    local window = widgets.Window{
+        view_id='main',
+        frame={t=20, r=3, w=32, h=11},
+        frame_title='Pathability Viewer',
+        drag_anchors={title=true, frame=true, body=true},
+    }
+
+    window:addviews{
+        widgets.ToggleHotkeyLabel{
+            view_id='lock',
+            frame={t=0, l=0},
+            key='CUSTOM_CTRL_T',
+            label='Lock target',
+            initial_option=false,
+        },
+        widgets.ToggleHotkeyLabel{
+            view_id='draw',
+            frame={t=1, l=0},
+            key='CUSTOM_CTRL_D',
+            label='Draw',
+            initial_option=true,
+        },
+        widgets.ToggleHotkeyLabel{
+            view_id='show',
+            frame={t=2, l=0},
+            key='CUSTOM_CTRL_U',
+            label='Show hidden',
+            initial_option=false,
+        },
+        widgets.EditField{
+            view_id='group',
+            frame={t=4, l=0},
+            label_text='Pathability group: ',
+            active=false,
+        },
+        widgets.HotkeyLabel{
+            frame={t=6, l=0},
+            key='LEAVESCREEN',
+            label='Close',
+            on_activate=self:callback('dismiss'),
+        },
+    }
+
+    self:addviews{window}
 end
 
-Pathable = defclass(Pathable, guidm.MenuOverlay)
+function Pathable:onRenderBody()
+    local target = self.subviews.lock:getOptionValue() and
+            self.saved_target or dfhack.gui.getMousePos()
+    self.saved_target = target
 
-Pathable.ATTRS = {
-    sidebar_mode=df.ui_sidebar_mode.LookAround,
-}
+    local group = self.subviews.group
+    local show = self.subviews.show:getOptionValue()
 
-function Pathable:onRenderBody(p)
-    local cursor = df.global.cursor
-    local block = dfhack.maps.getTileBlock(pos2xyz(cursor))
+    if not target then
+        group:setText('')
+        return
+    elseif not show and not dfhack.maps.isTileVisible(target) then
+        group:setText('Hidden')
+        return
+    end
 
-    p:seek(1, 1)
-    p:string("DFHack pathable tile viewer"):newline():newline(1)
-    render_toggle(p, 'CUSTOM_L', 'Lock cursor', opts.lock_cursor)
-    p:newline(1)
-    render_toggle(p, 'CUSTOM_D', 'Draw', opts.draw)
-    p:newline(1)
-    render_toggle(p, 'CUSTOM_U', 'Skip unrevealed', opts.skip_unrevealed)
+    local walk_group = dfhack.maps.getWalkableGroup(target)
+    group:setText(walk_group == 0 and 'None' or tostring(walk_group))
 
-    p:newline():newline(1)
-    p:key_string('LEAVESCREEN', "Exit to cursor"):newline(1)
-    p:key_string('LEAVESCREEN_ALL', "Exit to here"):newline(1)
-
-    p:newline(1)
-    p:string('Group: ' .. block.walkable[cursor.x % 16][cursor.y % 16])
-    p:newline(1)
-    p:string(df.tiletype[block.tiletype[cursor.x % 16][cursor.y % 16]], COLOR_CYAN)
-
-    if opts.draw then
-        plugin.paintScreen(xyz2pos(pos2xyz(cursor)), opts.skip_unrevealed)
+    if self.subviews.draw:getOptionValue() then
+        plugin.paintScreenPathable(target, show)
     end
 end
 
-function Pathable:onInput(keys)
-    if keys.LEAVESCREEN then
-        self:dismiss()
-        dfhack.gui.refreshSidebar()
-    elseif keys.LEAVESCREEN_ALL then
-        self:dismiss()
-    elseif keys.CUSTOM_L then
-        opts.lock_cursor = not opts.lock_cursor
-    elseif keys.CUSTOM_D then
-        opts.draw = not opts.draw
-    elseif keys.CUSTOM_U then
-        opts.skip_unrevealed = not opts.skip_unrevealed
-    else
-        if opts.lock_cursor then
-            -- no_clip_cursor=true: allow scrolling so the cursor isn't in view
-            self:simulateViewScroll(keys, nil, true)
-        else
-            self:propagateMoveKeys(keys)
-        end
-    end
+function Pathable:onDismiss()
+    view = nil
+end
+
+if dfhack_flags.module then
+    return
 end
 
 if not dfhack.isMapLoaded() then
-    qerror('This script requires a fortress map to be loaded')
+    qerror('gui/pathable requires a map to be loaded')
 end
 
-Pathable():show()
+view = view and view:raise() or Pathable{}:show()

@@ -67,7 +67,7 @@ build_filter.HUMANish={
 
 --economic stone fix: just disable all of them
 --[[ FIXME: maybe let player select which to disable?]]
-for k,v in ipairs(df.global.ui.economic_stone) do df.global.ui.economic_stone[k]=0 end
+for k,v in ipairs(df.global.plotinfo.economic_stone) do df.global.plotinfo.economic_stone[k]=0 end
 
 local gui = require 'gui'
 local wid=require 'gui.widgets'
@@ -556,7 +556,7 @@ function IsUnit(args)
 end
 function itemsAtPos(pos,tbl)
     local ret=tbl or {}
-    for k,v in pairs(df.global.world.items.all) do
+    for k,v in pairs(df.global.world.items.other.IN_PLAY) do
         if v.pos.x==pos.x and v.pos.y==pos.y and v.pos.z==pos.z and v.flags.on_ground then
             table.insert(ret,v)
         end
@@ -770,13 +770,13 @@ end
 function EnumItems(args)
     local ret=args.table or {}
     if args.all then
-        for k,v in pairs(df.global.world.items.all) do
+        for k,v in pairs(df.global.world.items.other.IN_PLAY) do
             if v.flags.on_ground then
                 AddItem(ret,v,args.deep)
             end
         end
     elseif args.pos~=nil then
-        for k,v in pairs(df.global.world.items.all) do
+        for k,v in pairs(df.global.world.items.other.IN_PLAY) do
             if v.pos.x==args.pos.x and v.pos.y==args.pos.y and v.pos.z==args.pos.z and v.flags.on_ground then
                 AddItem(ret,v,args.deep)
             end
@@ -1368,7 +1368,7 @@ end
 
 function usetool:openShopWindowButtoned(building,no_reset)
     self:setupFields()
-    local wui=df.global.ui_sidebar_menus.workshop_job
+    local wui=df.global.game.workshop_job
     if not no_reset then
         -- [[ manual reset incase the df-one does not exist?
         wui:assign{category_id=-1,mat_type=-1,mat_index=-1}
@@ -1430,11 +1430,11 @@ function track_stop_configure(bld) --TODO: dedicated widget with nice interface 
         else
             dialog.showListPrompt("Dumping direction", "Choose dumping:",COLOR_WHITE,dump_choices,function ( index,choice)
                 if choice.x then
-                    bld.use_dump=1 --??
+                    bld.track_flags.use_dump=true
                     bld.dump_x_shift=choice.x
                     bld.dump_y_shift=choice.y
                 else
-                    bld.use_dump=0
+                    bld.track_flags.use_dump=false
                 end
             end)
         end
@@ -1639,7 +1639,7 @@ function find_entity_civ( raw_code )
     end
 end
 function usetool:setupFields()
-    local ui=df.global.ui
+    local ui=df.global.plotinfo
 
     local adv=df.global.world.units.active[0]
     if settings.set_civ==true then
@@ -1734,10 +1734,8 @@ function usetool:fieldInput(keys)
             end
             return code
         end
-        if code~="_STRING" and code~="_MOUSE_L" and code~="_MOUSE_R" then
-            if ALLOWED_KEYS[code] then
-                self:sendInputToParent(code)
-            end
+        if ALLOWED_KEYS[code] then
+            self:sendInputToParent(code)
         end
     end
 

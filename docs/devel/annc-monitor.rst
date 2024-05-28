@@ -1,15 +1,19 @@
-
 devel/annc-monitor
 ==================
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Track announcements and reports and echo them to the console.
     :tags: dev
 
+This tool monitors announcements and reports and echoes their contents to the
+console.
 
-Displays announcements and reports in the console.
+Usage
+-----
 
-:enable|start:      Begins monitoring
-:disable|stop:      Stops monitoring
-:report enable:     Show combat reports
-:report disable:    Only show announcements
+::
+
+    enable devel/annc-monitor
+    devel/annc-monitor report enable|disable
+
+Combat report monitoring is disabled by default.

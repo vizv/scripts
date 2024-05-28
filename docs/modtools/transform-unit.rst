@@ -1,32 +1,44 @@
-
 modtools/transform-unit
 =======================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
+    :summary: Transform a unit into another unit type.
+    :tags: unavailable
 
+This tool transforms a unit into another unit type, either temporarily or
+permanently.
 
-Transforms a unit into another unit type, possibly permanently.
 Warning: this will crash arena mode if you view the unit on the
-same tick that it transforms.  If you wait until later, it will be fine.
+same tick that it transforms. If you wait until later, it will be fine.
 
-Arguments::
+Usage
+-----
 
-    -clear
-        clear records of normal races
-    -unit id
-        set the target unit
-    -duration ticks
-        how long it should last, or "forever"
-    -setPrevRace
-        make a record of the previous race so that you can
-        change it back with -untransform
-    -keepInventory
-        move items back into inventory after transformation
-    -race raceName
-    -caste casteName
-    -suppressAnnouncement
-        don't show the Unit has transformed into a Blah! event
-    -untransform
-        turn the unit back into what it was before
+::
+
+    modtools/transform-unit --unit <id> --race <race> --caste <caste> [--duration <ticks>] [--keepInventory] [--setPrevRace]
+    modtools/transform-unit --unit <id> --untransform
+    modtools/transform-unit --clear
+
+Options
+-------
+
+``--unit <id>``
+    Set the target unit.
+``--race <race>``
+    Set the target race.
+``--caste <caste>``
+    Set the target caste.
+``--duration <ticks>``
+    Set how long the transformation should last, or "forever". If not specified,
+    then the transformation is permanent.
+``--keepInventory``
+    Move items back into inventory after transformation
+``--setPrevRace``
+    Remember the previous race so that you can change the unit back with
+    ``--untransform``
+``--untransform``
+    Turn the unit back into what it was before (assuming you used the
+    ``--setPrevRace`` option when transforming the first time).
+``--clear``
+    Clear records of "previous" races used by the ``--untransform`` option.

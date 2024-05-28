@@ -1,13 +1,19 @@
-
 devel/light
 ===========
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev graphics
+    :summary: Experiment with lighting overlays.
+    :tags: unavailable
 
+This is an experimental lighting engine for DF, using the `rendermax` plugin.
 
-An experimental lighting engine for DF, using the `rendermax` plugin.
-
-Call ``devel/light static`` to not recalculate lighting when in game.
 Press :kbd:`~` to recalculate lighting. Press :kbd:`\`` to exit.
+
+Usage
+-----
+
+::
+
+    devel/light [static]
+
+Pass ``static`` to not recalculate lighting when in game.

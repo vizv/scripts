@@ -1,11 +1,9 @@
-
 modtools/set-belief
 ===================
 
 .. dfhack-tool::
-    :summary: todo.
-    :tags: dev
-
+    :summary: Change the beliefs/values of a unit.
+    :tags: unavailable
 
 Changes the beliefs (values) of units.
 Requires a belief, modifier, and a target.
@@ -59,8 +57,6 @@ argument, the script will try and default to targeting the currently selected un
 
 Other arguments:
 
-:help:
-    Shows this help page.
 :list:
     Prints a list of all beliefs + their IDs.
 :noneed:

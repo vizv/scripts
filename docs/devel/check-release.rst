@@ -2,8 +2,15 @@ devel/check-release
 ===================
 
 .. dfhack-tool::
-    :summary: todo.
+    :summary: Perform basic checks for DFHack release readiness.
     :tags: dev
 
+This script is run as part of the DFHack release process to check that release
+flags are properly set.
 
-Basic checks for release readiness
+Usage
+-----
+
+::
+
+    devel/check-release

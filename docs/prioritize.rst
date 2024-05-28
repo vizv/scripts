@@ -2,50 +2,55 @@ prioritize
 ==========
 
 .. dfhack-tool::
-    :summary: Set jobs of specified types to high priority.
+    :summary: Automatically boost the priority of important job types.
     :tags: fort auto jobs
 
-This tool can force specified types of jobs to get assigned and completed as
+This tool encourages specified types of jobs to get assigned and completed as
 soon as possible. Finally, you can be sure your food will be hauled before
 rotting, your hides will be tanned before going bad, and the corpses of your
 enemies will be cleared from your entranceway expediently.
 
 You can prioritize a bunch of active jobs that you need done *right now*, or you
 can mark certain job types as high priority, and ``prioritize`` will watch for
-and prioritize those types of jobs as they are created. This is especially
-useful for ensuring important (but low-priority -- according to DF) jobs don't
-get ignored indefinitely in busy forts.
+and boost the priority of those types of jobs as they are created. This is
+especially useful for ensuring important (but low-priority -- according to DF)
+jobs don't get ignored indefinitely in busy forts.
 
 It is important to automatically prioritize only the *most* important job types.
 If you add too many job types, or if there are simply too many jobs of those
-types in your fort, the other tasks in your fort can get ignored. This causes
-the same problem the ``prioritize`` script is designed to solve. See below for a
-good, playtested set of job types to automatically prioritize.
-
-Also see the ``do-job-now`` `tweak` for adding a hotkey to the jobs screen that
-can toggle the priority of specific individual jobs and the `do-job-now` script,
-which boosts the priority of just the jobs related to the selected
-job/unit/item/building/workorder.
+types in your fort, the *other* tasks in your fort can get ignored. This causes
+the same problem that ``prioritize`` is designed to solve. The script provides
+a good default set of job types to prioritize that have been suggested and
+playtested by the DF community.
 
 Usage
 -----
 
 ::
 
-    prioritize [<options>] [<job_type> ...]
+    enable prioritize
+    disable prioritize
+    prioritize [<options>] [defaults|<job_type> ...]
 
 Examples
 --------
 
 ``prioritize``
     Print out which job types are being automatically prioritized and how many
-    jobs of each type we have prioritized since we started watching them.
+    jobs of each type we have prioritized since we started watching them. The
+    counts are saved with your game, so they will be accurate even if the game
+    has been saved and reloaded since ``prioritize`` was started.
+``enable prioritize``, ``prioritize -a defaults``
+    Watch for and prioritize the default set of job types that the community has
+    suggested and playtested (see below for details).
 ``prioritize -j``
     Print out the list of active jobs that you can prioritize right now.
 ``prioritize ConstructBuilding DestroyBuilding``
     Prioritize all current building construction and destruction jobs.
 ``prioritize -a --haul-labor=Food,Body StoreItemInStockpile``
     Prioritize all current and future food and corpse hauling jobs.
+``disable prioritize``
+    Remove all job types from the watch list and clear tracking data.
 
 Options
 -------
@@ -57,7 +62,7 @@ Options
 ``-j``, ``--jobs``
     Print out how many unassigned jobs of each type there are. This is useful
     for discovering the types of the jobs that you can prioritize right now. If
-    any job types are specified, only returns the count for those types.
+    any job types are specified, only jobs of those types are listed.
 ``-l``, ``--haul-labor <labor>[,<labor>...]``
     For StoreItemInStockpile jobs, match only the specified hauling labor(s).
     Valid ``labor`` strings are: "Stone", "Wood", "Body", "Food", "Refuse",
@@ -76,24 +81,22 @@ Options
 Which job types should I prioritize?
 ------------------------------------
 
-The following list has been well playtested and works well across a wide variety
-of fort types::
+In general, you should prioritize job types that you care about getting done
+especially quickly and that the game does not prioritize for you. Time-sensitive
+tasks like food hauling, medical care, and lever pulling are good candidates.
 
-    prioritize -a StoreItemInVehicle StoreItemInBag StoreItemInBarrel PullLever
-    prioritize -a StoreItemInLocation StoreItemInHospital
-    prioritize -a DestroyBuilding RemoveConstruction RecoverWounded DumpItem
-    prioritize -a CleanSelf SlaughterAnimal PrepareRawFish ExtractFromRawFish
-    prioritize -a TradeAtDepot BringItemToDepot CleanTrap ManageWorkOrders
-    prioritize -a --haul-labor=Food,Body StoreItemInStockpile
-    prioritize -a --reaction-name=TAN_A_HIDE CustomReaction
+For greater fort efficiency, you should also prioritize jobs that can block the
+completion of other jobs. For example, dwarves often fill a stockpile up
+completely, ignoring the barrels, pots, and bins that could be used to organize
+the items more efficiently. Prioritizing those organizational jobs can mean the
+difference between having space in your food stockpile for fresh meat and being
+forced to let it rot in the butcher shop.
 
-You can add those commands to your ``dfhack-config/init/onMapLoad.init`` file to
-ensure important and time-sensitive job types are always completed promptly in
-your forts.
-
-Glass industry enthusiasts may also want to include::
-
-    prioritize -a CollectSand
+It is also convenient to prioritize tasks that block you (the player) from doing
+other things. When you designate a group of trees for chopping, it's often
+because you want to *do* something with those logs and/or that free space.
+Prioritizing tree chopping will get your dwarves on the task and keep you from
+staring at the screen too long.
 
 You may be tempted to automatically prioritize ``ConstructBuilding`` jobs, but
 beware that if you engage in megaprojects where many constructions must be
@@ -101,3 +104,20 @@ built, these jobs can consume your entire fortress if prioritized. It is often
 better to run ``prioritize ConstructBuilding`` by itself (i.e. without the
 ``-a`` parameter) as needed to just prioritize the construction jobs that you
 have ready at the time.
+
+Default list of job types to prioritize
+---------------------------------------
+
+The community has assembled a good default list of job types that most players
+will benefit from. They have been playtested across a wide variety of fort
+types. It is a good idea to enable `prioritize` with at least these defaults
+for all your forts.
+
+The default prioritize list includes:
+
+- Handling items that can rot
+- Medical, hygiene, and hospice tasks
+- Interactions with animals and prisoners
+- Noble-specific tasks (like managing workorders)
+- Dumping items, felling trees, and other tasks that you, as a player, might
+  stare at and internally scream "why why why isn't this getting done??".
