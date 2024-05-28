@@ -7,7 +7,7 @@ local utils = require('utils')
 local guimat = require('gui.materials')
 
 local UI_AREA = {r=4, t=19, w=35, h=35}
-local POPUP_UI_AREA = {r=40, t=19, w=30, h=22}
+local POPUP_UI_AREA = {r=40, t=19, w=30, h=19}
 
 local UI_COLORS = {
     SELECTED= COLOR_GREEN,
@@ -27,7 +27,6 @@ local UI_COLORS = {
 }
 
 local MORE_OPTIONS = {
-    ["dig"]          = { label= "Designated" },
     ["hidden"]       = { label= "Hidden" },
     ["light"]        = { label= "Light" },
     ["subterranean"] = { label= "Subterranean" },
@@ -73,7 +72,7 @@ local vein_type_list = {}
 ---@field material? df.tiletype_material
 ---@field special? df.tiletype_special
 ---@field variant? df.tiletype_variant
----@field dig? boolean
+---@field dig? boolean Only for filters
 ---@field hidden? boolean
 ---@field light? boolean
 ---@field subterranean? boolean
@@ -97,7 +96,6 @@ function setTile(pos, target)
         material       = toValidEnumValue(target.material, df.tiletype_material, df.tiletype_material.NONE),
         special        = toValidEnumValue(target.special,  df.tiletype_special,  df.tiletype_special.NONE),
         variant        = toValidEnumValue(target.variant,  df.tiletype_variant,  df.tiletype_variant.NONE),
-        dig            = toValidOptionValue(target.dig),
         hidden         = toValidOptionValue(target.hidden),
         light          = toValidOptionValue(target.light),
         subterranean   = toValidOptionValue(target.subterranean),
@@ -1250,7 +1248,6 @@ function TiletypeWindow:confirm()
                 material       = self.cur_mat,
                 special        = self.cur_special,
                 variant        = self.cur_variant,
-                dig            = parseOption(option_values.dig),
                 hidden         = parseOption(option_values.hidden),
                 light          = parseOption(option_values.light),
                 subterranean   = parseOption(option_values.subterranean),
