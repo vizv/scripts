@@ -8,7 +8,7 @@ local textures = require('gui.textures')
 local argparse = require('argparse')
 
 local UI_AREA = {r=2, t=18, w=38, h=35}
-local POPUP_UI_AREA = {r=38, t=18, w=30, h=19}
+local POPUP_UI_AREA = {r=41, t=18, w=30, h=19}
 
 local CONFIG_BUTTON = {
     { tile= dfhack.pen.parse{fg=COLOR_CYAN, tile=curry(textures.tp_control_panel, 7) or nil, ch=string.byte('[')} },
