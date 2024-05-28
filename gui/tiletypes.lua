@@ -1048,17 +1048,18 @@ TiletypeWindow.ATTRS {
     frame_inset={b=1, t=1},
     screen=DEFAULT_NIL,
     options_popup=DEFAULT_NIL,
-    cur_mode="place",
-    mode_description = "",
-    cur_shape=-1,
-    cur_mat=-1,
-    cur_special=-1,
-    cur_variant=-1,
-    first_point=DEFAULT_NIL, ---@type df.coord
-    last_point=DEFAULT_NIL, ---@type df.coord
 }
 
 function TiletypeWindow:init()
+    self.cur_mode="place"
+    self.mode_description = ""
+    self.cur_shape=-1
+    self.cur_mat=-1
+    self.cur_special=-1
+    self.cur_variant=-1
+    self.first_point=DEFAULT_NIL ---@type df.coord
+    self.last_point=DEFAULT_NIL ---@type df.coord
+
     local makeUIChars = function(center_char1, center_char2)
         return {
             {218, 196,          196,          191},
