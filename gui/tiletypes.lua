@@ -5,9 +5,17 @@ local guidm = require('gui.dwarfmode')
 local widgets = require('gui.widgets')
 local utils = require('utils')
 local guimat = require('gui.materials')
+local textures = require('gui.textures')
+local argparse = require('argparse')
 
-local UI_AREA = {r=4, t=19, w=35, h=35}
-local POPUP_UI_AREA = {r=40, t=19, w=30, h=19}
+local UI_AREA = {r=2, t=18, w=35, h=35}
+local POPUP_UI_AREA = {r=38, t=18, w=30, h=19}
+
+local CONFIG_BUTTON = {
+    { tile= dfhack.pen.parse{fg=COLOR_CYAN, tile=curry(textures.tp_control_panel, 7) or nil, ch=string.byte('[')} },
+    { tile= dfhack.pen.parse{tile=curry(textures.tp_control_panel, 10) or nil, ch=15} }, -- gear/masterwork symbol
+    { tile= dfhack.pen.parse{fg=COLOR_CYAN, tile=curry(textures.tp_control_panel, 8) or nil, ch=string.byte(']')} }
+}
 
 local UI_COLORS = {
     SELECTED= COLOR_GREEN,
@@ -59,11 +67,35 @@ local MODE_SETTINGS = {
     [ "remove"  ] = { idx= 4 , config= false , description= "Remove selected tiles"   , validator= function(pos) return true end                 },
 }
 
+CYCLE_VALUES = {
+    shape = {
+        [df.tiletype_shape.NONE] = true,
+        [df.tiletype_shape.EMPTY] = true,
+        [df.tiletype_shape.FLOOR] = true,
+        [df.tiletype_shape.WALL] = true,
+        [df.tiletype_shape.STAIR_UPDOWN] = true,
+    },
+    material = {
+        [df.tiletype_material.NONE] = true,
+        [df.tiletype_material.AIR] = true,
+        [df.tiletype_material.SOIL] = true,
+        [df.tiletype_material.STONE] = true,
+    },
+    special = {
+        [df.tiletype_special.NONE] = true,
+        [df.tiletype_special.NORMAL] = true,
+        [df.tiletype_special.SMOOTH] = true,
+    },
+}
+
 local shape_list = {}
+local short_shape_list = {}
 local mat_list = {}
+local short_mat_list = {}
 local stone_list = {}
 local stone_dict = {}
 local special_list = {}
+local short_special_list = {}
 local variant_list = {}
 local vein_type_list = {}
 
@@ -108,7 +140,7 @@ function setTile(pos, target)
     return plugin.tiletypes_setTile(pos, tiletype)
 end
 
-local function generateDataLists()
+local function generateDataLists(unrestricted)
     local function itemColor(name)
         return name == "NONE" and UI_COLORS.VALUE_NONE or UI_COLORS.VALUE
     end
@@ -116,12 +148,20 @@ local function generateDataLists()
     shape_list = {}
     for i=df.tiletype_shape._first_item, df.tiletype_shape._last_item do
         local name = df.tiletype_shape[i]
-        table.insert(shape_list, { label= name, value= i, pen= itemColor(name) })
+        local item = { label= name, value= i, pen= itemColor(name) }
+        table.insert(shape_list, item)
+        if CYCLE_VALUES.shape[i] then
+            table.insert(short_shape_list, item)
+        end
     end
     mat_list = {}
     for i=df.tiletype_material._first_item, df.tiletype_material._last_item do
         local name = df.tiletype_material[i]
-        table.insert(mat_list, { label= name, value= i, pen= itemColor(name) })
+        local item = { label= name, value= i, pen= itemColor(name) }
+        table.insert(mat_list, item)
+        if CYCLE_VALUES.material[i] then
+            table.insert(short_mat_list, item)
+        end
     end
     stone_list = { { text = "none", mat_type = -1, mat_index = -1 } }
     stone_dict = { [-1] = { label= "NONE", value= -1, pen= itemColor("NONE") } }
@@ -129,6 +169,7 @@ local function generateDataLists()
         if mat and mat.material
             and not mat.flags[df.inorganic_flags.SOIL_ANY]
             and not mat.material.flags[df.material_flags.IS_METAL]
+            and (unrestricted or not mat.flags[df.inorganic_flags.GENERATED])
         then
             local state = mat.material.heat.melting_point <= 10015 and 1 or 0
             local name = mat.material.state_name[state]:gsub('^frozen ',''):gsub('^molten ',''):gsub('^condensed ','')
@@ -144,7 +185,11 @@ local function generateDataLists()
     special_list = {}
     for i=df.tiletype_special._first_item, df.tiletype_special._last_item do
         local name = df.tiletype_special[i]
-        table.insert(special_list, { label= name, value= i, pen= itemColor(name) })
+        local item = { label= name, value= i, pen= itemColor(name) }
+        table.insert(special_list, item)
+        if CYCLE_VALUES.special[i] then
+            table.insert(short_special_list, item)
+        end
     end
     variant_list = {}
     for i=df.tiletype_variant._first_item, df.tiletype_variant._last_item do
@@ -925,23 +970,26 @@ function TileConfig:init()
         value.label = {{ text= value.base_label, pen= value.base_pen } }
     end
 
+    local config_btn_width = #CONFIG_BUTTON
+    local config_btn_l = UI_AREA.w - 2 - config_btn_width
+
     self:addviews {
         widgets.CycleHotkeyLabel {
-            frame={l=1, t=0},
+            frame={l=1, r=config_btn_width, t=0},
             key_back='CUSTOM_SHIFT_H',
             key='CUSTOM_H',
             label='Shape:',
-            options=shape_list,
+            options=short_shape_list,
             initial_option=-1,
             on_change=self.on_change_shape,
         },
         widgets.Divider { frame={t=2}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
-            frame={l=1, t=4},
+            frame={l=1, r=config_btn_width, t=4},
             key_back='CUSTOM_SHIFT_J',
             key='CUSTOM_J',
             label='Material:',
-            options=mat_list,
+            options=short_mat_list,
             initial_option=-1,
             on_change=self.on_change_mat,
         },
@@ -965,11 +1013,11 @@ function TileConfig:init()
         },
         widgets.Divider { frame={t=10}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
-            frame={l=1, t=12},
+            frame={l=1, r=config_btn_width, t=12},
             key_back='CUSTOM_SHIFT_K',
             key='CUSTOM_K',
             label='Special:',
-            options=special_list,
+            options=short_special_list,
             initial_option=-1,
             on_change=self.on_change_special,
         },
@@ -984,6 +1032,28 @@ function TileConfig:init()
             on_change=self.on_change_variant,
         },
         widgets.Divider { frame={t=18}, frame_style_l=false, frame_style_r=false, },
+    }
+
+    -- Advanced config buttons
+    self:addviews {
+        -- Shape
+        widgets.Label {
+            frame={l=config_btn_l, t=0},
+            text=CONFIG_BUTTON,
+            on_click=function() print("Not yet implemented") end,
+        },
+        -- Material
+        widgets.Label {
+            frame={l=config_btn_l, t=4},
+            text=CONFIG_BUTTON,
+            on_click=function() print("Not yet implemented") end,
+        },
+        -- Special
+        widgets.Label {
+            frame={l=config_btn_l, t=12},
+            text=CONFIG_BUTTON,
+            on_click=function() print("Not yet implemented") end,
+        },
     }
 
     self:changeStone(-1)
@@ -1057,8 +1127,8 @@ function TiletypeWindow:init()
     self.cur_mat=-1
     self.cur_special=-1
     self.cur_variant=-1
-    self.first_point=DEFAULT_NIL ---@type df.coord
-    self.last_point=DEFAULT_NIL ---@type df.coord
+    self.first_point=nil ---@type df.coord
+    self.last_point=nil ---@type df.coord
 
     local makeUIChars = function(center_char1, center_char2)
         return {
@@ -1298,9 +1368,12 @@ TiletypeScreen.ATTRS {
     focus_path = "tiletypes",
     pass_pause = true,
     pass_movement_keys = true,
+    unrestricted = false
 }
 
 function TiletypeScreen:init()
+    generateDataLists(self.unrestricted)
+
     local options_popup = OptionsPopup{
         view_id="options_popup",
         visible=false
@@ -1326,11 +1399,19 @@ end
 
 --#endregion
 
-if dfhack_flags.module then return end
+function main(...)
+    local args = {...}
+    local positionals = argparse.processArgsGetopt(args, {
+        { nil, 'unrestricted', handler = function() args.unrestricted = true end },
+    })
 
-if not dfhack.isMapLoaded() then
-    qerror("This script requires a fortress map to be loaded")
+    if not dfhack.isMapLoaded() then
+        qerror("This script requires a fortress map to be loaded")
+    end
+
+    view = view and view:raise() or TiletypeScreen{ unrestricted = args.unrestricted }:show()
 end
 
-generateDataLists()
-view = view and view:raise() or TiletypeScreen{}:show()
+if not dfhack_flags.module then
+    main(...)
+end
