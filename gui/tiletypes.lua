@@ -4,11 +4,10 @@ local gui = require('gui')
 local guidm = require('gui.dwarfmode')
 local widgets = require('gui.widgets')
 local utils = require('utils')
-local guimat = require('gui.materials')
 local textures = require('gui.textures')
 local argparse = require('argparse')
 
-local UI_AREA = {r=2, t=18, w=35, h=35}
+local UI_AREA = {r=2, t=18, w=38, h=35}
 local POPUP_UI_AREA = {r=38, t=18, w=30, h=19}
 
 local CONFIG_BUTTON = {
@@ -16,6 +15,8 @@ local CONFIG_BUTTON = {
     { tile= dfhack.pen.parse{tile=curry(textures.tp_control_panel, 10) or nil, ch=15} }, -- gear/masterwork symbol
     { tile= dfhack.pen.parse{fg=COLOR_CYAN, tile=curry(textures.tp_control_panel, 8) or nil, ch=string.byte(']')} }
 }
+
+local OTHER_LABEL_FORMAT = { first= string.char(15).."(", last= ")"}
 
 local UI_COLORS = {
     SELECTED= COLOR_GREEN,
@@ -73,31 +74,22 @@ CYCLE_VALUES = {
         [df.tiletype_shape.EMPTY] = true,
         [df.tiletype_shape.FLOOR] = true,
         [df.tiletype_shape.WALL] = true,
-        [df.tiletype_shape.STAIR_UPDOWN] = true,
+        other = df.tiletype_shape.STAIR_UPDOWN
     },
     material = {
         [df.tiletype_material.NONE] = true,
         [df.tiletype_material.AIR] = true,
         [df.tiletype_material.SOIL] = true,
         [df.tiletype_material.STONE] = true,
+        other = df.tiletype_material.LAVA_STONE
     },
     special = {
         [df.tiletype_special.NONE] = true,
         [df.tiletype_special.NORMAL] = true,
         [df.tiletype_special.SMOOTH] = true,
+        other = df.tiletype_special.WORN_1
     },
 }
-
-local shape_list = {}
-local short_shape_list = {}
-local mat_list = {}
-local short_mat_list = {}
-local stone_list = {}
-local stone_dict = {}
-local special_list = {}
-local short_special_list = {}
-local variant_list = {}
-local vein_type_list = {}
 
 ---@class TileType
 ---@field shape? df.tiletype_shape
@@ -138,71 +130,6 @@ function setTile(pos, target)
     tiletype.vein_type      = tiletype.material ~= df.tiletype_material.STONE and -1 or toValidEnumValue(target.vein_type,  df.inclusion_type,  df.inclusion_type.CLUSTER)
 
     return plugin.tiletypes_setTile(pos, tiletype)
-end
-
-local function generateDataLists(unrestricted)
-    local function itemColor(name)
-        return name == "NONE" and UI_COLORS.VALUE_NONE or UI_COLORS.VALUE
-    end
-
-    shape_list = {}
-    for i=df.tiletype_shape._first_item, df.tiletype_shape._last_item do
-        local name = df.tiletype_shape[i]
-        local item = { label= name, value= i, pen= itemColor(name) }
-        table.insert(shape_list, item)
-        if CYCLE_VALUES.shape[i] then
-            table.insert(short_shape_list, item)
-        end
-    end
-    mat_list = {}
-    for i=df.tiletype_material._first_item, df.tiletype_material._last_item do
-        local name = df.tiletype_material[i]
-        local item = { label= name, value= i, pen= itemColor(name) }
-        table.insert(mat_list, item)
-        if CYCLE_VALUES.material[i] then
-            table.insert(short_mat_list, item)
-        end
-    end
-    stone_list = { { text = "none", mat_type = -1, mat_index = -1 } }
-    stone_dict = { [-1] = { label= "NONE", value= -1, pen= itemColor("NONE") } }
-    for i,mat in ipairs(df.global.world.raws.inorganics) do
-        if mat and mat.material
-            and not mat.flags[df.inorganic_flags.SOIL_ANY]
-            and not mat.material.flags[df.material_flags.IS_METAL]
-            and (unrestricted or not mat.flags[df.inorganic_flags.GENERATED])
-        then
-            local state = mat.material.heat.melting_point <= 10015 and 1 or 0
-            local name = mat.material.state_name[state]:gsub('^frozen ',''):gsub('^molten ',''):gsub('^condensed ','')
-            table.insert(stone_list, {
-                text = name,
-                material = mat.material,
-                mat_type = 0,
-                mat_index = i
-            })
-            stone_dict[i] = { label= mat.id, value= i, pen= itemColor(mat.id) }
-        end
-    end
-    special_list = {}
-    for i=df.tiletype_special._first_item, df.tiletype_special._last_item do
-        local name = df.tiletype_special[i]
-        local item = { label= name, value= i, pen= itemColor(name) }
-        table.insert(special_list, item)
-        if CYCLE_VALUES.special[i] then
-            table.insert(short_special_list, item)
-        end
-    end
-    variant_list = {}
-    for i=df.tiletype_variant._first_item, df.tiletype_variant._last_item do
-        local name = df.tiletype_variant[i]
-        table.insert(variant_list, { label= name, value= i, pen= itemColor(name) })
-    end
-    vein_type_list = { { base_label= "NONE", value= -1, base_pen= itemColor("NONE") } } -- Equivalent to CLUSTER
-    for i=df.inclusion_type._first_item, df.inclusion_type._last_item do
-        local name = df.inclusion_type[i]
-        if name then
-            table.insert(vein_type_list, { base_label= name, value= i, base_pen= itemColor(name) })
-        end
-    end
 end
 
 --#region GUI
@@ -803,6 +730,166 @@ function BoxSelection:hideCursor()
     df.global.game.main_interface.main_designation_selected = df.main_designation_type.NONE
 end
 
+--================================--
+--||        SelectDialog        ||--
+--================================--
+-- Popup for selecting an item from a list, with a search bar
+
+---@class CategoryChoice
+---@field text string|widgets.LabelToken[]
+---@field category string?
+---@field key string?
+---@field item_list (widgets.ListChoice|CategoryChoice)[]
+
+ARROW = string.char(26)
+
+SelectDialog = defclass(SelectDialog, gui.FramedScreen)
+
+SelectDialog.ATTRS{
+    focus_path = "SelectDialog",
+    prompt = "Type or select a item from this list",
+    base_category = "Any item",
+    frame_style = gui.GREY_LINE_FRAME,
+    frame_inset = 1,
+    frame_title = "Select Item",
+    item_list = DEFAULT_NIL, ---@type (widgets.ListChoice|CategoryChoice)[]
+    on_select = DEFAULT_NIL,
+    on_cancel = DEFAULT_NIL,
+    on_close = DEFAULT_NIL,
+}
+
+function SelectDialog:init(info)
+    self:addviews{
+        widgets.Label{
+            text = {
+                self.prompt, '\n\n',
+                'Category: ', { text = self:cb_getfield('category_str'), pen = COLOR_CYAN }
+            },
+            text_pen = COLOR_WHITE,
+            frame = { l = 0, t = 0 },
+        },
+        widgets.Label{
+            view_id = 'back',
+            visible = false,
+            text = { { key = 'LEAVESCREEN', text = ': Back' } },
+            frame = { r = 0, b = 0 },
+            auto_width = true,
+        },
+        widgets.FilteredList{
+            view_id = 'list',
+            not_found_label = 'No matching items',
+            frame = { l = 0, r = 0, t = 4, b = 2 },
+            icon_width = 2,
+            on_submit = self:callback('onSubmitItem'),
+            edit_on_char=function(c) return c:match('%l') end,
+        },
+        widgets.Label{
+            text = { {
+                key = 'SELECT', text = ': Select',
+                disabled = function() return not self.subviews.list:canSubmit() end
+            } },
+            frame = { l = 0, b = 0 },
+        }
+    }
+
+    self:initCategory(self.base_category, self.item_list)
+end
+
+function SelectDialog:getWantedFrameSize(rect)
+    return math.max(self.frame_width or 40, #self.prompt), math.min(28, rect.height-8)
+end
+
+function SelectDialog:onDestroy()
+    if self.on_close then
+        self.on_close()
+    end
+end
+
+function SelectDialog:initCategory(name, item_list)
+    local choices = {}
+
+    for _,value in pairs(item_list) do
+        self:addItem(choices, value)
+    end
+
+    self:pushCategory(name, choices)
+end
+
+function SelectDialog:addItem(choices, item)
+    if not item or not item.text then return end
+
+    if item.item_list then
+        table.insert(choices, {
+            icon = ARROW, text = item.text, key = item.key,
+            cb = function() self:initCategory(item.category or item.text, item.item_list) end
+        })
+    else
+        table.insert(choices, {
+            text = item.text,
+            value = item.value or item.text
+        })
+    end
+end
+
+function SelectDialog:pushCategory(name, choices)
+    if not self.back_stack then
+        self.back_stack = {}
+        self.subviews.back.visible = false
+    else
+        table.insert(self.back_stack, {
+            category_str = self.category_str,
+            all_choices = self.subviews.list:getChoices(),
+            edit_text = self.subviews.list:getFilter(),
+            selected = self.subviews.list:getSelected(),
+        })
+        self.subviews.back.visible = true
+    end
+
+    self.category_str = name
+    self.subviews.list:setChoices(choices, 1)
+end
+
+function SelectDialog:onGoBack()
+    local save = table.remove(self.back_stack)
+    self.subviews.back.visible = (#self.back_stack > 0)
+
+    self.category_str = save.category_str
+    self.subviews.list:setChoices(save.all_choices)
+    self.subviews.list:setFilter(save.edit_text, save.selected)
+end
+
+function SelectDialog:submitItem(value)
+    self:dismiss()
+
+    if self.on_select then
+        self.on_select(value)
+    end
+end
+
+function SelectDialog:onSubmitItem(idx, item)
+    if item.cb then
+        item:cb(idx)
+    else
+        self:submitItem(item.value)
+    end
+end
+
+function SelectDialog:onInput(keys)
+    if keys.LEAVESCREEN then
+        if self.subviews.back.visible then
+            self:onGoBack()
+        else
+            self:dismiss()
+            if self.on_cancel then
+                self.on_cancel()
+            end
+        end
+        return true
+    end
+    self:inputToSubviews(keys)
+    return true
+end
+
 --#endregion
 
 
@@ -831,9 +918,11 @@ function CycleLabel:init()
 end
 
 function CycleLabel:updateOptionLabel()
-    local label = copyall(self:getOptionLabel())
+    local label = self:getOptionLabel()
     if type(label) ~= "table" then
         label = {{ text= label }}
+    else
+        label = copyall(label)
     end
     if self.base_label then
         if label[1] then
@@ -955,6 +1044,7 @@ end
 
 TileConfig = defclass(TileConfig, widgets.Widget)
 TileConfig.ATTRS {
+    data_lists=DEFAULT_NIL,
     on_change_shape=DEFAULT_NIL,
     on_change_mat=DEFAULT_NIL,
     on_change_stone=DEFAULT_NIL,
@@ -966,30 +1056,43 @@ TileConfig.ATTRS {
 function TileConfig:init()
     self.stone_enabled = false
 
-    for _,value in pairs(vein_type_list) do
-        value.label = {{ text= value.base_label, pen= value.base_pen } }
+    local function getListOther(short_list)
+        for i=1, #short_list do
+            if short_list[i].value == short_list.other.value then
+                return short_list.other
+            end
+        end
+        table.insert(short_list, short_list.other)
+        short_list.other.label = OTHER_LABEL_FORMAT.first..short_list.other.label..OTHER_LABEL_FORMAT.last
+        return short_list.other
     end
+
+    self.other_shape = getListOther(self.data_lists.short_shape_list)
+    self.other_mat = getListOther(self.data_lists.short_mat_list)
+    self.other_special = getListOther(self.data_lists.short_special_list)
 
     local config_btn_width = #CONFIG_BUTTON
     local config_btn_l = UI_AREA.w - 2 - config_btn_width
 
     self:addviews {
         widgets.CycleHotkeyLabel {
+            view_id="shape_cycle",
             frame={l=1, r=config_btn_width, t=0},
             key_back='CUSTOM_SHIFT_H',
             key='CUSTOM_H',
             label='Shape:',
-            options=short_shape_list,
+            options=self.data_lists.short_shape_list,
             initial_option=-1,
             on_change=self.on_change_shape,
         },
         widgets.Divider { frame={t=2}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
+            view_id="mat_cycle",
             frame={l=1, r=config_btn_width, t=4},
             key_back='CUSTOM_SHIFT_J',
             key='CUSTOM_J',
             label='Material:',
-            options=short_mat_list,
+            options=self.data_lists.short_mat_list,
             initial_option=-1,
             on_change=self.on_change_mat,
         },
@@ -1008,16 +1111,17 @@ function TileConfig:init()
             base_label={ text= "Vein Type:", pen=function() return self.stone_enabled and UI_COLORS.HIGHLIGHTED or UI_COLORS.DESELECTED end },
             enabled=function() return self.stone_enabled end,
             initial_option=-1,
-            options=vein_type_list,
+            options=self.data_lists.vein_type_list,
             on_change=self.on_change_vein_type,
         },
         widgets.Divider { frame={t=10}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
+            view_id="special_cycle",
             frame={l=1, r=config_btn_width, t=12},
             key_back='CUSTOM_SHIFT_K',
             key='CUSTOM_K',
             label='Special:',
-            options=short_special_list,
+            options=self.data_lists.short_special_list,
             initial_option=-1,
             on_change=self.on_change_special,
         },
@@ -1027,7 +1131,7 @@ function TileConfig:init()
             key_back='CUSTOM_SHIFT_L',
             key='CUSTOM_L',
             label='Variant:',
-            options=variant_list,
+            options=self.data_lists.variant_list,
             initial_option=-1,
             on_change=self.on_change_variant,
         },
@@ -1040,19 +1144,19 @@ function TileConfig:init()
         widgets.Label {
             frame={l=config_btn_l, t=0},
             text=CONFIG_BUTTON,
-            on_click=function() print("Not yet implemented") end,
+            on_click=function() self:openShapePopup() end,
         },
         -- Material
         widgets.Label {
             frame={l=config_btn_l, t=4},
             text=CONFIG_BUTTON,
-            on_click=function() print("Not yet implemented") end,
+            on_click=function() self:openMaterialPopup() end,
         },
         -- Special
         widgets.Label {
             frame={l=config_btn_l, t=12},
             text=CONFIG_BUTTON,
-            on_click=function() print("Not yet implemented") end,
+            on_click=function() self:openSpecialPopup() end,
         },
     }
 
@@ -1060,32 +1164,58 @@ function TileConfig:init()
     self:setVisibility(self.visible)
 end
 
-function TileConfig:openStonePopup()
-    local dialog = guimat.MaterialDialog {
-        frame_title = "Stone Types",
-        use_inorganic = false,
-        use_creature = false,
-        use_plant = false,
-        on_select = function(_,value) self:changeStone(value) end,
+function TileConfig:openShapePopup()
+    SelectDialog {
+        frame_title = "Shape Values",
+        base_category = "Shape",
+        item_list = self.data_lists.shape_list,
+        on_select = function(item)
+            self.other_shape.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
+            self.other_shape.value = item.value
+            self.subviews.shape_cycle.option_idx=#self.subviews.shape_cycle.options
+        end,
     }:show()
-
-    dialog.subviews.list:setChoices(stone_list, 1)
-    dialog.context_str= "Stone"
 end
 
-function TileConfig:setStoneEnabled(bool)
-    self.stone_enabled = bool
-    if not bool then
-        self.subviews.vein_type_label:setOption(self.subviews.vein_type_label.initial_option)
-        self:changeStone(nil)
-    end
-    self.subviews.vein_type_label:updateOptionLabel()
+function TileConfig:openMaterialPopup()
+    SelectDialog {
+        frame_title = "Material Values",
+        base_category = "Material",
+        item_list = self.data_lists.mat_list,
+        on_select = function(item)
+            self.other_mat.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
+            self.other_mat.value = item.value
+            self.subviews.mat_cycle.option_idx=#self.subviews.mat_cycle.options
+        end,
+    }:show()
+end
+
+function TileConfig:openSpecialPopup()
+    SelectDialog {
+        frame_title = "Special Values",
+        base_category = "Special",
+        item_list = self.data_lists.special_list,
+        on_select = function(item)
+            self.other_special.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
+            self.other_special.value = item.value
+            self.subviews.special_cycle.option_idx=#self.subviews.special_cycle.options
+        end,
+    }:show()
+end
+
+function TileConfig:openStonePopup()
+    SelectDialog {
+        frame_title = "Stone Types",
+        base_category = "Stone",
+        item_list = self.data_lists.stone_list,
+        on_select = function(value) self:changeStone(value) end,
+    }:show()
 end
 
 function TileConfig:changeStone(stone_index)
-    local stone_option = stone_dict[-1]
+    local stone_option = self.data_lists.stone_dict[-1]
     if stone_index then
-        stone_option = stone_dict[stone_index]
+        stone_option = self.data_lists.stone_dict[stone_index]
         self.on_change_stone(stone_option.value)
     end
 
@@ -1098,6 +1228,15 @@ function TileConfig:changeStone(stone_index)
         base_label,
         { gap=1, text=stone_option.label, pen=stone_option.pen }
     })
+end
+
+function TileConfig:setStoneEnabled(bool)
+    self.stone_enabled = bool
+    if not bool then
+        self.subviews.vein_type_label:setOption(self.subviews.vein_type_label.initial_option)
+        self:changeStone(nil)
+    end
+    self.subviews.vein_type_label:updateOptionLabel()
 end
 
 function TileConfig:setVisibility(visibility)
@@ -1118,6 +1257,7 @@ TiletypeWindow.ATTRS {
     frame_inset={b=1, t=1},
     screen=DEFAULT_NIL,
     options_popup=DEFAULT_NIL,
+    data_lists=DEFAULT_NIL,
 }
 
 function TiletypeWindow:init()
@@ -1235,6 +1375,7 @@ function TiletypeWindow:init()
                 widgets.Divider { frame={h=1}, frame_style_l=false, frame_style_r=false, },
                 TileConfig {
                     view_id="tile_config",
+                    data_lists=self.data_lists,
                     on_change_shape=function(value)
                         self.cur_shape = value
                     end,
@@ -1372,7 +1513,7 @@ TiletypeScreen.ATTRS {
 }
 
 function TiletypeScreen:init()
-    generateDataLists(self.unrestricted)
+    self.data_lists = self:generateDataLists()
 
     local options_popup = OptionsPopup{
         view_id="options_popup",
@@ -1382,10 +1523,77 @@ function TiletypeScreen:init()
         TiletypeWindow {
             view_id="main_window",
             screen=self,
-            options_popup=options_popup
+            options_popup=options_popup,
+            data_lists = self.data_lists
         },
         options_popup
     }
+end
+
+function TiletypeScreen:generateDataLists()
+    local function itemColor(name)
+        return name == "NONE" and UI_COLORS.VALUE_NONE or UI_COLORS.VALUE
+    end
+
+    local function getEnumLists(enum, short_dict)
+        list = {}
+        short_list = {}
+
+        for i=enum._first_item, enum._last_item do
+            local name = enum[i]
+            if name then
+                local item = { label= name, value= i, pen= itemColor(name) }
+                table.insert(list, { text=name, value=item })
+                if short_dict then
+                    if short_dict.all or short_dict[i] then
+                        table.insert(short_list, item)
+                    elseif short_dict.other == i then
+                        short_list.other = copyall(item)
+                    end
+                end
+            end
+        end
+
+        return list, short_list
+    end
+
+
+    local data_lists = {}
+    data_lists.shape_list, data_lists.short_shape_list = getEnumLists(df.tiletype_shape, CYCLE_VALUES.shape)
+    data_lists.mat_list, data_lists.short_mat_list = getEnumLists(df.tiletype_material, CYCLE_VALUES.material)
+    data_lists.special_list, data_lists.short_special_list = getEnumLists(df.tiletype_special, CYCLE_VALUES.special)
+    _, data_lists.variant_list = getEnumLists(df.tiletype_variant, { all = true})
+
+    data_lists.stone_list = { { text = "none", value = -1 } }
+    data_lists.stone_dict = { [-1] = { label= "NONE", value= -1, pen= itemColor("NONE") } }
+    for i,mat in ipairs(df.global.world.raws.inorganics) do
+        if mat and mat.material
+            and not mat.flags[df.inorganic_flags.SOIL_ANY]
+            and not mat.material.flags[df.material_flags.IS_METAL]
+            and (self.unrestricted or not mat.flags[df.inorganic_flags.GENERATED])
+        then
+            local state = mat.material.heat.melting_point <= 10015 and 1 or 0
+            local name = mat.material.state_name[state]:gsub('^frozen ',''):gsub('^molten ',''):gsub('^condensed ','')
+            if mat.flags[df.inorganic_flags.GENERATED] then
+                -- Position 2 so that it is located immediately after "none"
+                if not data_lists.stone_list[2].item_list then
+                    table.insert(data_lists.stone_list, 2, { text = "generated materials", category = "Generated", item_list = {} })
+                end
+                table.insert(data_lists.stone_list[2].item_list, { text = name, value = i })
+            else
+                table.insert(data_lists.stone_list, { text = name, value = i })
+            end
+            data_lists.stone_dict[i] = { label= mat.id, value= i, pen= itemColor(mat.id) }
+        end
+    end
+
+    _, data_lists.vein_type_list = getEnumLists(df.inclusion_type, { all = true})
+    table.insert(data_lists.vein_type_list, 1, { label= "NONE", value= -1, pen= itemColor("NONE") }) -- Equivalent to CLUSTER
+    for _, value in pairs(data_lists.vein_type_list) do
+        value.label = {{ text= value.label, pen= value.pen }}
+    end
+
+    return data_lists
 end
 
 function TiletypeScreen:onDismiss()
