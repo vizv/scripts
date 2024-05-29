@@ -33,16 +33,6 @@ AdvRumorsOverlay.ATTRS{
     overlay_onupdate_max_freq_seconds=0,
 }
 
-function AdvRumorsOverlay:init()
-    self:addviews{
-        widgets.Label{
-            view_id='label',
-            text='adv-rumors - waiting...',
-            auto_width=true
-        },
-    }
-end
-
 function AdvRumorsOverlay:overlay_onupdate()
     checkRumorUpdate()
 end
