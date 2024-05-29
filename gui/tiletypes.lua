@@ -28,11 +28,17 @@ local UI_COLORS = {
     HIGHLIGHTED= COLOR_WHITE,
     HIGHLIGHTED2= COLOR_DARKGRAY,
     HIGHLIGHTED_BORDER= COLOR_YELLOW,
-    OPTION_ANY= COLOR_GRAY,
-    OPTION_YES= COLOR_LIGHTGREEN,
-    OPTION_NO= COLOR_RED,
     VALUE_NONE= COLOR_GRAY,
     VALUE= COLOR_YELLOW
+}
+
+local TILESET = dfhack.textures.loadTileset('hack/data/art/tiletypes.png', 8, 12, true)
+local TILESET_STRIDE = 16
+
+local OPTION_SETTINGS = {
+    [-1] = { char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
+    [ 0] = { char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
+    [ 1] = { char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
 }
 
 local MORE_OPTIONS = {
@@ -40,11 +46,14 @@ local MORE_OPTIONS = {
     ["light"]        = { label= "Light" },
     ["subterranean"] = { label= "Subterranean" },
     ["skyview"]      = { label= "Skyview" },
-    ["aquifer"]      = { label= "Aquifer" },
+    ["aquifer"]      = { label= "Aquifer", overrides= {
+        { value= 1, char1= 173, char2= 173, offset= 109, pen = COLOR_LIGHTBLUE },
+        { value= 2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE }
+    } },
 }
 
 local MODE_LIST = {
-    { label= "Place"   , value= "place"  , pen= COLOR_YELLOW     },
+    { label= "Paint"   , value= "paint"  , pen= COLOR_YELLOW     },
     { label= "Replace" , value= "replace", pen= COLOR_LIGHTGREEN },
     { label= "Fill"    , value= "fill"   , pen= COLOR_GREEN      },
     { label= "Remove"  , value= "remove" , pen= COLOR_RED        },
@@ -62,10 +71,26 @@ function isEmptyTile(pos)
 end
 
 local MODE_SETTINGS = {
-    [ "place"   ] = { idx= 1 , config= true  , description= "Place tiles"             , validator= function(pos) return true end                 },
-    [ "replace" ] = { idx= 2 , config= true  , description= "Replace non-empty tiles" , validator= function(pos) return not isEmptyTile(pos) end },
-    [ "fill"    ] = { idx= 3 , config= true  , description= "Fill in empty tiles"     , validator= function(pos) return isEmptyTile(pos) end     },
-    [ "remove"  ] = { idx= 4 , config= false , description= "Remove selected tiles"   , validator= function(pos) return true end                 },
+    ["paint"] = {
+        idx= 1, config= true , char1= 219, char2= 219, offset=  1, selected_offset = 49,
+        description= "Paint tiles",
+        validator= function(pos) return true end
+    },
+    ["replace"] = {
+        idx= 2, config= true , char1=   8, char2=   7, offset=  5, selected_offset = 53,
+        description= "Replace non-empty tiles",
+        validator= function(pos) return not isEmptyTile(pos) end
+    },
+    ["fill"] = {
+        idx= 3, config= true , char1=   7, char2=   8, offset=  9, selected_offset = 57,
+        description= "Fill in empty tiles",
+        validator= function(pos) return isEmptyTile(pos) end
+    },
+    ["remove"] = {
+        idx= 4, config= false, char1= 177, char2= 177, offset= 13, selected_offset = 61,
+        description= "Remove selected tiles",
+        validator= function(pos) return true end
+    },
 }
 
 CYCLE_VALUES = {
@@ -96,12 +121,12 @@ CYCLE_VALUES = {
 ---@field material? df.tiletype_material
 ---@field special? df.tiletype_special
 ---@field variant? df.tiletype_variant
----@field dig? boolean Only for filters
----@field hidden? boolean
----@field light? boolean
----@field subterranean? boolean
----@field skyview? boolean
----@field aquifer? boolean
+---@field dig? integer Only for filters
+---@field hidden? integer
+---@field light? integer
+---@field subterranean? integer
+---@field skyview? integer
+---@field aquifer? integer
 ---@field stone_material? integer
 ---@field vein_type? df.inclusion_type
 
@@ -113,8 +138,9 @@ function setTile(pos, target)
         return value ~= nil and enum[value] and value or default
     end
     local toValidOptionValue = function(value)
-        return value ~= nil and (value and 1 or 0) or -1
+        return value == nil and -1 or value
     end
+
     local tiletype = {
         shape          = toValidEnumValue(target.shape,    df.tiletype_shape,    df.tiletype_shape.NONE),
         material       = toValidEnumValue(target.material, df.tiletype_material, df.tiletype_material.NONE),
@@ -758,7 +784,7 @@ SelectDialog.ATTRS{
     on_close = DEFAULT_NIL,
 }
 
-function SelectDialog:init(info)
+function SelectDialog:init()
     self:addviews{
         widgets.Label{
             text = {
@@ -970,64 +996,83 @@ function OptionsPopup:init()
     self.values = {}
     local height_offset = 0
     for key,option in pairs(MORE_OPTIONS) do
-        self.values[key] = "Any"
+        self.values[key] = -1
+        local options = {
+            {
+                value=-1,
+                label= makeInlineButtonLabelText{
+                    left_specs={
+                        chars={option.label},
+                        pens=OPTION_SETTINGS[-1].pen,
+                        pens_hover=UI_COLORS.HIGHLIGHTED,
+                    },
+                    right_specs={
+                        chars=makeUIChars(OPTION_SETTINGS[-1].char1, OPTION_SETTINGS[-1].char2),
+                        pens=makeUIPen(UI_COLORS.DESELECTED, OPTION_SETTINGS[-1].pen),
+                        pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, OPTION_SETTINGS[-1].pen),
+                        tileset=TILESET,
+                        tileset_offset=OPTION_SETTINGS[-1].offset,
+                        tileset_stride=TILESET_STRIDE,
+                    },
+                    width=width
+                },
+            },
+            {
+                value=0,
+                label= makeInlineButtonLabelText{
+                    left_specs={
+                        chars={option.label},
+                        pens=OPTION_SETTINGS[0].pen,
+                        pens_hover=UI_COLORS.HIGHLIGHTED,
+                    },
+                    right_specs={
+                        chars=makeUIChars(OPTION_SETTINGS[0].char1, OPTION_SETTINGS[0].char2),
+                        pens=makeUIPen(UI_COLORS.DESELECTED, OPTION_SETTINGS[0].pen),
+                        pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, OPTION_SETTINGS[0].pen),
+                        tileset=TILESET,
+                        tileset_offset=OPTION_SETTINGS[0].offset,
+                        tileset_stride=TILESET_STRIDE,
+                    },
+                    width=width
+                },
+            },
+        }
+
+        local addOption = function(value, pen, char1, char2, offset)
+            table.insert(options, #options, {
+                value=value,
+                label= makeInlineButtonLabelText{
+                    left_specs={
+                        chars={option.label},
+                        pens=pen,
+                        pens_hover=UI_COLORS.HIGHLIGHTED,
+                    },
+                    right_specs= {
+                        chars=makeUIChars(char1, char2),
+                        pens=makeUIPen(UI_COLORS.DESELECTED, pen),
+                        pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, pen),
+                        tileset=TILESET,
+                        tileset_offset=offset,
+                        tileset_stride=TILESET_STRIDE,
+                    },
+                    width=width
+                },
+            })
+        end
+
+        if option.overrides then
+            for _, value in pairs(option.overrides) do
+                addOption(value.value, value.pen, value.char1, value.char2, value.offset)
+            end
+        else
+            addOption(1, OPTION_SETTINGS[1].pen, OPTION_SETTINGS[1].char1, OPTION_SETTINGS[1].char2, OPTION_SETTINGS[1].offset)
+        end
+
         table.insert(optionViews,
             CycleLabel {
                 frame={l=1,t=height_offset},
-                initial_option="Any",
-                options={
-                    {
-                        value="Any",
-                        label= makeInlineButtonLabelText{
-                            left_specs={
-                                chars={option.label},
-                                pens=UI_COLORS.OPTION_ANY,
-                                pens_hover=UI_COLORS.HIGHLIGHTED,
-                            },
-                            right_specs={
-                                chars=makeUIChars(" "," "),
-                                pens=makeUIPen(UI_COLORS.DESELECTED, UI_COLORS.OPTION_ANY),
-                                pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, UI_COLORS.OPTION_ANY),
-                                asset={page='INTERFACE_BITS_SHARED', x=4, y=6},
-                            },
-                            width=width
-                        },
-                    },
-                    {
-                        value=true,
-                        label= makeInlineButtonLabelText{
-                            left_specs={
-                                chars={option.label},
-                                pens=UI_COLORS.OPTION_YES,
-                                pens_hover=UI_COLORS.HIGHLIGHTED,
-                            },
-                            right_specs={
-                                chars=makeUIChars("+","+"),
-                                pens=makeUIPen(UI_COLORS.DESELECTED, UI_COLORS.OPTION_YES),
-                                pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, UI_COLORS.OPTION_YES),
-                                asset={page='INTERFACE_BITS_SHARED', x=0, y=6},
-                            },
-                            width=width
-                        },
-                    },
-                    {
-                        value=false,
-                        label= makeInlineButtonLabelText{
-                            left_specs={
-                                chars={option.label},
-                                pens=UI_COLORS.OPTION_NO,
-                                pens_hover=UI_COLORS.HIGHLIGHTED,
-                            },
-                            right_specs={
-                                chars=makeUIChars("X","X"),
-                                pens=makeUIPen(UI_COLORS.DESELECTED, UI_COLORS.OPTION_NO),
-                                pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, UI_COLORS.OPTION_NO),
-                                asset={page='INTERFACE_BITS_SHARED', x=8, y=3},
-                            },
-                            width=width
-                        },
-                    },
-                },
+                initial_option=-1,
+                options=options,
                 on_change=function(value) self.values[key] = value end
             }
         )
@@ -1261,7 +1306,7 @@ TiletypeWindow.ATTRS {
 }
 
 function TiletypeWindow:init()
-    self.cur_mode="place"
+    self.cur_mode="paint"
     self.mode_description = ""
     self.cur_shape=-1
     self.cur_mat=-1
@@ -1278,10 +1323,6 @@ function TiletypeWindow:init()
         }
     end
     local makeUIPen = function(border_pen, center_pen)
-        --border_pen = type(border_pen) == "table" and border_pen or {fg=border_pen}
-        --border_pen.tile_color=true
-        center_pen = type(center_pen) == "table" and center_pen or {fg=center_pen}
-        center_pen.tile_color=true
         return {
             border_pen,
             {border_pen, center_pen, center_pen, border_pen},
@@ -1305,58 +1346,66 @@ function TiletypeWindow:init()
                     frame={l=1},
                     button_specs={
                         {
-                            chars=makeUIChars(219, 219),
+                            chars=makeUIChars(MODE_SETTINGS["paint"].char1, MODE_SETTINGS["paint"].char2),
                             pens=makeUIPen(UI_COLORS.DESELECTED_BORDER, UI_COLORS.DESELECTED),
                             pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, UI_COLORS.HIGHLIGHTED),
-                            asset={page='INTERFACE_BITS_BUILDING_PLACEMENT', x=0, y=0},
-                            tiles_override={[2]={[2]=219, [3]=219}},
+                            tileset=TILESET,
+                            tileset_offset=MODE_SETTINGS["paint"].offset,
+                            tileset_stride=TILESET_STRIDE,
                         },
                         {
-                            chars=makeUIChars(8, 7),
+                            chars=makeUIChars(MODE_SETTINGS["replace"].char1, MODE_SETTINGS["replace"].char2),
                             pens=makeUIPen(UI_COLORS.DESELECTED_BORDER, UI_COLORS.DESELECTED),
                             pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, UI_COLORS.HIGHLIGHTED),
-                            asset={page='INTERFACE_BITS_BUILDING_PLACEMENT', x=0, y=0},
-                            tiles_override={[2]={[2]=8, [3]=7}},
+                            tileset=TILESET,
+                            tileset_offset=MODE_SETTINGS["replace"].offset,
+                            tileset_stride=TILESET_STRIDE,
                         },
                         {
-                            chars=makeUIChars(7, 8),
+                            chars=makeUIChars(MODE_SETTINGS["fill"].char1, MODE_SETTINGS["fill"].char2),
                             pens=makeUIPen(UI_COLORS.DESELECTED_BORDER, {fg=UI_COLORS.DESELECTED,bg=UI_COLORS.DESELECTED2}),
                             pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, {fg=UI_COLORS.HIGHLIGHTED,bg=UI_COLORS.HIGHLIGHTED2}),
-                            asset={page='INTERFACE_BITS_BUILDING_PLACEMENT', x=0, y=0},
-                            tiles_override={[2]={[2]=7, [3]=8}},
+                            tileset=TILESET,
+                            tileset_offset=MODE_SETTINGS["fill"].offset,
+                            tileset_stride=TILESET_STRIDE,
                         },
                         {
-                            chars=makeUIChars(177, 177),
+                            chars=makeUIChars(MODE_SETTINGS["remove"].char1, MODE_SETTINGS["remove"].char2),
                             pens=makeUIPen(UI_COLORS.DESELECTED_BORDER, UI_COLORS.DESELECTED),
                             pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, UI_COLORS.HIGHLIGHTED),
-                            asset={page='INTERFACE_BITS_BUILDING_PLACEMENT', x=0, y=0},
-                            tiles_override={[2]={[2]=177, [3]=177}},
+                            tileset=TILESET,
+                            tileset_offset=MODE_SETTINGS["remove"].offset,
+                            tileset_stride=TILESET_STRIDE,
                         },
                     },
                     button_specs_selected={
                         {
-                            chars=makeUIChars(219, 219),
+                            chars=makeUIChars(MODE_SETTINGS["paint"].char1, MODE_SETTINGS["paint"].char2),
                             pens=makeUIPen(UI_COLORS.SELECTED_BORDER, UI_COLORS.SELECTED),
-                            asset={page='INTERFACE_BITS_BUILDING_PLACEMENT', x=4, y=0},
-                            tiles_override={[2]={[2]=219, [3]=219}},
+                            tileset=TILESET,
+                            tileset_offset=MODE_SETTINGS["paint"].selected_offset,
+                            tileset_stride=TILESET_STRIDE,
                         },
                         {
-                            chars=makeUIChars(8, 7),
+                            chars=makeUIChars(MODE_SETTINGS["replace"].char1, MODE_SETTINGS["replace"].char2),
                             pens=makeUIPen(UI_COLORS.SELECTED_BORDER, UI_COLORS.SELECTED),
-                            asset={page='INTERFACE_BITS_BUILDING_PLACEMENT', x=4, y=0},
-                            tiles_override={[2]={[2]=8, [3]=7}},
+                            tileset=TILESET,
+                            tileset_offset=MODE_SETTINGS["replace"].selected_offset,
+                            tileset_stride=TILESET_STRIDE,
                         },
                         {
-                            chars=makeUIChars(7, 8),
+                            chars=makeUIChars(MODE_SETTINGS["fill"].char1, MODE_SETTINGS["fill"].char2),
                             pens=makeUIPen(UI_COLORS.SELECTED_BORDER, {fg=UI_COLORS.SELECTED,bg=UI_COLORS.SELECTED2}),
-                            asset={page='INTERFACE_BITS_BUILDING_PLACEMENT', x=4, y=0},
-                            tiles_override={[2]={[2]=7, [3]=8}},
+                            tileset=TILESET,
+                            tileset_offset=MODE_SETTINGS["fill"].selected_offset,
+                            tileset_stride=TILESET_STRIDE,
                         },
                         {
-                            chars=makeUIChars(177, 177),
+                            chars=makeUIChars(MODE_SETTINGS["remove"].char1, MODE_SETTINGS["remove"].char2),
                             pens=makeUIPen(UI_COLORS.SELECTED_BORDER, UI_COLORS.SELECTED2),
-                            asset={page='INTERFACE_BITS_BUILDING_PLACEMENT', x=4, y=0},
-                            tiles_override={[2]={[2]=177, [3]=177}},
+                            tileset=TILESET,
+                            tileset_offset=MODE_SETTINGS["remove"].selected_offset,
+                            tileset_stride=TILESET_STRIDE,
                         },
                     },
                     key_back='CUSTOM_SHIFT_M',
@@ -1446,13 +1495,6 @@ function TiletypeWindow:confirm()
             end)
         else
             local option_values = self.options_popup.values
-            local parseOption = function(option)
-                if option == "Any" then
-                    return nil
-                else
-                    return option
-                end
-            end
 
             ---@type TileType
             local tiletype = {
@@ -1460,11 +1502,11 @@ function TiletypeWindow:confirm()
                 material       = self.cur_mat,
                 special        = self.cur_special,
                 variant        = self.cur_variant,
-                hidden         = parseOption(option_values.hidden),
-                light          = parseOption(option_values.light),
-                subterranean   = parseOption(option_values.subterranean),
-                skyview        = parseOption(option_values.skyview),
-                aquifer        = parseOption(option_values.aquifer),
+                hidden         = option_values.hidden,
+                light          = option_values.light,
+                subterranean   = option_values.subterranean,
+                skyview        = option_values.skyview,
+                aquifer        = option_values.aquifer,
                 stone_material = self.cur_stone,
                 vein_type      = self.cur_vein_type,
             }
