@@ -19,3 +19,10 @@ Usage
 ::
 
     gui/tiletypes
+    gui/tiletypes --unrestricted
+
+Options
+-------
+
+``-f``, ``--unrestricted``
+    Include world-gen materials as available options.

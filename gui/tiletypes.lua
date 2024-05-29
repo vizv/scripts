@@ -1652,7 +1652,7 @@ end
 function main(...)
     local args = {...}
     local positionals = argparse.processArgsGetopt(args, {
-        { nil, 'unrestricted', handler = function() args.unrestricted = true end },
+        { 'f', 'unrestricted', handler = function() args.unrestricted = true end },
     })
 
     if not dfhack.isMapLoaded() then
