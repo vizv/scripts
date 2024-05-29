@@ -8,9 +8,8 @@ adv-rumors
 ==========
 Improves the "Bring up specific incident or rumor" menu in Adventure mode.
 
-- Adds a "slew" keyword for filtering, making it easy to find your kills and not your companions'
-- Adds "gaining", "placement" and "giving" keywords for artifacts
-- Trims repetitive words
+- Adds all words to keywords for easier filtering/searching everywhere
+- slay/slain/slew keywords for all relevant instances
 
 ]====]
 
