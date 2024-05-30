@@ -86,12 +86,20 @@ end
 LegendsWarning = defclass(LegendsWarning, widgets.Window)
 LegendsWarning.ATTRS {
     frame_title='Open Legends Mode',
-    frame={w=50, h=21},
+    frame={w=50, h=14},
     autoarrange_subviews=true,
+    autoarrange_gap=1,
     no_autoquit=false,
 }
 
 function LegendsWarning:init()
+    if not self.no_autoquit then
+        self.frame.h = self.frame.h + 5
+    end
+    if dfhack.world.isFortressMode() then
+        self.frame.h = self.frame.h + (self.no_autoquit and 7 or 2)
+    end
+
     self:addviews{
         widgets.Label{
             text={
@@ -99,7 +107,7 @@ function LegendsWarning:init()
                 'mode from a active game, but beware that this', NEWLINE,
                 'is a', {gap=1, text='ONE WAY TRIP', pen=COLOR_RED}, '.', NEWLINE,
                 NEWLINE,
-                'Returning to fort mode from legends mode', NEWLINE,
+                'Returning to play from legends mode', NEWLINE,
                 'would make the game unstable, so to protect', NEWLINE,
                 'your savegame, Dwarf Fortress will exit when', NEWLINE,
                 'you are done browsing.',
@@ -110,21 +118,22 @@ function LegendsWarning:init()
             text={
                 'You have opted for a ', {text='two-way ticket', pen=COLOR_RED} ,' to legends', NEWLINE,
                 'mode. Remember to ', {text='quit to desktop and restart', pen=COLOR_RED}, NEWLINE,
-                'DF when you\'re done to avoid save corruption.', NEWLINE,
-                NEWLINE,
-                'When you return to this game mode, automatic', NEWLINE,
-                'autosaves will be disabled until you restart', NEWLINE,
-                'DF to avoid accidentally overwriting good', NEWLINE,
-                'savegames.',
+                'DF when you\'re done to avoid save corruption.'
             },
             visible=self.no_autoquit,
         },
         widgets.Label{
             text={
-                NEWLINE,
-                {text='This is your last chance to save your game.', pen=COLOR_LIGHTRED}, NEWLINE,
-                NEWLINE,
+                'When you return to fort mode, automatic', NEWLINE,
+                'autosaves will be disabled until you restart', NEWLINE,
+                'DF to avoid accidentally overwriting good', NEWLINE,
+                'savegames.',
             },
+            visible=self.no_autoquit and dfhack.world.isFortressMode(),
+        },
+        widgets.Label{
+            text='This is your last chance to save your game.',
+            text_pen=COLOR_LIGHTRED,
         },
         widgets.HotkeyLabel{
             frame={l=0},
@@ -132,13 +141,12 @@ function LegendsWarning:init()
             label='Please click here to create an Autosave',
             text_pen=COLOR_YELLOW,
             on_activate=function() dfhack.run_command('quicksave') end,
+            visible=dfhack.world.isFortressMode(),
         },
         widgets.Label{
             text={
-                NEWLINE,
-                'or exit out of this dialog and create a named', NEWLINE,
-                'save of your choice.', NEWLINE,
-                NEWLINE,
+                (dfhack.world.isFortressMode() and 'Alternately,' or 'You can') .. ' exit out of this dialog and', NEWLINE,
+                'create a named save of your choice.',
             },
         },
         widgets.HotkeyLabel{
