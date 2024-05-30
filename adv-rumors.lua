@@ -33,7 +33,7 @@ AdvRumorsOverlay.ATTRS{
 }
 
 function AdvRumorsOverlay:overlay_onupdate()
-    checkRumorUpdate()
+    rumorUpdate()
 end
 
 OVERLAY_WIDGETS = {message=AdvRumorsOverlay}
@@ -126,19 +126,6 @@ function shortenChoice(choice)
     local fulltext = choiceToString(choice)
     fulltext = shortenChoiceText(fulltext)
     renameChoice(fulltext, choice)
-end
-
--- Check if rumorUpdate() should be called, making sure to keep track of the current conversation tree state
-local current_state = -1
-function checkRumorUpdate()
-    if not adventure.conversation.open or adventure.conversation.selecting_conversation or adventure.conversation.conv_actce == nil then
-        current_state = -1
-        return
-    end
-    if current_state ~= adventure.conversation.conv_actce.state then
-        rumorUpdate()
-    end
-    current_state = adventure.conversation.conv_actce.state
 end
 
 -- Condense the rumor system choices
