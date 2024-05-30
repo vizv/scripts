@@ -30,15 +30,16 @@ function clearNemesisFromLinkedSites(nem)
     end
     for _, link in ipairs(nem.figure.site_links) do
         local site = df.world_site.find(link.site)
-        for i = #site.unk_1.nemesis - 1, 0, -1 do
-            if site.unk_1.nemesis[i] == nem.id then
-                site.unk_1.nemesis:erase(i)
+        for i = #site.populace.nemesis - 1, 0, -1 do
+            if site.populace.nemesis[i] == nem.id then
+                site.populace.nemesis:erase(i)
             end
         end
     end
 end
 
 function createNemesis(unit)
+    -- TODO: figure out how to create a nemesis entry without relying on external scripts
     local nemesis = reqscript('modtools/create-unit').createNemesis(unit, unit.civ_id)
     nemesis.figure.flags.never_cull = true
     return nemesis
@@ -116,30 +117,6 @@ function swapAdvUnit(newUnit)
         return
     end
 
-    local activeUnits = df.global.world.units.active
-    local oldUnitIndex
-    if activeUnits[0] == oldUnit then
-        oldUnitIndex = 0
-    else -- unlikely; this is just in case
-        for i, u in ipairs(activeUnits) do
-            if u == oldUnit then
-                oldUnitIndex = i
-                break
-            end
-        end
-    end
-    local newUnitIndex
-    for i, u in ipairs(activeUnits) do
-        if u == newUnit then
-            newUnitIndex = i
-            break
-        end
-    end
-
-    if not newUnitIndex then
-        qerror("Target unit index not found!")
-    end
-
     local newNem = dfhack.units.getNemesis(newUnit) or createNemesis(newUnit)
     if not newNem then
         qerror("Failed to obtain target nemesis!")
@@ -149,9 +126,11 @@ function swapAdvUnit(newUnit)
     setNewAdvNemFlags(newNem)
     configureAdvParty(newNem)
     df.global.adventure.player_id = newNem.id
-    activeUnits[newUnitIndex] = oldUnit
-    activeUnits[oldUnitIndex] = newUnit
+    df.global.world.units.adv_unit = newUnit
     oldUnit.idle_area:assign(oldUnit.pos)
+
+    -- +1 is necessary because in adv mode, the window pos is off by 1 from dwarf mode for some reason
+    dfhack.gui.revealInDwarfmodeMap(xyz2pos(newUnit.pos.x+1, newUnit.pos.y+1, newUnit.pos.z), true)
 end
 
 if not dfhack_flags.module then
