@@ -15,7 +15,7 @@ if positionals[1] == 'help' or opts.help then
     return
 end
 
-if positionals[1] then
+if not positionals[1] then
     plugin.fix_map(opts.dry_run)
 else
     plugin.fix_tile(argparse.coords(positionals[1], 'pos'), opts.dry_run)
