@@ -1,6 +1,3 @@
--- Embark underground.
--- author: Atomic Chicken
-
 --@ module = true
 
 local utils = require 'utils'
@@ -50,8 +47,8 @@ function getFeatureBlocks(featureID)
 end
 
 function isValidTiletype(tiletype)
-  local tiletype = df.tiletype[tiletype]
-  local tiletypeAttrs = df.tiletype.attrs[tiletype]
+  local tt = df.tiletype[tiletype]
+  local tiletypeAttrs = df.tiletype.attrs[tt]
   local material = tiletypeAttrs.material
   local forbiddenMaterials = {
     df.tiletype_material.TREE, -- so as not to embark stranded on top of a tree
@@ -95,7 +92,7 @@ function blockGlowingBarrierAnnouncements(recenter)
   dfhack.timeout(1,'ticks', function() -- barrier disappears after 1 tick
     announcementFlags:assign(oldFlags) -- restore announcement settings
     if recenter then
---    Remove glowing barrier notifications:
+      -- Remove glowing barrier notifications:
       local status = df.global.world.status
       local announcements = status.announcements
       for i = #announcements-1, 0, -1 do

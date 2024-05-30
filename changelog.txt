@@ -27,9 +27,11 @@ Template for new versions:
 # Future
 
 ## New Tools
+- `pop-control`: (reinstated) limit the maximum size of migrant waves
 - `gui/sitemap`: list and zoom to nearby people, locations, and artifacts
 - `devel/tree-info`: print a visualization of tree_info data
 - `gui/tiletypes`: interface for modifying map tiles and tile properties
+- `fix/population-cap`: fixes the situation where you continue to get migrant waves even when you are above your configured population cap
 
 ## New Features
 - `buildingplan`: dimension tooltip is now displayed for constructions and buildings that are designated over an area
@@ -38,6 +40,7 @@ Template for new versions:
 - `item`: don't match uncollected spider webs when you search for "silk"
 - `assign-profile`: fix handling of unit option for setting target unit id
 - `gui/gm-unit`: correctly display skill levels above Legendary+5
+- `quickfort`: fix merge logic for disjoint stockpiles that are given the same label
 
 ## Misc Improvements
 - `gui/unit-info-viewer`: now displays a unit's weight, relative to either dwarves, elephants or cats
@@ -45,6 +48,8 @@ Template for new versions:
 - `caravan`: optional overlay to hide vanilla bring trade goods to depot button (if you prefer to always use the DFHack version and don't want to accidentally click on the vanilla button). enable ``caravan.movegoods_hider`` in `gui/control-panel` UI Overlays tab to use.
 
 ## Removed
+- `max-wave`: merged into `pop-control`
+- `devel/find-offsets`, `devel/find-twbt`, `devel/prepare-save`: remove development scripts that are no longer useful
 
 # 50.13-r2
 

@@ -169,6 +169,7 @@ local function custom_stockpile(_, keys)
     if not db_entry then return nil end
     if token_and_label.label then
         db_entry.label = ('%s/%s'):format(db_entry.label, token_and_label.label)
+        db_entry.global_label = db_entry.label
     end
     if next(adjustments) then
         db_entry.adjustments[adjustments] = true

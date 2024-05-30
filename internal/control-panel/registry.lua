@@ -119,6 +119,7 @@ COMMANDS_BY_IDX = {
         params={'--time', '1', '--timeUnits', 'months', '--command', '[', 'orders', 'recheck', ']'}},
     {command='partial-items', help_command='tweak', group='gameplay', mode='tweak', default=true,
         desc='Displays percentages on partially-consumed items like hospital cloth.'},
+    {command='pop-control', group='gameplay', mode='enable'},
     {command='starvingdead', group='gameplay', mode='enable'},
     {command='work-now', group='gameplay', mode='enable'},
 }
