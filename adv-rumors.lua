@@ -25,7 +25,7 @@ local shortening = false
 
 AdvRumorsOverlay = defclass(AdvRumorsOverlay, overlay.OverlayWidget)
 AdvRumorsOverlay.ATTRS{
-    desc='Sample widget that displays a message on the screen.',
+    desc='Widget responsible for updating the conversation screen to add keywords etc.',
     default_pos={x=25,y=25},
     default_enabled=true,
     viewscreens='dungeonmode/Conversation',
