@@ -1,5 +1,5 @@
 gui/tiletypes
-===========
+=============
 
 .. dfhack-tool::
     :summary: Interactively paint tiles of specified types onto the map.
