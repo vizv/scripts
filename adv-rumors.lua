@@ -2,28 +2,23 @@
 
 --@ module=true
 
-local help = [====[
-
-adv-rumors
-==========
-Improves the "Bring up specific incident or rumor" menu in Adventure mode.
-
-- Adds all words to keywords for easier filtering/searching everywhere
-- slay/slain/slew keywords for all relevant instances
-
-]====]
-
+-- requirements
 local overlay = require('plugins.overlay')
 local utils = require('utils')
 local widgets = require('gui.widgets')
 
-local adventure = df.global.game.main_interface.adventure
+-- globals
+ignore_words = utils.invert{
+    "a", "an", "attacked", "by", "in", "occurred", "of", "or",
+    "s", "slain", "slew", "the", "this", "to", "was", "which"
+}
 
--- experimental, set this to 'true' to make the choices less verbose
-local shortening = false
+-- locals
+local adventure = df.global.game.main_interface.adventure
 
 AdvRumorsOverlay = defclass(AdvRumorsOverlay, overlay.OverlayWidget)
 AdvRumorsOverlay.ATTRS{
+    name='adv-rumors',
     desc='Adds keywords to conversation entries.',
     overlay_only=true,
     default_enabled=true,
@@ -42,7 +37,7 @@ OVERLAY_WIDGETS = {message=AdvRumorsOverlay}
 function choiceToString(choice)
     local line_table = {}
     for i, data in ipairs(choice.print_string.text) do
-        table.insert(line_table, data.value)
+        table.insert(line_table, dfhack.toSearchNormalized(data.value))
     end
     return table.concat(line_table, "\n")
 end
@@ -66,6 +61,17 @@ function renameChoice(text, choice)
     end
 end
 
+function getKeywords(choice)
+    local keywords = {}
+    for i, keyword in ipairs(choice.key_word) do
+        local keytext = dfhack.df2utf(keyword.value):lower()
+        if not keywords[keytext] then
+            table.insert(keywords, keytext)
+        end
+    end
+    return keywords
+end
+
 function addKeyword(choice, keyword)
     -- Prevent duplicate keywords
     for i, kword in ipairs(choice.key_word) do
@@ -78,30 +84,29 @@ function addKeyword(choice, keyword)
     choice.key_word:insert('#', keyword_ptr)
 end
 
+function addKeywords(choice, keywords)
+    for i, keyword in ipairs(keywords) do
+        addKeyword(choice, keyword)
+    end
+end
+
 function addKeywordsForChoice(choice)
     local fulltext = choiceToString(choice)
 
     -- Special cases
     if string.find(fulltext, "slew") or string.find(fulltext, "slain") then
-        addKeyword(choice, 'slew')
         addKeyword(choice, 'slay')
-        addKeyword(choice, 'slain')
     end
 
     -- add a "sane" handling of you/your/me
-    if string.find(fulltext, " you ") or string.find(fulltext, " your ") then
+    if string.find(fulltext, 'you?%f[%W]') or string.find(fulltext, 'your?%f[%W]') then
         addKeyword(choice, 'me')
     end
 
     -- Transform the whole thing into keywords barring blacklist
-    local names_blacklist = utils.invert{"the", "a", "an", "of", "to", "attacked", "slew", "was", "slain", "by"}
-    local title = fulltext
-    if title:find('%(') then
-        title = title:sub(1, title:find('%(') - 1)
-    end
     local new_keywords, keywords_set = {}, utils.invert(getKeywords(choice))
-    for word in text:gmatch('[%w(]+') do
-        if word:startswith('(') then break end
+    for word in fulltext:gmatch('[%w]+') do
+        -- remove the parenthises from the word
         word = dfhack.toSearchNormalized(word)
         if not ignore_words[word] and not keywords_set[word] then
             table.insert(new_keywords, word)
@@ -109,24 +114,6 @@ function addKeywordsForChoice(choice)
         end
     end
     addKeywords(choice, new_keywords)
-end
-
--- Returns a string that shortens the options
-function shortenChoiceText(text)
-    return text
-        :gsub("Summarize the conflict in which +", "A fight where ")
-        :gsub("This occurred +", "")
-        :gsub("Bring up +", "")
-        :gsub("Spread rumor of +", "")
-        :gsub("Ask about +", "")
-        :gsub("Ask for directions to +", "where is ")
-        :gsub("Ask for the whereabouts of +", "where is ")
-end
-
-function shortenChoice(choice)
-    local fulltext = choiceToString(choice)
-    fulltext = shortenChoiceText(fulltext)
-    renameChoice(fulltext, choice)
 end
 
 -- Condense the rumor system choices
