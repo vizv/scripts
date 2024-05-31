@@ -20,6 +20,14 @@ Usage
 
     gui/tiletypes [<options>]
 
+Examples
+--------
+
+``gui/tiletypes``
+    Start the tiletypes GUI.
+``gui/tiletypes --unrestricted``
+    Start the tiletypes GUI with non-standard materials available.
+
 Options
 -------
 
