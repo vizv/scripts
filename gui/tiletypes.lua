@@ -769,14 +769,14 @@ end
 ---@field key string?
 ---@field item_list (widgets.ListChoice|CategoryChoice)[]
 
-ARROW = string.char(26)
+local ARROW = string.char(26)
 
-SelectDialog = defclass(SelectDialog, gui.FramedScreen)
+SelectDialogWindow = defclass(SelectDialogWindow, widgets.Window)
 
-SelectDialog.ATTRS{
-    focus_path = "SelectDialog",
+SelectDialogWindow.ATTRS{
     prompt = "Type or select a item from this list",
     base_category = "Any item",
+    frame={w=40, h=28},
     frame_style = gui.FRAME_PANEL,
     frame_inset = 1,
     frame_title = "Select Item",
@@ -786,7 +786,21 @@ SelectDialog.ATTRS{
     on_close = DEFAULT_NIL,
 }
 
-function SelectDialog:init()
+function SelectDialogWindow:init()
+    self.back = widgets.HotkeyLabel{
+        frame = { r = 0, b = 0 },
+        auto_width = true,
+        visible = false,
+        label = "Back",
+        key="LEAVESCREEN",
+        on_activate = self:callback('onGoBack')
+    }
+    self.list = widgets.FilteredList{
+        not_found_label = 'No matching items',
+        frame = { l = 0, r = 0, t = 4, b = 2 },
+        icon_width = 2,
+        on_submit = self:callback('onSubmitItem'),
+    }
     self:addviews{
         widgets.Label{
             text = {
@@ -796,44 +810,28 @@ function SelectDialog:init()
             text_pen = COLOR_WHITE,
             frame = { l = 0, t = 0 },
         },
-        widgets.Label{
-            view_id = 'back',
-            visible = false,
-            text = { { key = 'LEAVESCREEN', text = ': Back' } },
-            frame = { r = 0, b = 0 },
-            auto_width = true,
-        },
-        widgets.FilteredList{
-            view_id = 'list',
-            not_found_label = 'No matching items',
-            frame = { l = 0, r = 0, t = 4, b = 2 },
-            icon_width = 2,
-            on_submit = self:callback('onSubmitItem'),
-            edit_on_char=function(c) return c:match('%l') end,
-        },
-        widgets.Label{
-            text = { {
-                key = 'SELECT', text = ': Select',
-                disabled = function() return not self.subviews.list:canSubmit() end
-            } },
+        self.back,
+        self.list,
+        widgets.HotkeyLabel{
             frame = { l = 0, b = 0 },
+            auto_width = true,
+            label = "Select",
+            key="SELECT",
+            disabled = function() return not self.list:canSubmit() end,
+            on_activate = function() self.list:submit() end
         }
     }
 
     self:initCategory(self.base_category, self.item_list)
 end
 
-function SelectDialog:getWantedFrameSize(rect)
-    return math.max(self.frame_width or 40, #self.prompt), math.min(28, rect.height-8)
-end
-
-function SelectDialog:onDismiss()
+function SelectDialogWindow:onDismiss()
     if self.on_close then
         self.on_close()
     end
 end
 
-function SelectDialog:initCategory(name, item_list)
+function SelectDialogWindow:initCategory(name, item_list)
     local choices = {}
 
     for _,value in pairs(item_list) do
@@ -843,7 +841,7 @@ function SelectDialog:initCategory(name, item_list)
     self:pushCategory(name, choices)
 end
 
-function SelectDialog:addItem(choices, item)
+function SelectDialogWindow:addItem(choices, item)
     if not item or not item.text then return end
 
     if item.item_list then
@@ -859,42 +857,42 @@ function SelectDialog:addItem(choices, item)
     end
 end
 
-function SelectDialog:pushCategory(name, choices)
+function SelectDialogWindow:pushCategory(name, choices)
     if not self.back_stack then
         self.back_stack = {}
-        self.subviews.back.visible = false
+        self.back.visible = false
     else
         table.insert(self.back_stack, {
             category_str = self.category_str,
-            all_choices = self.subviews.list:getChoices(),
-            edit_text = self.subviews.list:getFilter(),
-            selected = self.subviews.list:getSelected(),
+            all_choices = self.list:getChoices(),
+            edit_text = self.list:getFilter(),
+            selected = self.list:getSelected(),
         })
-        self.subviews.back.visible = true
+        self.back.visible = true
     end
 
     self.category_str = name
-    self.subviews.list:setChoices(choices, 1)
+    self.list:setChoices(choices, 1)
 end
 
-function SelectDialog:onGoBack()
+function SelectDialogWindow:onGoBack()
     local save = table.remove(self.back_stack)
-    self.subviews.back.visible = (#self.back_stack > 0)
+    self.back.visible = (#self.back_stack > 0)
 
     self.category_str = save.category_str
-    self.subviews.list:setChoices(save.all_choices)
-    self.subviews.list:setFilter(save.edit_text, save.selected)
+    self.list:setChoices(save.all_choices)
+    self.list:setFilter(save.edit_text, save.selected)
 end
 
-function SelectDialog:submitItem(value)
-    self:dismiss()
+function SelectDialogWindow:submitItem(value)
+    self.parent_view:dismiss()
 
     if self.on_select then
         self.on_select(value)
     end
 end
 
-function SelectDialog:onSubmitItem(idx, item)
+function SelectDialogWindow:onSubmitItem(idx, item)
     if item.cb then
         item:cb(idx)
     else
@@ -902,20 +900,34 @@ function SelectDialog:onSubmitItem(idx, item)
     end
 end
 
-function SelectDialog:onInput(keys)
-    if keys.LEAVESCREEN then
-        if self.subviews.back.visible then
-            self:onGoBack()
-        else
-            self:dismiss()
-            if self.on_cancel then
-                self.on_cancel()
-            end
-        end
+function SelectDialogWindow:onInput(keys)
+    if SelectDialogWindow.super.onInput(self, keys) then
         return true
     end
-    self:inputToSubviews(keys)
+    if keys.LEAVESCREEN then
+        self.parent_view:dismiss()
+        if self.on_cancel then
+            self.on_cancel()
+        end
+    end
     return true
+end
+
+-- Screen for the popup
+SelectDialog = defclass(SelectDialog, gui.ZScreenModal)
+SelectDialog.ATTRS{
+    focus_path='selectdialog'
+}
+
+function SelectDialog:init(attrs)
+    self.window = SelectDialogWindow(attrs)
+    self:addviews{
+        self.window
+    }
+end
+
+function SelectDialog:onDismiss()
+    self.window:onDismiss()
 end
 
 --#endregion
@@ -1220,6 +1232,7 @@ function TileConfig:openShapePopup()
             self.other_shape.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
             self.other_shape.value = item.value
             self.subviews.shape_cycle.option_idx=#self.subviews.shape_cycle.options
+            self.on_change_shape(item.value)
         end,
     }:show()
 end
@@ -1233,6 +1246,7 @@ function TileConfig:openMaterialPopup()
             self.other_mat.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
             self.other_mat.value = item.value
             self.subviews.mat_cycle.option_idx=#self.subviews.mat_cycle.options
+            self.on_change_mat(item.value)
         end,
     }:show()
 end
@@ -1246,6 +1260,7 @@ function TileConfig:openSpecialPopup()
             self.other_special.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
             self.other_special.value = item.value
             self.subviews.special_cycle.option_idx=#self.subviews.special_cycle.options
+            self.on_change_special(item.value)
         end,
     }:show()
 end
