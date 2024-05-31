@@ -60,8 +60,8 @@ local MODE_LIST = {
 }
 
 function isEmptyTile(pos)
-    if pos and dfhack.maps.isValidTilePos(pos.x or -1, pos.y or -1, pos.z or -1) then
-        local tiletype = dfhack.maps.getTileType(pos.x, pos.y, pos.z)
+    if pos and dfhack.maps.isValidTilePos(pos) then
+        local tiletype = dfhack.maps.getTileType(pos)
         return tiletype and (
             df.tiletype.attrs[tiletype].shape == df.tiletype_shape.NONE
             or df.tiletype.attrs[tiletype].material == df.tiletype_material.AIR
@@ -260,9 +260,9 @@ end
 ---@param screen_rect { x1: integer, x2: integer, y1: integer, y2: integer }
 function drawOutsideOfScreenRect(draw_queue, screen_rect)
     local view_dims = dfhack.gui.getDwarfmodeViewDims()
-    local tile_view_size = { x= view_dims.map_x2 - view_dims.map_x1 + 1, y= view_dims.map_y2 - view_dims.map_y1 + 1 }
-    local display_view_size = { x= df.global.init.display.grid_x, y= df.global.init.display.grid_y }
-    local display_to_tile_ratio = { x= tile_view_size.x / display_view_size.x, y= tile_view_size.y / display_view_size.y }
+    local tile_view_size = xy2pos(view_dims.map_x2 - view_dims.map_x1 + 1, view_dims.map_y2 - view_dims.map_y1 + 1)
+    local display_view_size = xy2pos(df.global.init.display.grid_x, df.global.init.display.grid_y)
+    local display_to_tile_ratio = xy2pos(tile_view_size.x / display_view_size.x, tile_view_size.y / display_view_size.y)
 
     local screen_tile_rect = {
         x1= screen_rect.x1 * display_to_tile_ratio.x - 1,
@@ -341,12 +341,11 @@ end
 
 local TILE_MAP = {
     getPenKey= function(nesw)
-        return (
-            (nesw.n and 8 or 0)
-            + (nesw.e and 4 or 0)
-            + (nesw.s and 2 or 0)
-            + (nesw.w and 1 or 0)
-        )
+        local out = 0
+        for _,v in ipairs({nesw.n, nesw.e, nesw.s, nesw.w}) do
+            out = (out << 1) | (v and 1 or 0)
+        end
+        return out
     end
 }
 TILE_MAP.pens= {
@@ -388,16 +387,20 @@ Box.ATTRS {
 }
 
 function Box:init(points)
-    self.min = {}
-    self.max = {}
+    self.min = nil
+    self.max = nil
     for _,value in pairs(points) do
-        if value and dfhack.maps.isValidTilePos(value.x or -1, value.y or -1, value.z or -1) then
-            self.min.x = self.min.x and math.min(self.min.x, value.x) or value.x
-            self.min.y = self.min.y and math.min(self.min.y, value.y) or value.y
-            self.min.z = self.min.z and math.min(self.min.z, value.z) or value.z
-            self.max.x = self.max.x and math.max(self.max.x, value.x) or value.x
-            self.max.y = self.max.y and math.max(self.max.y, value.y) or value.y
-            self.max.z = self.max.z and math.max(self.max.z, value.z) or value.z
+        if dfhack.maps.isValidTilePos(value) then
+            self.min = xyz2pos(
+                self.min and math.min(self.min.x, value.x) or value.x,
+                self.min and math.min(self.min.y, value.y) or value.y,
+                self.min and math.min(self.min.z, value.z) or value.z
+            )
+            self.max = xyz2pos(
+                self.max and math.max(self.max.x, value.x) or value.x,
+                self.max and math.max(self.max.y, value.y) or value.y,
+                self.max and math.max(self.max.z, value.z) or value.z
+            )
         else
             self.valid = false
             break
@@ -405,12 +408,12 @@ function Box:init(points)
     end
 
     self.valid = self.valid and self.min and self.max
-        and dfhack.maps.isValidTilePos(self.min.x or -1, self.min.y or -1, self.min.z or -1)
-        and dfhack.maps.isValidTilePos(self.max.x or -1, self.max.y or -1, self.max.z or -1)
+        and dfhack.maps.isValidTilePos(self.min.x, self.min.y, self.min.z)
+        and dfhack.maps.isValidTilePos(self.max.x, self.max.y, self.max.z)
 
     if not self.valid then
-        self.min = { x= -1, y= -1, z= -1}
-        self.max = { x= -1, y= -1, z= -1}
+        self.min = xyz2pos(-1, -1, -1)
+        self.max = xyz2pos(-1, -1, -1)
     end
 end
 
@@ -419,135 +422,134 @@ function Box:iterate(callback)
     for z = self.min.z, self.max.z do
         for y = self.min.y, self.max.y do
             for x = self.min.x, self.max.x do
-                callback({ x= x, y= y, z= z })
+                callback(xyz2pos(x, y, z))
             end
         end
     end
 end
 
 function Box:draw(tile_map, frame_rect, ascii_fill)
-    if self.valid and df.global.window_z >= self.min.z and df.global.window_z <= self.max.z then
-        local screen_min = {
-            x= self.min.x - df.global.window_x,
-            y= self.min.y - df.global.window_y
+    if not self.valid or df.global.window_z < self.min.z or df.global.window_z > self.max.z then return end
+    local screen_min = xy2pos(
+        self.min.x - df.global.window_x,
+        self.min.y - df.global.window_y
+    )
+    local screen_max = xy2pos(
+        self.max.x - df.global.window_x,
+        self.max.y - df.global.window_y
+    )
+
+    local draw_queue = {}
+
+    if self.min.x == self.max.x and self.min.y == self.max.y then
+        -- Single point
+        draw_queue = {
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=true, w=true}],
+                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
+            }
         }
-        local screen_max = {
-            x= self.max.x - df.global.window_x,
-            y= self.max.y - df.global.window_y
+
+    elseif self.min.x == self.max.x then
+        -- Vertical line
+        draw_queue = {
+            -- Line
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=false, w=true}],
+                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_max.y }
+            },
+            -- Top nub
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=false, w=true}],
+                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
+            },
+            -- Bottom nub
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=true, w=true}],
+                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_max.y, y2= screen_max.y }
+            }
+        }
+    elseif self.min.y == self.max.y then
+        -- Horizontal line
+        draw_queue = {
+            -- Line
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=true, w=false}],
+                rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
+            },
+            -- Left nub
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=true, w=true}],
+                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
+            },
+            -- Right nub
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=true, w=false}],
+                rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
+            }
+        }
+    else
+        -- Rectangle
+        draw_queue = {
+            -- North Edge
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=false, w=false}],
+                rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
+            },
+            -- East Edge
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=false, w=false}],
+                rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_max.y }
+            },
+            -- South Edge
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=true, w=false}],
+                rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_max.y, y2= screen_max.y }
+            },
+            -- West Edge
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=false, w=true}],
+                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_max.y }
+            },
+            -- NW Corner
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=false, w=true}],
+                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
+            },
+            -- NE Corner
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=false, w=false}],
+                rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
+            },
+            -- SE Corner
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=true, w=false}],
+                rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_max.y, y2= screen_max.y }
+            },
+            -- SW Corner
+            {
+                pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=true, w=true}],
+                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_max.y, y2= screen_max.y }
+            },
         }
 
-        local draw_queue = {}
-
-        if self.min.x == self.max.x and self.min.y == self.max.y then
-            -- Single point
-            draw_queue = {
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=true, w=true}],
-                    rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
-                }
-            }
-
-        elseif self.min.x == self.max.x then
-            -- Vertical line
-            draw_queue = {
-                -- Line
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=false, w=true}],
-                    rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_max.y }
-                },
-                -- Top nub
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=false, w=true}],
-                    rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
-                },
-                -- Bottom nub
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=true, w=true}],
-                    rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_max.y, y2= screen_max.y }
-                }
-            }
-        elseif self.min.y == self.max.y then
-            -- Horizontal line
-            draw_queue = {
-                -- Line
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=true, w=false}],
-                    rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
-                },
-                -- Left nub
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=true, w=true}],
-                    rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
-                },
-                -- Right nub
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=true, w=false}],
-                    rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
-                }
-            }
-        else
-            -- Rectangle
-            draw_queue = {
-                -- North Edge
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=false, w=false}],
-                    rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
-                },
-                -- East Edge
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=false, w=false}],
-                    rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_max.y }
-                },
-                -- South Edge
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=true, w=false}],
-                    rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_max.y, y2= screen_max.y }
-                },
-                -- West Edge
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=false, w=true}],
-                    rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_max.y }
-                },
-                -- NW Corner
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=false, w=true}],
-                    rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
-                },
-                -- NE Corner
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=false, w=false}],
-                    rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
-                },
-                -- SE Corner
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=true, w=false}],
-                    rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_max.y, y2= screen_max.y }
-                },
-                -- SW Corner
-                {
-                    pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=true, w=true}],
-                    rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_max.y, y2= screen_max.y }
-                },
-            }
-
-            if dfhack.screen.inGraphicsMode() or ascii_fill then
-                -- Fill inside
-                table.insert(draw_queue, 1, {
-                    pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=false, w=false}],
-                    rect= { x1= screen_min.x + 1, x2= screen_max.x - 1, y1= screen_min.y + 1, y2= screen_max.y - 1 }
-                })
-            end
+        if dfhack.screen.inGraphicsMode() or ascii_fill then
+            -- Fill inside
+            table.insert(draw_queue, 1, {
+                pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=false, w=false}],
+                rect= { x1= screen_min.x + 1, x2= screen_max.x - 1, y1= screen_min.y + 1, y2= screen_max.y - 1 }
+            })
         end
+    end
 
-        if frame_rect and not dfhack.screen.inGraphicsMode() then
-            -- If in ASCII and a frame_rect was specified
-            -- Draw the queue, avoiding the frame_rect
-            drawOutsideOfScreenRect(draw_queue, frame_rect)
-        else
-            -- Draw the queue
-            for _,draw_rect in pairs(draw_queue) do
-                dfhack.screen.fillRect(draw_rect.pen, math.floor(draw_rect.rect.x1), math.floor(draw_rect.rect.y1), math.floor(draw_rect.rect.x2), math.floor(draw_rect.rect.y2), true)
-            end
+    if frame_rect and not dfhack.screen.inGraphicsMode() then
+        -- If in ASCII and a frame_rect was specified
+        -- Draw the queue, avoiding the frame_rect
+        drawOutsideOfScreenRect(draw_queue, frame_rect)
+    else
+        -- Draw the queue
+        for _,draw_rect in pairs(draw_queue) do
+            dfhack.screen.fillRect(draw_rect.pen, math.floor(draw_rect.rect.x1), math.floor(draw_rect.rect.y1), math.floor(draw_rect.rect.x2), math.floor(draw_rect.rect.y2), true)
         end
     end
 end
@@ -573,19 +575,19 @@ end
 ---@class BoxSelection: widgets.Window, BoxSelection.attrs
 BoxSelection = defclass(BoxSelection, widgets.Window)
 BoxSelection.ATTRS {
-    box=DEFAULT_NIL, -- For output
     screen=DEFAULT_NIL, -- Allows the DimensionsTooltip to be shown
     tile_map=TILE_MAP,
     avoid_rect=DEFAULT_NIL,
     on_confirm=DEFAULT_NIL,
-    first_point=DEFAULT_NIL,
-    last_point=DEFAULT_NIL,
     flat=false,
     ascii_fill=false,
 }
 
 function BoxSelection:init()
     self.frame = { w=0, h=0 }
+    self.box=nil
+    self.first_point=nil
+    self.last_point=nil
 
     -- Set the cursor to the center of the screen
     local dims = dfhack.gui.getDwarfmodeViewDims()
@@ -595,20 +597,20 @@ function BoxSelection:init()
     df.global.game.main_interface.main_designation_selected = df.main_designation_type.TOGGLE_ENGRAVING -- Alternative: df.main_designation_type.REMOVE_CONSTRUCTION
     self.lastCursorPos = guidm.getCursorPos()
 
-    if self.screen and self.screen.addviews then
+    if self.screen then
+        self.dimensions_tooltip = widgets.DimensionsTooltip{
+            get_anchor_pos_fn=function()
+                if self.first_point and self.flat then
+                    return xyz2pos(self.first_point.x, self.first_point.y, df.global.window_z)
+                end
+                return self.first_point
+            end,
+        }
         self.screen:addviews{
-            widgets.DimensionsTooltip{
-                view_id="dimensions_tooltip",
-                get_anchor_pos_fn=function()
-                    if self.first_point and self.flat then
-                        return xyz2pos(self.first_point.x, self.first_point.y, df.global.window_z)
-                    end
-                    return self.first_point
-                end,
-            },
+            self.dimensions_tooltip
         }
     else
-        qerror("No screen provided to BoxSelection, unable to display DimensionsTooltip")
+        error("No screen provided to BoxSelection, unable to display DimensionsTooltip")
     end
 end
 
@@ -621,7 +623,7 @@ function BoxSelection:confirm()
             self.first_point,
             self.last_point
         }
-        if type(self.on_confirm) == "function" then
+        if self.on_confirm then
             self.on_confirm(self.box)
         end
     end
@@ -638,6 +640,14 @@ function BoxSelection:onInput(keys)
         return true
     end
     if keys.LEAVESCREEN or keys._MOUSE_R then
+        if self.last_point then
+            self.box = nil
+            self.last_point = nil
+            return true
+        elseif self.first_point then
+            self.first_point = nil
+            return true
+        end
         return false
     end
 
@@ -673,11 +683,11 @@ function BoxSelection:onInput(keys)
         -- If left click and the mouse is not in the avoid_rect
         if self.first_point and not self.last_point then
             if not self.flat or mousePos.z == self.first_point.z then
-                local inBoundsMouse = {
-                    x = math.max(math.min(mousePos.x, df.global.world.map.x_count - 1), 0),
-                    y = math.max(math.min(mousePos.y, df.global.world.map.y_count - 1), 0),
-                    z = mousePos.z,
-                }
+                local inBoundsMouse = xyz2pos(
+                    math.max(math.min(mousePos.x, df.global.world.map.x_count - 1), 0),
+                    math.max(math.min(mousePos.y, df.global.world.map.y_count - 1), 0),
+                    mousePos.z
+                )
                 self.last_point = inBoundsMouse
                 self:confirm()
             end
@@ -705,40 +715,39 @@ function BoxSelection:onRenderFrame(dc, rect)
         and self.lastMousePos.x == df.global.gps.precise_mouse_x and self.lastMousePos.y == df.global.gps.precise_mouse_y
     self.lastMousePos = xy2pos(df.global.gps.precise_mouse_x, df.global.gps.precise_mouse_y)
 
-    if self.screen and self.screen.subviews.dimensions_tooltip then
-        self.screen.subviews.dimensions_tooltip.visible = not self.useCursor
+    if self.screen and self.dimensions_tooltip then
+        self.dimensions_tooltip.visible = not self.useCursor
     end
 
-    if self.tile_map then
-        local box = self.box
+    if not self.tile_map then return end
 
-        if not box then
-            local selectedPos = dfhack.gui.getMousePos(true)
-            if self.useCursor or not selectedPos then
-                selectedPos = guidm.getCursorPos()
-                if not selectedPos then return end
-            end
-
-            if self.flat and self.first_point then
-                selectedPos.z = self.first_point.z
-            end
-
-            local inBoundsMouse = {
-                x = math.max(math.min(selectedPos.x, df.global.world.map.x_count - 1), 0),
-                y = math.max(math.min(selectedPos.y, df.global.world.map.y_count - 1), 0),
-                z = selectedPos.z,
-            }
-
-            box = Box {
-                self.first_point or selectedPos,
-                self.last_point or (self.first_point and inBoundsMouse or selectedPos)
-            }
+    local box = self.box
+    if not box then
+        local selectedPos = dfhack.gui.getMousePos(true)
+        if self.useCursor or not selectedPos then
+            selectedPos = guidm.getCursorPos()
+            if not selectedPos then return end
         end
 
-        if box then
-            local avoid_rect = utils.getval(self.avoid_rect)
-            box:draw(self.tile_map, avoid_rect, self.ascii_fill)
+        if self.flat and self.first_point then
+            selectedPos.z = self.first_point.z
         end
+
+        local inBoundsMouse = xyz2pos(
+            math.max(math.min(selectedPos.x, df.global.world.map.x_count - 1), 0),
+            math.max(math.min(selectedPos.y, df.global.world.map.y_count - 1), 0),
+            selectedPos.z
+        )
+
+        box = Box {
+            self.first_point or selectedPos,
+            self.last_point or (self.first_point and inBoundsMouse or selectedPos)
+        }
+    end
+
+    if box then
+        local avoid_rect = utils.getval(self.avoid_rect)
+        box:draw(self.tile_map, avoid_rect, self.ascii_fill)
     end
 
     -- Don't call super.onRenderFrame, since this widget should not be drawn
@@ -768,7 +777,7 @@ SelectDialog.ATTRS{
     focus_path = "SelectDialog",
     prompt = "Type or select a item from this list",
     base_category = "Any item",
-    frame_style = gui.GREY_LINE_FRAME,
+    frame_style = gui.FRAME_PANEL,
     frame_inset = 1,
     frame_title = "Select Item",
     item_list = DEFAULT_NIL, ---@type (widgets.ListChoice|CategoryChoice)[]
@@ -818,7 +827,7 @@ function SelectDialog:getWantedFrameSize(rect)
     return math.max(self.frame_width or 40, #self.prompt), math.min(28, rect.height-8)
 end
 
-function SelectDialog:onDestroy()
+function SelectDialog:onDismiss()
     if self.on_close then
         self.on_close()
     end
@@ -1591,7 +1600,6 @@ function TiletypeScreen:generateDataLists()
 
         return list, short_list
     end
-
 
     local data_lists = {}
     data_lists.shape_list, data_lists.short_shape_list = getEnumLists(df.tiletype_shape, CYCLE_VALUES.shape)
