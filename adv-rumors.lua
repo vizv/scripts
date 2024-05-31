@@ -9,8 +9,8 @@ local widgets = require('gui.widgets')
 
 -- globals
 ignore_words = utils.invert{
-    "a", "an", "attacked", "by", "in", "occurred", "of", "or",
-    "s", "slain", "slew", "the", "this", "to", "was", "which"
+    "a", "an", "by", "in", "occurred", "of", "or",
+    "s", "the", "this", "to", "was", "which"
 }
 
 -- locals
@@ -90,14 +90,17 @@ function generateKeywordsForChoice(choice)
     for i, data in ipairs(choice.print_string.text) do
         local text = dfhack.toSearchNormalized(data.value)
         -- Special cases
-        if string.find(text, "slew") or string.find(text, "slain") then
-            addKeyword(choice, 'slay')
-            addKeyword(choice, 'kill')
+        if not keywords_set['kill'] and string.find(text, "slew") or string.find(text, "slain") then
+            keywords_set['kill'] = true
+            table.insert(new_keywords, 'kill')
+            keywords_set['slay'] = true
+            table.insert(new_keywords, 'slay')
         end
 
         -- add an additional "me" keyword for you/your
-        if string.find(text, 'your?%f[%W]') then
-            addKeyword(choice, 'me')
+        if not keywords_set['me'] and string.find(text, 'your?%f[%W]') then
+            keywords_set['me'] = true
+            table.insert(new_keywords, 'me')
         end
 
         -- Transform the whole thing into keywords barring blacklist
@@ -118,6 +121,6 @@ function rumorUpdate()
         if shortening and adventure.conversation.conv_actce.state ~= df.conversation_state_type.MAIN then
             shortenChoice(choice)
         end
-        addKeywordsForChoice(choice)
+        generateKeywordsForChoice(choice)
     end
 end

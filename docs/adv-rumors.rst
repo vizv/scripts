@@ -8,7 +8,7 @@ adv-rumors
 In adventure mode, start a conversation with someone. This tool will:
 
 - Add all words to keywords for easier filtering/searching everywhere
-- Additional 'slay' and 'kill' keyword for all instances of slew/slain in the choice's text
+- Additional 'slay' and 'kill' keywords for choices where someone was slain
 
 Overlay
 -------
