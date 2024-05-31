@@ -415,12 +415,11 @@ function Box:init(points)
 end
 
 function Box:iterate(callback)
-    if self.valid then
-        for z = self.min.z, self.max.z do
-            for y = self.min.y, self.max.y do
-                for x = self.min.x, self.max.x do
-                    callback({ x= x, y= y, z= z })
-                end
+    if not self.valid then return end
+    for z = self.min.z, self.max.z do
+        for y = self.min.y, self.max.y do
+            for x = self.min.x, self.max.x do
+                callback({ x= x, y= y, z= z })
             end
         end
     end
@@ -590,11 +589,7 @@ function BoxSelection:init()
 
     -- Set the cursor to the center of the screen
     local dims = dfhack.gui.getDwarfmodeViewDims()
-    guidm.setCursorPos {
-        x= df.global.window_x + (dims.map_x2 - dims.map_x1 + 1) // 2,
-        y= df.global.window_y + (dims.map_y2 - dims.map_y1 + 1) // 2,
-        z= df.global.window_z,
-    }
+    guidm.setCursorPos(guidm.Viewport.get():getCenter())
 
     -- Show cursor
     df.global.game.main_interface.main_designation_selected = df.main_designation_type.TOGGLE_ENGRAVING -- Alternative: df.main_designation_type.REMOVE_CONSTRUCTION
@@ -606,7 +601,7 @@ function BoxSelection:init()
                 view_id="dimensions_tooltip",
                 get_anchor_pos_fn=function()
                     if self.first_point and self.flat then
-                        return { x= self.first_point.x, y= self.first_point.y, z= df.global.window_z }
+                        return xyz2pos(self.first_point.x, self.first_point.y, df.global.window_z)
                     end
                     return self.first_point
                 end,
@@ -619,8 +614,8 @@ end
 
 function BoxSelection:confirm()
     if self.first_point and self.last_point
-        and dfhack.maps.isValidTilePos(self.first_point.x or -1, self.first_point.y or -1, self.first_point.z or -1)
-        and dfhack.maps.isValidTilePos(self.last_point.x or -1, self.last_point.y or -1, self.last_point.z or -1)
+        and dfhack.maps.isValidTilePos(self.first_point)
+        and dfhack.maps.isValidTilePos(self.last_point)
     then
         self.box = Box{
             self.first_point,
@@ -647,25 +642,22 @@ function BoxSelection:onInput(keys)
     end
 
     local mousePos = dfhack.gui.getMousePos(true)
-    local cursorPos = copyall(df.global.cursor)
+    local cursorPos = guidm.getCursorPos()
 
-    if keys.SELECT then
+    if cursorPos and keys.SELECT then
         if self.first_point and not self.last_point then
             if not self.flat or cursorPos.z == self.first_point.z then
-                df.global.cursor.x = math.max(math.min(cursorPos.x, df.global.world.map.x_count - 1), 0)
-                df.global.cursor.y = math.max(math.min(cursorPos.y, df.global.world.map.y_count - 1), 0)
-                cursorPos = guidm.getCursorPos()
                 self.last_point = cursorPos
                 self:confirm()
             end
-        elseif dfhack.maps.isValidTilePos(cursorPos.x, cursorPos.y, cursorPos.z) then
+        elseif dfhack.maps.isValidTilePos(cursorPos) then
             self.first_point = self.first_point or cursorPos
         end
 
         return true
     end
 
-    local avoid_rect = type(self.avoid_rect) == "function" and self.avoid_rect() or self.avoid_rect
+    local avoid_rect = utils.getval(self.avoid_rect)
 
     -- Get the position of the mouse in coordinates local to avoid_rect, if it's specified
     local mouseFramePos = avoid_rect and self:getMousePos(gui.ViewRect{
@@ -689,7 +681,7 @@ function BoxSelection:onInput(keys)
                 self.last_point = inBoundsMouse
                 self:confirm()
             end
-        elseif dfhack.maps.isValidTilePos(mousePos.x, mousePos.y, mousePos.z) then
+        elseif dfhack.maps.isValidTilePos(mousePos) then
             self.first_point = self.first_point or mousePos
         end
 
@@ -711,7 +703,7 @@ function BoxSelection:onRenderFrame(dc, rect)
     -- Switch to cursor if the mouse is offscreen, or if it hasn't moved
     self.useCursor = (self.useCursor or (self.lastMousePos and (self.lastMousePos.x < 0 or self.lastMousePos.y < 0)))
         and self.lastMousePos.x == df.global.gps.precise_mouse_x and self.lastMousePos.y == df.global.gps.precise_mouse_y
-    self.lastMousePos = { x= df.global.gps.precise_mouse_x, y= df.global.gps.precise_mouse_y }
+    self.lastMousePos = xy2pos(df.global.gps.precise_mouse_x, df.global.gps.precise_mouse_y)
 
     if self.screen and self.screen.subviews.dimensions_tooltip then
         self.screen.subviews.dimensions_tooltip.visible = not self.useCursor
@@ -723,7 +715,8 @@ function BoxSelection:onRenderFrame(dc, rect)
         if not box then
             local selectedPos = dfhack.gui.getMousePos(true)
             if self.useCursor or not selectedPos then
-                selectedPos = copyall(df.global.cursor)
+                selectedPos = guidm.getCursorPos()
+                if not selectedPos then return end
             end
 
             if self.flat and self.first_point then
@@ -743,7 +736,7 @@ function BoxSelection:onRenderFrame(dc, rect)
         end
 
         if box then
-            local avoid_rect = type(self.avoid_rect) == "function" and self.avoid_rect() or self.avoid_rect
+            local avoid_rect = utils.getval(self.avoid_rect)
             box:draw(self.tile_map, avoid_rect, self.ascii_fill)
         end
     end
