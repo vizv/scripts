@@ -1,11 +1,11 @@
 --@ module = true
-local plugin = require('plugins.tiletypes')
+local argparse = require('argparse')
 local gui = require('gui')
 local guidm = require('gui.dwarfmode')
-local widgets = require('gui.widgets')
-local utils = require('utils')
+local plugin = require('plugins.tiletypes')
 local textures = require('gui.textures')
-local argparse = require('argparse')
+local utils = require('utils')
+local widgets = require('gui.widgets')
 
 local UI_AREA = {r=2, t=18, w=38, h=35}
 local POPUP_UI_AREA = {r=41, t=18, w=30, h=19}
