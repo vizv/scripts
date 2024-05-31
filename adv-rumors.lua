@@ -13,26 +13,24 @@ Improves the "Bring up specific incident or rumor" menu in Adventure mode.
 
 ]====]
 
-local adventure = df.global.game.main_interface.adventure
-
-local utils = require("utils")
-
 local overlay = require('plugins.overlay')
+local utils = require('utils')
 local widgets = require('gui.widgets')
+
+local adventure = df.global.game.main_interface.adventure
 
 -- experimental, set this to 'true' to make the choices less verbose
 local shortening = false
 
 AdvRumorsOverlay = defclass(AdvRumorsOverlay, overlay.OverlayWidget)
 AdvRumorsOverlay.ATTRS{
-    desc='Widget responsible for updating the conversation screen to add keywords etc.',
-    default_pos={x=25,y=25},
+    desc='Adds keywords to conversation entries.',
+    overlay_only=true,
     default_enabled=true,
     viewscreens='dungeonmode/Conversation',
-    overlay_onupdate_max_freq_seconds=0,
 }
 
-function AdvRumorsOverlay:overlay_onupdate()
+function AdvRumorsOverlay:render()
     rumorUpdate()
 end
 
@@ -101,13 +99,16 @@ function addKeywordsForChoice(choice)
     if title:find('%(') then
         title = title:sub(1, title:find('%(') - 1)
     end
-    local keywords = title:gmatch('%w+')
-    for keyword in keywords do
-        keyword = keyword:lower()
-        if not names_blacklist[keyword] then
-            addKeyword(choice, keyword)
+    local new_keywords, keywords_set = {}, utils.invert(getKeywords(choice))
+    for word in text:gmatch('[%w(]+') do
+        if word:startswith('(') then break end
+        word = dfhack.toSearchNormalized(word)
+        if not ignore_words[word] and not keywords_set[word] then
+            table.insert(new_keywords, word)
+            keywords_set[word] = true
         end
     end
+    addKeywords(choice, new_keywords)
 end
 
 -- Returns a string that shortens the options
