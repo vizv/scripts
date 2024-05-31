@@ -595,7 +595,6 @@ function BoxSelection:init()
 
     -- Show cursor
     df.global.game.main_interface.main_designation_selected = df.main_designation_type.TOGGLE_ENGRAVING -- Alternative: df.main_designation_type.REMOVE_CONSTRUCTION
-    self.lastCursorPos = guidm.getCursorPos()
 
     if self.screen then
         self.dimensions_tooltip = widgets.DimensionsTooltip{
@@ -652,7 +651,9 @@ function BoxSelection:onInput(keys)
     end
 
     local mousePos = dfhack.gui.getMousePos(true)
-    local cursorPos = guidm.getCursorPos()
+    local cursorPos = copyall(df.global.cursor)
+    cursorPos.x = math.max(math.min(cursorPos.x, df.global.world.map.x_count - 1), 0)
+    cursorPos.y = math.max(math.min(cursorPos.y, df.global.world.map.y_count - 1), 0)
 
     if cursorPos and keys.SELECT then
         if self.first_point and not self.last_point then
@@ -681,6 +682,7 @@ function BoxSelection:onInput(keys)
 
     if keys._MOUSE_L and not mouseFramePos then
         -- If left click and the mouse is not in the avoid_rect
+        self.useCursor = false
         if self.first_point and not self.last_point then
             if not self.flat or mousePos.z == self.first_point.z then
                 local inBoundsMouse = xyz2pos(
@@ -703,8 +705,6 @@ function BoxSelection:onInput(keys)
     filteredKeys["CURSOR_DOWN_Z"] = nil
     filteredKeys["CURSOR_UP_Z"] = nil
     self.useCursor = self.useCursor or guidm.getMapKey(filteredKeys)
-        or (self.lastCursorPos and (self.lastCursorPos.x ~= cursorPos.x or self.lastCursorPos.y ~= cursorPos.y))
-    self.lastCursorPos = cursorPos
 
     return false
 end
@@ -712,8 +712,8 @@ end
 function BoxSelection:onRenderFrame(dc, rect)
     -- Switch to cursor if the mouse is offscreen, or if it hasn't moved
     self.useCursor = (self.useCursor or (self.lastMousePos and (self.lastMousePos.x < 0 or self.lastMousePos.y < 0)))
-        and self.lastMousePos.x == df.global.gps.precise_mouse_x and self.lastMousePos.y == df.global.gps.precise_mouse_y
-    self.lastMousePos = xy2pos(df.global.gps.precise_mouse_x, df.global.gps.precise_mouse_y)
+        and self.lastMousePos.x == df.global.gps.mouse_x and self.lastMousePos.y == df.global.gps.mouse_y
+    self.lastMousePos = xy2pos(df.global.gps.mouse_x, df.global.gps.mouse_y)
 
     if self.screen and self.dimensions_tooltip then
         self.dimensions_tooltip.visible = not self.useCursor
@@ -725,8 +725,9 @@ function BoxSelection:onRenderFrame(dc, rect)
     if not box then
         local selectedPos = dfhack.gui.getMousePos(true)
         if self.useCursor or not selectedPos then
-            selectedPos = guidm.getCursorPos()
-            if not selectedPos then return end
+            selectedPos = copyall(df.global.cursor)
+            selectedPos.x = math.max(math.min(selectedPos.x, df.global.world.map.x_count - 1), 0)
+            selectedPos.y = math.max(math.min(selectedPos.y, df.global.world.map.y_count - 1), 0)
         end
 
         if self.flat and self.first_point then
