@@ -255,117 +255,151 @@ function makeInlineButtonLabelText(spec)
     return label_tokens
 end
 
--- Draws a list of rects with associated pens, without overlapping the given screen rect
----@param draw_queue { pen: dfhack.pen, rect: { x1: integer, x2: integer, y1: integer, y2: integer } }[]
----@param screen_rect { x1: integer, x2: integer, y1: integer, y2: integer }
-function drawOutsideOfScreenRect(draw_queue, screen_rect)
+-- Rect data class
+
+---@class Rect.attrs
+---@field x1 number
+---@field y1 number
+---@field x2 number
+---@field y2 number
+
+---@class Rect.attrs.partial: Rect.attrs
+
+---@class Rect: Rect.attrs
+---@field ATTRS Rect.attrs|fun(attributes: Rect.attrs.partial)
+---@overload fun(init_table: Rect.attrs.partial): self
+Rect = defclass(Rect)
+Rect.ATTRS {
+    x1 = -1,
+    y1 = -1,
+    x2 = -1,
+    y2 = -1,
+}
+
+---@param pos df.coord2d
+---@return boolean
+function Rect:contains(pos)
+    return pos.x <= self.x2
+        and pos.x >= self.x1
+        and pos.y <= self.y2
+        and pos.y >= self.y1
+end
+
+---@param overlap_rect Rect
+---@return boolean
+function Rect:isOverlapping(overlap_rect)
+    return overlap_rect.x1 <= self.x2
+        and overlap_rect.x2 >= self.x1
+        and overlap_rect.y1 <= self.y2
+        and overlap_rect.y2 >= self.y1
+end
+
+---@param clip_rect Rect
+---@return Rect[]
+function Rect:clip(clip_rect)
+    local output = {}
+
+    -- If there is any overlap with the screen rect
+    if self:isOverlapping(clip_rect) then
+        local temp_rect = Rect(self)
+        -- Get rect to the left of the clip rect
+        if temp_rect.x1 <= clip_rect.x1 then
+            table.insert(output, Rect{
+                x1= temp_rect.x1,
+                x2= math.min(temp_rect.x2, clip_rect.x1),
+                y1= temp_rect.y1,
+                y2= temp_rect.y2
+            })
+            temp_rect.x1 = clip_rect.x1
+        end
+        -- Get rect to the right of the clip rect
+        if temp_rect.x2 >= clip_rect.x2 then
+            table.insert(output, Rect{
+                x1= math.max(temp_rect.x1, clip_rect.x2),
+                x2= temp_rect.x2,
+                y1= temp_rect.y1,
+                y2= temp_rect.y2
+            })
+            temp_rect.x2 = clip_rect.x2
+        end
+        -- Get rect above the clip rect
+        if temp_rect.y1 <= clip_rect.y1 then
+            table.insert(output, Rect{
+                x1= temp_rect.x1,
+                x2= temp_rect.x2,
+                y1= temp_rect.y1,
+                y2= math.min(temp_rect.y2, clip_rect.y1)
+            })
+            temp_rect.y1 = clip_rect.y1
+        end
+        -- Get rect below the clip rect
+        if temp_rect.y2 >= clip_rect.y2 then
+            table.insert(output, Rect{
+                x1= temp_rect.x1,
+                x2= temp_rect.x2,
+                y1= math.max(temp_rect.y1, clip_rect.y2),
+                y2= temp_rect.y2
+            })
+            temp_rect.y2 = clip_rect.y2
+        end
+    else
+        -- No overlap
+        table.insert(output, self)
+    end
+
+    return output
+end
+
+---@return Rect
+function Rect:screenToTile()
     local view_dims = dfhack.gui.getDwarfmodeViewDims()
     local tile_view_size = xy2pos(view_dims.map_x2 - view_dims.map_x1 + 1, view_dims.map_y2 - view_dims.map_y1 + 1)
     local display_view_size = xy2pos(df.global.init.display.grid_x, df.global.init.display.grid_y)
     local display_to_tile_ratio = xy2pos(tile_view_size.x / display_view_size.x, tile_view_size.y / display_view_size.y)
 
-    local screen_tile_rect = {
-        x1= screen_rect.x1 * display_to_tile_ratio.x - 1,
-        x2= screen_rect.x2 * display_to_tile_ratio.x + 1,
-        y1= screen_rect.y1 * display_to_tile_ratio.y - 1,
-        y2= screen_rect.y2 * display_to_tile_ratio.y + 1
+    return Rect{
+        x1= self.x1 * display_to_tile_ratio.x - 1,
+        x2= self.x2 * display_to_tile_ratio.x + 1,
+        y1= self.y1 * display_to_tile_ratio.y - 1,
+        y2= self.y2 * display_to_tile_ratio.y + 1
     }
-
-    for _,draw_rect in pairs(draw_queue) do
-        -- If there is any overlap between the draw rect and the screen rect
-        if screen_tile_rect.x1 < draw_rect.rect.x2
-            and screen_tile_rect.x2 > draw_rect.rect.x1
-            and screen_tile_rect.y1 < draw_rect.rect.y2
-            and screen_tile_rect.y2 > draw_rect.rect.y1
-        then
-            local temp_rect = { x1= draw_rect.rect.x1, x2= draw_rect.rect.x2, y1= draw_rect.rect.y1, y2= draw_rect.rect.y2 }
-            -- Draw to the left of the screen rect
-            if temp_rect.x1 <= screen_tile_rect.x1 then
-                table.insert(draw_queue, {
-                    pen= draw_rect.pen,
-                    rect = {
-                        x1= temp_rect.x1,
-                        x2= math.min(temp_rect.x2, screen_tile_rect.x1),
-                        y1= temp_rect.y1,
-                        y2= temp_rect.y2
-                    }
-                })
-                temp_rect.x1 = screen_tile_rect.x1
-            end
-            -- Draw to the right of the screen rect
-            if temp_rect.x2 >= screen_tile_rect.x2 then
-                table.insert(draw_queue, {
-                    pen= draw_rect.pen,
-                    rect = {
-                        x1= math.max(temp_rect.x1, screen_tile_rect.x2),
-                        x2= temp_rect.x2,
-                        y1= temp_rect.y1,
-                        y2= temp_rect.y2
-                    }
-                })
-                temp_rect.x2 = screen_tile_rect.x2
-            end
-            -- Draw above the screen rect
-            if temp_rect.y1 <= screen_tile_rect.y1 then
-                table.insert(draw_queue, {
-                    pen= draw_rect.pen,
-                    rect = {
-                        x1= temp_rect.x1,
-                        x2= temp_rect.x2,
-                        y1= temp_rect.y1,
-                        y2= math.min(temp_rect.y2, screen_tile_rect.y1)
-                    }
-                })
-                temp_rect.y1 = screen_tile_rect.y1
-            end
-            -- Draw below the screen rect
-            if temp_rect.y2 >= screen_tile_rect.y2 then
-                table.insert(draw_queue, {
-                    pen= draw_rect.pen,
-                    rect = {
-                        x1= temp_rect.x1,
-                        x2= temp_rect.x2,
-                        y1= math.max(temp_rect.y1, screen_tile_rect.y2),
-                        y2= temp_rect.y2
-                    }
-                })
-                temp_rect.y2 = screen_tile_rect.y2
-            end
-
-        -- No overlap
-        else
-            dfhack.screen.fillRect(draw_rect.pen, math.floor(draw_rect.rect.x1), math.floor(draw_rect.rect.y1), math.floor(draw_rect.rect.x2), math.floor(draw_rect.rect.y2), true)
-        end
-    end
 end
 
-local TILE_MAP = {
-    getPenKey= function(nesw)
-        local out = 0
-        for _,v in ipairs({nesw.n, nesw.e, nesw.s, nesw.w}) do
-            out = (out << 1) | (v and 1 or 0)
+---@return Rect
+function Rect:tileToScreen()
+    local view_dims = dfhack.gui.getDwarfmodeViewDims()
+    local tile_view_size = xy2pos(view_dims.map_x2 - view_dims.map_x1 + 1, view_dims.map_y2 - view_dims.map_y1 + 1)
+    local display_view_size = xy2pos(df.global.init.display.grid_x, df.global.init.display.grid_y)
+    local display_to_tile_ratio = xy2pos(tile_view_size.x / display_view_size.x, tile_view_size.y / display_view_size.y)
+
+    return Rect{
+        x1= (self.x1 + 1) / display_to_tile_ratio.x,
+        x2= (self.x2 - 1) / display_to_tile_ratio.x,
+        y1= (self.y1 + 1) / display_to_tile_ratio.y,
+        y2= (self.y2 - 1) / display_to_tile_ratio.y
+    }
+end
+
+-- Draws a list of rects with associated pens, without overlapping any of the given screen rects
+---@param draw_queue { pen: dfhack.pen, rect: Rect }[]
+---@param screen_rect_list Rect[]
+function drawOutsideOfScreenRectList(draw_queue, screen_rect_list)
+    local cur_draw_queue = draw_queue
+    for _,screen_rect in pairs(screen_rect_list) do
+        local screen_tile_rect = screen_rect:screenToTile()
+        local new_draw_queue = {}
+        for _,draw_rect in pairs(cur_draw_queue) do
+            for _,clipped in pairs(draw_rect.rect:clip(screen_tile_rect)) do
+                table.insert(new_draw_queue, { pen= draw_rect.pen, rect= clipped })
+            end
         end
-        return out
+        cur_draw_queue = new_draw_queue
     end
-}
-TILE_MAP.pens= {
-    [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  2), fg=COLOR_GREEN, ch='X'}, -- INSIDE
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  1), fg=COLOR_GREEN, ch='X'}, -- NW
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  1), fg=COLOR_GREEN, ch='X'}, -- NORTH
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  1), fg=COLOR_GREEN, ch='X'}, -- NE
-    [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  2), fg=COLOR_GREEN, ch='X'}, -- WEST
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  2), fg=COLOR_GREEN, ch='X'}, -- EAST
-    [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  3), fg=COLOR_GREEN, ch='X'}, -- SW
-    [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  3), fg=COLOR_GREEN, ch='X'}, -- SOUTH
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  3), fg=COLOR_GREEN, ch='X'}, -- SE
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  2), fg=COLOR_GREEN, ch='X'}, -- N_NUB
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 5,  1), fg=COLOR_GREEN, ch='X'}, -- E_NUB
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  1), fg=COLOR_GREEN, ch='X'}, -- W_NUB
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  2), fg=COLOR_GREEN, ch='X'}, -- S_NUB
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  3), fg=COLOR_GREEN, ch='X'}, -- VERT_NS
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  1), fg=COLOR_GREEN, ch='X'}, -- VERT_EW
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  3), fg=COLOR_GREEN, ch='X'}, -- POINT
-}
+
+    for _,draw_rect in pairs(cur_draw_queue) do
+        dfhack.screen.fillRect(draw_rect.pen, draw_rect.rect.x1, draw_rect.rect.y1, draw_rect.rect.x2, draw_rect.rect.y2, true)
+    end
+end
 
 -- Box data class
 
@@ -428,7 +462,7 @@ function Box:iterate(callback)
     end
 end
 
-function Box:draw(tile_map, frame_rect, ascii_fill)
+function Box:draw(tile_map, avoid_rect, ascii_fill)
     if not self.valid or df.global.window_z < self.min.z or df.global.window_z > self.max.z then return end
     local screen_min = xy2pos(
         self.min.x - df.global.window_x,
@@ -446,7 +480,7 @@ function Box:draw(tile_map, frame_rect, ascii_fill)
         draw_queue = {
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=true, w=true}],
-                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
             }
         }
 
@@ -456,17 +490,17 @@ function Box:draw(tile_map, frame_rect, ascii_fill)
             -- Line
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=false, w=true}],
-                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_max.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_max.y }
             },
             -- Top nub
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=false, w=true}],
-                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
             },
             -- Bottom nub
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=true, w=true}],
-                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_max.y, y2= screen_max.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_min.x, y1= screen_max.y, y2= screen_max.y }
             }
         }
     elseif self.min.y == self.max.y then
@@ -475,17 +509,17 @@ function Box:draw(tile_map, frame_rect, ascii_fill)
             -- Line
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=true, w=false}],
-                rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
             },
             -- Left nub
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=true, w=true}],
-                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
             },
             -- Right nub
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=true, w=false}],
-                rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
+                rect= Rect{ x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
             }
         }
     else
@@ -494,42 +528,42 @@ function Box:draw(tile_map, frame_rect, ascii_fill)
             -- North Edge
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=false, w=false}],
-                rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
             },
             -- East Edge
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=false, w=false}],
-                rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_max.y }
+                rect= Rect{ x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_max.y }
             },
             -- South Edge
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=true, w=false}],
-                rect= { x1= screen_min.x, x2= screen_max.x, y1= screen_max.y, y2= screen_max.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_max.x, y1= screen_max.y, y2= screen_max.y }
             },
             -- West Edge
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=false, w=true}],
-                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_max.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_max.y }
             },
             -- NW Corner
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=true, e=false, s=false, w=true}],
-                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_min.x, y1= screen_min.y, y2= screen_min.y }
             },
             -- NE Corner
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=true, e=true, s=false, w=false}],
-                rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
+                rect= Rect{ x1= screen_max.x, x2= screen_max.x, y1= screen_min.y, y2= screen_min.y }
             },
             -- SE Corner
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=false, e=true, s=true, w=false}],
-                rect= { x1= screen_max.x, x2= screen_max.x, y1= screen_max.y, y2= screen_max.y }
+                rect= Rect{ x1= screen_max.x, x2= screen_max.x, y1= screen_max.y, y2= screen_max.y }
             },
             -- SW Corner
             {
                 pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=true, w=true}],
-                rect= { x1= screen_min.x, x2= screen_min.x, y1= screen_max.y, y2= screen_max.y }
+                rect= Rect{ x1= screen_min.x, x2= screen_min.x, y1= screen_max.y, y2= screen_max.y }
             },
         }
 
@@ -537,15 +571,15 @@ function Box:draw(tile_map, frame_rect, ascii_fill)
             -- Fill inside
             table.insert(draw_queue, 1, {
                 pen= tile_map.pens[tile_map.getPenKey{n=false, e=false, s=false, w=false}],
-                rect= { x1= screen_min.x + 1, x2= screen_max.x - 1, y1= screen_min.y + 1, y2= screen_max.y - 1 }
+                rect= Rect{ x1= screen_min.x + 1, x2= screen_max.x - 1, y1= screen_min.y + 1, y2= screen_max.y - 1 }
             })
         end
     end
 
-    if frame_rect and not dfhack.screen.inGraphicsMode() then
-        -- If in ASCII and a frame_rect was specified
-        -- Draw the queue, avoiding the frame_rect
-        drawOutsideOfScreenRect(draw_queue, frame_rect)
+    if avoid_rect and not dfhack.screen.inGraphicsMode() then
+        -- If in ASCII and an avoid_rect was specified
+        -- Draw the queue, avoiding the avoid_rect
+        drawOutsideOfScreenRectList(draw_queue, { avoid_rect })
     else
         -- Draw the queue
         for _,draw_rect in pairs(draw_queue) do
@@ -559,11 +593,39 @@ end
 --================================--
 -- Allows for selecting a box
 
+local TILE_MAP = {
+    getPenKey= function(nesw)
+        local out = 0
+        for _,v in ipairs({nesw.n, nesw.e, nesw.s, nesw.w}) do
+            out = (out << 1) | (v and 1 or 0)
+        end
+        return out
+    end
+}
+TILE_MAP.pens= {
+    [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  2), fg=COLOR_GREEN, ch='X'}, -- INSIDE
+    [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  1), fg=COLOR_GREEN, ch='X'}, -- NW
+    [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  1), fg=COLOR_GREEN, ch='X'}, -- NORTH
+    [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  1), fg=COLOR_GREEN, ch='X'}, -- NE
+    [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  2), fg=COLOR_GREEN, ch='X'}, -- WEST
+    [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  2), fg=COLOR_GREEN, ch='X'}, -- EAST
+    [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  3), fg=COLOR_GREEN, ch='X'}, -- SW
+    [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  3), fg=COLOR_GREEN, ch='X'}, -- SOUTH
+    [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  3), fg=COLOR_GREEN, ch='X'}, -- SE
+    [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  2), fg=COLOR_GREEN, ch='X'}, -- N_NUB
+    [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 5,  1), fg=COLOR_GREEN, ch='X'}, -- E_NUB
+    [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  1), fg=COLOR_GREEN, ch='X'}, -- W_NUB
+    [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  2), fg=COLOR_GREEN, ch='X'}, -- S_NUB
+    [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  3), fg=COLOR_GREEN, ch='X'}, -- VERT_NS
+    [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  1), fg=COLOR_GREEN, ch='X'}, -- VERT_EW
+    [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  3), fg=COLOR_GREEN, ch='X'}, -- POINT
+}
+
 ---@class BoxSelection.attrs: widgets.Window.attrs
 ---@field box? Box
 ---@field screen? gui.Screen
 ---@field tile_map? { pens: { key: dfhack.pen }, getPenKey: fun(nesw: { n: boolean, e: boolean, s: boolean, w: boolean }): any }
----@field avoid_rect? gui.ViewRect|fun():gui.ViewRect
+---@field avoid_view? gui.View|fun():gui.View
 ---@field on_confirm? fun(box: Box)
 ---@field first_point? df.coord
 ---@field last_point? df.coord
@@ -577,7 +639,7 @@ BoxSelection = defclass(BoxSelection, widgets.Window)
 BoxSelection.ATTRS {
     screen=DEFAULT_NIL, -- Allows the DimensionsTooltip to be shown
     tile_map=TILE_MAP,
-    avoid_rect=DEFAULT_NIL,
+    avoid_view=DEFAULT_NIL,
     on_confirm=DEFAULT_NIL,
     flat=false,
     ascii_fill=false,
@@ -668,20 +730,13 @@ function BoxSelection:onInput(keys)
         return true
     end
 
-    local avoid_rect = utils.getval(self.avoid_rect)
+    local avoid_view = utils.getval(self.avoid_view)
 
-    -- Get the position of the mouse in coordinates local to avoid_rect, if it's specified
-    local mouseFramePos = avoid_rect and self:getMousePos(gui.ViewRect{
-        rect=gui.mkdims_wh(
-            avoid_rect.x1,
-            avoid_rect.y1,
-            avoid_rect.width,
-            avoid_rect.height
-        )
-    })
+    -- Get the position of the mouse in coordinates local to avoid_view, if it's specified
+    local mouseFramePos = avoid_view and avoid_view:getMouseFramePos()
 
     if keys._MOUSE_L and not mouseFramePos then
-        -- If left click and the mouse is not in the avoid_rect
+        -- If left click and the mouse is not in the avoid_view
         self.useCursor = false
         if self.first_point and not self.last_point then
             if not self.flat or mousePos.z == self.first_point.z then
@@ -747,8 +802,8 @@ function BoxSelection:onRenderFrame(dc, rect)
     end
 
     if box then
-        local avoid_rect = utils.getval(self.avoid_rect)
-        box:draw(self.tile_map, avoid_rect, self.ascii_fill)
+        local avoid_view = utils.getval(self.avoid_view)
+        box:draw(self.tile_map, avoid_view and Rect(avoid_view.frame_rect), self.ascii_fill)
     end
 
     -- Don't call super.onRenderFrame, since this widget should not be drawn
@@ -1352,7 +1407,7 @@ function TiletypeWindow:init()
         BoxSelection {
             view_id="box_selection",
             screen=self.screen,
-            avoid_rect=function() return self.frame_rect end,
+            avoid_view=self,
             on_confirm=function() self:confirm() end,
         },
         widgets.ResizingPanel {
