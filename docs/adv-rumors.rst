@@ -8,11 +8,11 @@ adv-rumors
 In adventure mode, start a conversation with someone. This tool will:
 
 - Add all words to keywords for easier filtering/searching everywhere
-- Additional 'slay' keyword for all relevant instances
+- Additional 'slay' and 'kill' keyword for all instances of slew/slain in the choice's text
 
 Overlay
 -------
 
 This script also provides an overlay that is managed by the `gui/overlay` framework.
-When the `gui/adv-rumors` overlay is enabled, the script will automatically run on the convesration screen,
+When the `adv-rumors.conversation` overlay is enabled, the script will automatically run on the convesration screen,
 introducing additional keywords.

@@ -29,7 +29,7 @@ function AdvRumorsOverlay:render()
     rumorUpdate()
 end
 
-OVERLAY_WIDGETS = {message=AdvRumorsOverlay}
+OVERLAY_WIDGETS = {conversation=AdvRumorsOverlay}
 
 -- CORE FUNCTIONS
 
@@ -61,56 +61,52 @@ function renameChoice(text, choice)
     end
 end
 
+-- Gets the keywords already present on the dialog choice
 function getKeywords(choice)
     local keywords = {}
     for i, keyword in ipairs(choice.key_word) do
-        local keytext = dfhack.df2utf(keyword.value):lower()
-        if not keywords[keytext] then
-            table.insert(keywords, keytext)
-        end
+        table.insert(keywords, keyword.value:lower())
     end
     return keywords
 end
 
+-- Adds a keyword to the dialog choice
 function addKeyword(choice, keyword)
-    -- Prevent duplicate keywords
-    for i, kword in ipairs(choice.key_word) do
-        if kword.value == keyword then
-            return
-        end
-    end
     local keyword_ptr = df.new('string')
     keyword_ptr.value = keyword
     choice.key_word:insert('#', keyword_ptr)
 end
 
+-- Adds multiple keywords to the dialog choice
 function addKeywords(choice, keywords)
     for i, keyword in ipairs(keywords) do
         addKeyword(choice, keyword)
     end
 end
 
-function addKeywordsForChoice(choice)
-    local fulltext = choiceToString(choice)
-
-    -- Special cases
-    if string.find(fulltext, "slew") or string.find(fulltext, "slain") then
-        addKeyword(choice, 'slay')
-    end
-
-    -- add a "sane" handling of you/your/me
-    if string.find(fulltext, 'you?%f[%W]') or string.find(fulltext, 'your?%f[%W]') then
-        addKeyword(choice, 'me')
-    end
-
-    -- Transform the whole thing into keywords barring blacklist
+-- Generates keywords based on the text of the dialog choice, plus keywords for special cases
+function generateKeywordsForChoice(choice)
     local new_keywords, keywords_set = {}, utils.invert(getKeywords(choice))
-    for word in fulltext:gmatch('[%w]+') do
-        -- remove the parenthises from the word
-        word = dfhack.toSearchNormalized(word)
-        if not ignore_words[word] and not keywords_set[word] then
-            table.insert(new_keywords, word)
-            keywords_set[word] = true
+    for i, data in ipairs(choice.print_string.text) do
+        local text = dfhack.toSearchNormalized(data.value)
+        -- Special cases
+        if string.find(text, "slew") or string.find(text, "slain") then
+            addKeyword(choice, 'slay')
+            addKeyword(choice, 'kill')
+        end
+
+        -- add an additional "me" keyword for you/your
+        if string.find(text, 'your?%f[%W]') then
+            addKeyword(choice, 'me')
+        end
+
+        -- Transform the whole thing into keywords barring blacklist
+        for word in text:gmatch('%w+') do
+            word = dfhack.toSearchNormalized(word)
+            if not ignore_words[word] and not keywords_set[word] then
+                table.insert(new_keywords, word)
+                keywords_set[word] = true
+            end
         end
     end
     addKeywords(choice, new_keywords)
