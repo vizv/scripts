@@ -18,7 +18,6 @@ local adventure = df.global.game.main_interface.adventure
 
 AdvRumorsOverlay = defclass(AdvRumorsOverlay, overlay.OverlayWidget)
 AdvRumorsOverlay.ATTRS{
-    name='adv-rumors',
     desc='Adds keywords to conversation entries.',
     overlay_only=true,
     default_enabled=true,
@@ -115,9 +114,6 @@ end
 -- Condense the rumor system choices
 function rumorUpdate()
     for i, choice in ipairs(adventure.conversation.conv_choice_info) do
-        if shortening and adventure.conversation.conv_actce.state ~= df.conversation_state_type.MAIN then
-            shortenChoice(choice)
-        end
         generateKeywordsForChoice(choice)
     end
 end

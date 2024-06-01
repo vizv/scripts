@@ -5,14 +5,15 @@ adv-rumors
     :summary: Improves the conversation menus in Adventure mode.
     :tags: adventure interface
 
-In adventure mode, start a conversation with someone. This tool will:
+When you start a conversation with someone in adventure mode, this tool will:
 
-- Add all words to keywords for easier filtering/searching everywhere
-- Additional 'slay' and 'kill' keywords for choices where someone was slain
+- Make conversation topics searchable by additional useful keywords based on the topic description
+- Add ``slay`` and ``kill`` keywords for topics about someone who was slain
 
 Overlay
 -------
 
-This script also provides an overlay that is managed by the `gui/overlay` framework.
-When the `adv-rumors.conversation` overlay is enabled, the script will automatically run on the convesration screen,
+This script functions via an overlay that is managed by the `gui/overlay` framework.
+When the ``adv-rumors.conversation`` overlay is enabled, the script will
+automatically run on the convesration screen,
 introducing additional keywords.
