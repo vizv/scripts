@@ -32,6 +32,7 @@ Template for new versions:
 - `devel/tree-info`: print a visualization of tree_info data
 - `gui/tiletypes`: interface for modifying map tiles and tile properties
 - `fix/population-cap`: fixes the situation where you continue to get migrant waves even when you are above your configured population cap
+- `fix/occupancy`: fixes issues where you can't build somewhere because the game tells you an item/unit/building is in the way but there's nothing there
 
 ## New Features
 - `buildingplan`: dimension tooltip is now displayed for constructions and buildings that are designated over an area
@@ -50,6 +51,7 @@ Template for new versions:
 ## Removed
 - `max-wave`: merged into `pop-control`
 - `devel/find-offsets`, `devel/find-twbt`, `devel/prepare-save`: remove development scripts that are no longer useful
+- `fix/item-occupancy`, `fix/tile-occupancy`: merged into `fix/occupancy`
 
 # 50.13-r2
 

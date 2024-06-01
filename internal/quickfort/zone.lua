@@ -136,7 +136,7 @@ local aliases = {}
 
 local valid_locations = {
     tavern={new=df.abstract_building_inn_tavernst,
-        assign={name={type=df.language_name_type.SymbolFood},
+        assign={name={type=df.language_name_type.FoodStore},
                 contents={desired_goblets=10, desired_instruments=5,
                 need_more={goblets=true, instruments=true}}}},
     hospital={new=df.abstract_building_hospitalst,
