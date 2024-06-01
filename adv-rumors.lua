@@ -87,29 +87,26 @@ end
 -- Generates keywords based on the text of the dialog choice, plus keywords for special cases
 function generateKeywordsForChoice(choice)
     local new_keywords, keywords_set = {}, utils.invert(getKeywords(choice))
-    for i, data in ipairs(choice.print_string.text) do
-        local text = dfhack.toSearchNormalized(data.value)
-        -- Special cases
-        if not keywords_set['kill'] and string.find(text, "slew") or string.find(text, "slain") then
-            keywords_set['kill'] = true
-            table.insert(new_keywords, 'kill')
-            keywords_set['slay'] = true
-            table.insert(new_keywords, 'slay')
-        end
 
-        -- add an additional "me" keyword for you/your
-        if not keywords_set['me'] and string.find(text, 'your?%f[%W]') then
-            keywords_set['me'] = true
-            table.insert(new_keywords, 'me')
-        end
+    -- Puts the keyword into a new_keywords table, but only if unique and not ignored
+    local function collect_keyword(word)
+        if ignore_words[word] or keywords_set[word] then return end
+        table.insert(new_keywords, word)
+        keywords_set[word] = true
+    end
 
-        -- Transform the whole thing into keywords barring blacklist
-        for word in text:gmatch('%w+') do
-            word = dfhack.toSearchNormalized(word)
-            if not ignore_words[word] and not keywords_set[word] then
-                table.insert(new_keywords, word)
-                keywords_set[word] = true
+    -- generate keywords from useful words in the text
+    for _, data in ipairs(choice.print_string.text) do
+        for word in dfhack.toSearchNormalized(data.value):gmatch('%w+') do
+            -- collect additional keywords based on the special words
+            if word == 'slew' or word == 'slain' then
+                collect_keyword('kill')
+                collect_keyword('slay')
+            elseif word == 'you' or word == 'your' then
+                collect_keyword('me')
             end
+            -- collect the actual word if it's unique and not ignored
+            collect_keyword(word)
         end
     end
     addKeywords(choice, new_keywords)
