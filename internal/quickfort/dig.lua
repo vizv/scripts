@@ -270,8 +270,9 @@ end
 local function do_remove_ramps(digctx)
     if digctx.on_map_edge or digctx.flags.hidden then return nil end
     if is_construction(digctx.tileattrs) or
-            not is_removable_shape(digctx.tileattrs) then
-        return nil;
+        not is_removable_shape(digctx.tileattrs)
+    then
+        return function() end -- noop, but not an error
     end
     return function() digctx.flags.dig = values.dig_default end
 end
