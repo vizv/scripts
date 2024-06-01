@@ -32,36 +32,8 @@ OVERLAY_WIDGETS = {conversation=AdvRumorsOverlay}
 
 -- CORE FUNCTIONS
 
--- Converts the choice's print string to a lua string
-function choiceToString(choice)
-    local line_table = {}
-    for i, data in ipairs(choice.print_string.text) do
-        table.insert(line_table, dfhack.toSearchNormalized(data.value))
-    end
-    return table.concat(line_table, "\n")
-end
-
--- Renames the choice's print string based on string, respecting the newlines
-function renameChoice(text, choice)
-    -- Clear the string
-    for i, data in ipairs(choice.print_string.text) do
-        df.delete(data)
-    end
-    choice.print_string.text:resize(0)
-
-    -- Split the string assuming \n is newline
-    local line_table = string.split(text, "\n")
-    for i, line in ipairs(line_table) do
-        -- Create a df string for each line
-        local line_ptr = df.new('string')
-        line_ptr.value = line
-        -- Insert it into the text data
-        choice.print_string.text:insert('#', line_ptr)
-    end
-end
-
 -- Gets the keywords already present on the dialog choice
-function getKeywords(choice)
+local function getKeywords(choice)
     local keywords = {}
     for i, keyword in ipairs(choice.key_word) do
         table.insert(keywords, keyword.value:lower())
@@ -70,21 +42,21 @@ function getKeywords(choice)
 end
 
 -- Adds a keyword to the dialog choice
-function addKeyword(choice, keyword)
+local function addKeyword(choice, keyword)
     local keyword_ptr = df.new('string')
     keyword_ptr.value = keyword
     choice.key_word:insert('#', keyword_ptr)
 end
 
 -- Adds multiple keywords to the dialog choice
-function addKeywords(choice, keywords)
+local function addKeywords(choice, keywords)
     for i, keyword in ipairs(keywords) do
         addKeyword(choice, keyword)
     end
 end
 
 -- Generates keywords based on the text of the dialog choice, plus keywords for special cases
-function generateKeywordsForChoice(choice)
+local function generateKeywordsForChoice(choice)
     local new_keywords, keywords_set = {}, utils.invert(getKeywords(choice))
 
     -- Puts the keyword into a new_keywords table, but only if unique and not ignored
