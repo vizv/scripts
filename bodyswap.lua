@@ -39,8 +39,7 @@ function clearNemesisFromLinkedSites(nem)
 end
 
 function createNemesis(unit)
-    -- TODO: figure out how to create a nemesis entry without relying on external scripts
-    local nemesis = reqscript('modtools/create-unit').createNemesis(unit, unit.civ_id)
+    local nemesis = unit:create_nemesis(false, true)
     nemesis.figure.flags.never_cull = true
     return nemesis
 end
@@ -129,8 +128,7 @@ function swapAdvUnit(newUnit)
     df.global.world.units.adv_unit = newUnit
     oldUnit.idle_area:assign(oldUnit.pos)
 
-    -- +1 is necessary because in adv mode, the window pos is off by 1 from dwarf mode for some reason
-    dfhack.gui.revealInDwarfmodeMap(xyz2pos(newUnit.pos.x+1, newUnit.pos.y+1, newUnit.pos.z), true)
+    dfhack.gui.revealInDwarfmodeMap(newUnit.pos, true)
 end
 
 if not dfhack_flags.module then
@@ -140,7 +138,7 @@ if not dfhack_flags.module then
 
     local unit = args.unit and df.unit.find(tonumber(args.unit)) or dfhack.gui.getSelectedUnit()
     if not unit then
-        print("Enter the following if you require assistance: bodyswap -help")
+        print("Enter the following if you require assistance: help bodyswap")
         if args.unit then
             qerror("Invalid unit id: " .. args.unit)
         else
