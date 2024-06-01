@@ -29,7 +29,9 @@ local UI_COLORS = {
     HIGHLIGHTED2= COLOR_DARKGRAY,
     HIGHLIGHTED_BORDER= COLOR_YELLOW,
     VALUE_NONE= COLOR_GRAY,
-    VALUE= COLOR_YELLOW
+    VALUE= COLOR_YELLOW,
+    VALID_OPTION= COLOR_WHITE,
+    INVALID_OPTION= COLOR_RED,
 }
 
 local TILESET = dfhack.textures.loadTileset('hack/data/art/tiletypes.png', 8, 12, true)
@@ -1170,6 +1172,11 @@ TileConfig.ATTRS {
 
 function TileConfig:init()
     self.stone_enabled = false
+    self.valid_combination = true
+
+    local function getTextPen()
+        return self.valid_combination and UI_COLORS.VALID_OPTION or UI_COLORS.INVALID_OPTION
+    end
 
     local function getListOther(short_list)
         for i=1, #short_list do
@@ -1198,7 +1205,13 @@ function TileConfig:init()
             label='Shape:',
             options=self.data_lists.short_shape_list,
             initial_option=-1,
-            on_change=self.on_change_shape,
+            on_change=function(value)
+                self:updateValidity()
+                if self.on_change_shape then
+                    self.on_change_shape(value)
+                end
+            end,
+            text_pen=getTextPen
         },
         widgets.Divider { frame={t=2}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
@@ -1209,7 +1222,13 @@ function TileConfig:init()
             label='Material:',
             options=self.data_lists.short_mat_list,
             initial_option=-1,
-            on_change=self.on_change_mat,
+            on_change=function(value)
+                self:updateValidity()
+                if self.on_change_mat then
+                    self.on_change_mat(value)
+                end
+            end,
+            text_pen=getTextPen
         },
         widgets.HotkeyLabel {
             view_id="stone_label",
@@ -1238,17 +1257,30 @@ function TileConfig:init()
             label='Special:',
             options=self.data_lists.short_special_list,
             initial_option=-1,
-            on_change=self.on_change_special,
+            on_change=function(value)
+                self:updateValidity()
+                if self.on_change_special then
+                    self.on_change_special(value)
+                end
+            end,
+            text_pen=getTextPen
         },
         widgets.Divider { frame={t=14}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
+            view_id="variant_cycle",
             frame={l=1, t=16},
             key_back='CUSTOM_SHIFT_L',
             key='CUSTOM_L',
             label='Variant:',
             options=self.data_lists.variant_list,
             initial_option=-1,
-            on_change=self.on_change_variant,
+            on_change=function(value)
+                self:updateValidity()
+                if self.on_change_variant then
+                    self.on_change_variant(value)
+                end
+            end,
+            text_pen=getTextPen
         },
         widgets.Divider { frame={t=18}, frame_style_l=false, frame_style_r=false, },
     }
@@ -1288,6 +1320,7 @@ function TileConfig:openShapePopup()
             self.other_shape.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
             self.other_shape.value = item.value
             self.subviews.shape_cycle.option_idx=#self.subviews.shape_cycle.options
+            self:updateValidity()
             self.on_change_shape(item.value)
         end,
     }:show()
@@ -1302,6 +1335,7 @@ function TileConfig:openMaterialPopup()
             self.other_mat.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
             self.other_mat.value = item.value
             self.subviews.mat_cycle.option_idx=#self.subviews.mat_cycle.options
+            self:updateValidity()
             self.on_change_mat(item.value)
         end,
     }:show()
@@ -1316,6 +1350,7 @@ function TileConfig:openSpecialPopup()
             self.other_special.label = OTHER_LABEL_FORMAT.first..item.label..OTHER_LABEL_FORMAT.last
             self.other_special.value = item.value
             self.subviews.special_cycle.option_idx=#self.subviews.special_cycle.options
+            self:updateValidity()
             self.on_change_special(item.value)
         end,
     }:show()
@@ -1360,6 +1395,29 @@ end
 function TileConfig:setVisibility(visibility)
     self.frame = visibility and { h=19 } or { h=0 }
     self.visible = visibility
+end
+
+function TileConfig:updateValidity()
+    local variant_value = self.subviews.variant_cycle:getOptionValue(self.subviews.variant_cycle.option_idx)
+    local special_value = self.subviews.special_cycle:getOptionValue(self.subviews.special_cycle.option_idx)
+    local mat_value = self.subviews.mat_cycle:getOptionValue(self.subviews.mat_cycle.option_idx)
+    local shape_value = self.subviews.shape_cycle:getOptionValue(self.subviews.shape_cycle.option_idx)
+
+    self.valid_combination = false
+    for i=df.tiletype._first_item, df.tiletype._last_item do
+        local name = df.tiletype[i]
+        if name then
+            local tile_attrs = df.tiletype.attrs[name]
+            if (shape_value == df.tiletype_shape.NONE or tile_attrs.shape == shape_value)
+                and (mat_value == df.tiletype_material.NONE or tile_attrs.material == mat_value)
+                and (special_value == df.tiletype_special.NONE or tile_attrs.special == special_value or tile_attrs.special == df.tiletype_special.NONE)
+                and (variant_value == df.tiletype_variant.NONE or tile_attrs.variant == variant_value or tile_attrs.variant == df.tiletype_variant.NONE)
+            then
+                self.valid_combination = true
+                break
+            end
+        end
+    end
 end
 
 --================================--
