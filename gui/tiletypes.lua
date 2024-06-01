@@ -759,7 +759,7 @@ function BoxSelection:onInput(keys)
     local filteredKeys = utils.clone(keys)
     filteredKeys["CURSOR_DOWN_Z"] = nil
     filteredKeys["CURSOR_UP_Z"] = nil
-    self.useCursor = self.useCursor or guidm.getMapKey(filteredKeys)
+    self.useCursor = (self.useCursor or guidm.getMapKey(filteredKeys)) and df.global.d_init.feature.flags.KEYBOARD_CURSOR
 
     return false
 end
