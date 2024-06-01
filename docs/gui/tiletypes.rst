@@ -26,10 +26,10 @@ Examples
 ``gui/tiletypes``
     Start the tiletypes GUI.
 ``gui/tiletypes --unrestricted``
-    Start the tiletypes GUI with non-standard materials available.
+    Start the tiletypes GUI with non-standard stone types available.
 
 Options
 -------
 
 ``-f``, ``--unrestricted``
-    Include non-standard materials in the list when choosing a tile material.
+    Include non-standard stone types in the selection list.
