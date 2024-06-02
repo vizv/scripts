@@ -50,8 +50,8 @@ end
 function extinguishContaminant(spatter)
     -- reset temperature of any contaminants to prevent them from causing reignition
     -- (just in case anyone decides to play around with molten gold or whatnot)
-    spatter.temperature.whole = 10050
-    spatter.temperature.fraction = 0
+    spatter.base.temperature.whole = 10050
+    spatter.base.temperature.fraction = 0
 end
 
 ---@param item df.item
