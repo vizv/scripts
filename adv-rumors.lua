@@ -16,22 +16,7 @@ ignore_words = utils.invert{
 -- locals
 local adventure = df.global.game.main_interface.adventure
 
-AdvRumorsOverlay = defclass(AdvRumorsOverlay, overlay.OverlayWidget)
-AdvRumorsOverlay.ATTRS{
-    desc='Adds keywords to conversation entries.',
-    overlay_only=true,
-    default_enabled=true,
-    viewscreens='dungeonmode/Conversation',
-}
-
-function AdvRumorsOverlay:render()
-    rumorUpdate()
-end
-
-OVERLAY_WIDGETS = {conversation=AdvRumorsOverlay}
-
 -- CORE FUNCTIONS
-
 -- Gets the keywords already present on the dialog choice
 local function getKeywords(choice)
     local keywords = {}
@@ -84,8 +69,24 @@ local function generateKeywordsForChoice(choice)
 end
 
 -- Condense the rumor system choices
-function rumorUpdate()
+local function rumorUpdate()
     for i, choice in ipairs(adventure.conversation.conv_choice_info) do
         generateKeywordsForChoice(choice)
     end
+end
+
+-- Overlay
+
+AdvRumorsOverlay = defclass(AdvRumorsOverlay, overlay.OverlayWidget)
+AdvRumorsOverlay.ATTRS{
+    desc='Adds keywords to conversation entries.',
+    overlay_only=true,
+    default_enabled=true,
+    viewscreens='dungeonmode/Conversation',
+}
+
+OVERLAY_WIDGETS = {conversation=AdvRumorsOverlay}
+
+function AdvRumorsOverlay:render()
+    rumorUpdate()
 end
