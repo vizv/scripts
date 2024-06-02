@@ -30,11 +30,7 @@ function clearNemesisFromLinkedSites(nem)
     end
     for _, link in ipairs(nem.figure.site_links) do
         local site = df.world_site.find(link.site)
-        for i = #site.populace.nemesis - 1, 0, -1 do
-            if site.populace.nemesis[i] == nem.id then
-                site.populace.nemesis:erase(i)
-            end
-        end
+        utils.erase_sorted(site.populace.nemesis, nem.id)
     end
 end
 
@@ -128,7 +124,7 @@ function swapAdvUnit(newUnit)
     df.global.world.units.adv_unit = newUnit
     oldUnit.idle_area:assign(oldUnit.pos)
 
-    dfhack.gui.revealInDwarfmodeMap(newUnit.pos, true)
+    dfhack.gui.revealInDwarfmodeMap(dfhack.units.getPosition(newUnit), true)
 end
 
 if not dfhack_flags.module then
