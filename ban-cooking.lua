@@ -268,7 +268,7 @@ funcs.fruit = function()
         for k, g in ipairs(p.growths) do
             local matinfo = dfhack.matinfo.decode(g)
             local m = matinfo.material
-            if m.id == "FRUIT" and m.flags.EDIBLE_COOKED and m.flags.LEAF_MAT then
+            if m.id == "FRUIT" and m.flags.EDIBLE_COOKED and m.flags.STOCKPILE_PLANT_GROWTH then
                 for _, s in ipairs(m.reaction_product.id) do
                     if s.value == "DRINK_MAT" then
                         ban_cooking(p.name .. ' ' .. m.id, matinfo.type, matinfo.index, df.item_type.PLANT_GROWTH, k)

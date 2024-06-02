@@ -192,7 +192,7 @@ local function stacks_add_item(stockpile, stacks, stack_type, item, container)
         else
             comp_key = ('%s+%s+%s+%s+%s'):format(stack_type.type_id, item.race, item.caste, item:getActualMaterial(), item:getActualMaterialIndex())
         end
-    elseif item:isAmmo() then
+    elseif item:isCrafted() then
         if item:getQuality() == df.item_quality.Masterful then
             comp_key = ('%s+%s+%s+%s+%s'):format(stack_type.type_id, item.mat_type, item.mat_index, item:getQuality(), item:getMaker())
         else
@@ -446,7 +446,7 @@ local function stacks_add_items(stockpile, stacks, items, container, ind)
                     local casteRaw = raceRaw.caste[item.caste]
                     log(4, ('      %sitem:%40s <%6d> is incl, type:%d, race:%s, caste:%s'):format(
                         ind, utils.getItemDescription(item), item.id, type_id,  raceRaw.creature_id,  casteRaw.caste_id))
-                elseif item:isAmmo() then
+                elseif item:isCrafted() then
                     local mat_info = dfhack.matinfo.decode(item.mat_type, item.mat_index)
                     log(4, ('      %sitem:%40s <%6d> is incl, type:%d, info:%s, quality:%d, maker:%d'):format(
                         ind, utils.getItemDescription(item), item.id, type_id, mat_info:toString(), item:getQuality(), item:getMaker()))

@@ -53,7 +53,7 @@ function printTreeTile(bits)
         dfhack.print(' ')
     end
 
-    if bits.twigs then
+    if bits.leaves then
         chars = chars-1
         exists = true
         print_color(';', COLOR_GREEN)

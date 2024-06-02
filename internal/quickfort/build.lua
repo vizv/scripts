@@ -802,8 +802,7 @@ local building_db_raw = {
     Mrsssqq=make_roller_entry(df.screw_pump_direction.FromWest, 30000),
     Mrsssqqq=make_roller_entry(df.screw_pump_direction.FromWest, 20000),
     Mrsssqqqq=make_roller_entry(df.screw_pump_direction.FromWest, 10000),
-    -- Instruments are not yet supported by DFHack
-    -- I={label='Instrument', type=df.building_type.Instrument},
+    I={label='Instrument', type=df.building_type.Instrument},
     S={label='Support', type=df.building_type.Support,
        is_valid_tile_fn=is_valid_tile_has_space},
     m={label='Animal Trap', type=df.building_type.AnimalTrap},
