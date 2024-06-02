@@ -94,9 +94,7 @@ function command_passes_filters(data, target_group, filter_strs)
     end
     filter_strs = filter_strs or {}
     local first_word = get_first_word(data.help_command or data.command)
-    if dfhack.getHideArmokTools() and helpdb.is_entry(first_word)
-        and helpdb.get_entry_tags(first_word).armok
-    then
+    if dfhack.getHideArmokTools() and helpdb.has_tag(first_word, 'armok') then
         return false
     end
     return data.help_command and
