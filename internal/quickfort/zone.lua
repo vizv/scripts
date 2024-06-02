@@ -255,7 +255,7 @@ local function parse_zone_config(c, props)
             zone_data.assigned_unit = get_noble_unit('captain_of_the_guard')
         end
         if not zone_data.assigned_unit then
-            dfhack.printerr(('could not find a unit assigned to noble position: "%s"'):format(props.assigned_unit))
+            log('could not find a unit assigned to noble position: "%s"', props.assigned_unit)
         end
         props.assigned_unit = nil
     end
