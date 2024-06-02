@@ -27,6 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
+- `adv-rumors`: (reinstated) add additional searchable keywords for conversation topics
 - `pop-control`: (reinstated) limit the maximum size of migrant waves
 - `gui/sitemap`: list and zoom to nearby people, locations, and artifacts
 - `devel/tree-info`: print a visualization of tree_info data
