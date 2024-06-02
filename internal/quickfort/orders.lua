@@ -29,11 +29,12 @@ local function inc_order_spec(order_specs, quantity, reactions, label)
     label = label:gsub('_', ' ')
     log('needs job to build: %s %s', tostring(quantity), label)
     if not order_specs[label] then
-        local order = nil
+        local order, instrument_name = nil, nil
         for _,v in ipairs(reactions) do
             local name = v.name:lower()
             -- just find the first procedurally generated instrument
             if label == 'instrument' and name:find('^assemble [^ ]+$') then
+                instrument_name = name:match('^assemble (.*)')
                 order = v.order
                 break
             -- the success of these matchers depends on the job name that is
@@ -54,7 +55,7 @@ local function inc_order_spec(order_specs, quantity, reactions, label)
             end
         end
         if not order then error(string.format('unhandled label: %s', label)) end
-        order_specs[label] = {order=order, quantity=0}
+        order_specs[label] = {order=order, quantity=0, instrument_name=instrument_name}
     end
     order_specs[label].quantity = order_specs[label].quantity + quantity
 end
@@ -130,9 +131,16 @@ end
 
 local function create_order(ctx, label, order_spec)
     local quantity = math.ceil(order_spec.quantity)
+    if order_spec.instrument_name then
+        label = ('%s (%s)'):format(label, order_spec.instrument_name)
+    end
     log('ordering %d %s', quantity, label)
     if not ctx.dry_run and stockflow then
-        stockflow.create_orders(order_spec.order, quantity)
+        if order_spec.instrument_name then
+            dfhack.run_script('instruments', 'order', order_spec.instrument_name, tostring(quantity), '-q')
+        else
+            stockflow.create_orders(order_spec.order, quantity)
+        end
         table.insert(ctx.stats, {label=('Ordered '..label), value=quantity, is_order=true})
     else
         table.insert(ctx.stats, {label=('Would order '..label), value=quantity, is_order=true})

@@ -184,7 +184,7 @@ end
 
 -- creates a df.manager_order from it's definition.
 -- this is translated orders.cpp to Lua,
-function create_orders(orders)
+function create_orders(orders, quiet)
     -- is dfhack.with_suspend necessary?
 
     -- we need id mapping to restore saved order_conditions
@@ -436,8 +436,10 @@ function create_orders(orders)
             if job_type == "CustomReaction" then
                 job_type  = job_type .. " '" .. order.reaction_name .. "'"
             end
-            print("Queuing " .. job_type
-                .. (amount==0 and " infinitely" or " x"..amount))
+            if not quiet then
+                print("Queuing " .. job_type
+                    .. (amount==0 and " infinitely" or " x"..amount))
+            end
             world.manager_orders:insert('#', order)
         end
         end)
