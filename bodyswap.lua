@@ -35,7 +35,7 @@ function clearNemesisFromLinkedSites(nem)
 end
 
 function createNemesis(unit)
-    local nemesis = unit:create_nemesis(false, true)
+    local nemesis = unit:create_nemesis(1, 1)
     nemesis.figure.flags.never_cull = true
     return nemesis
 end
@@ -124,7 +124,7 @@ function swapAdvUnit(newUnit)
     df.global.world.units.adv_unit = newUnit
     oldUnit.idle_area:assign(oldUnit.pos)
 
-    dfhack.gui.revealInDwarfmodeMap(dfhack.units.getPosition(newUnit), true)
+    dfhack.gui.revealInDwarfmodeMap(xyz2pos(dfhack.units.getPosition(newUnit)), true)
 end
 
 if not dfhack_flags.module then
