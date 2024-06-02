@@ -128,18 +128,11 @@ OVERLAY_WIDGETS = {
 --- HelpWindow
 ---
 
-DESIGN_HELP_DEFAULT = {
-    'gui/design Help',
-    '============',
-    NEWLINE,
-    'This is a default help text.'
-}
-
 CONSTRUCTION_HELP = {
-    'gui/design Help: Building filters',
-    '=================================',
+    'Building filters',
+    '================',
     NEWLINE,
-    'Use `buildingplan` to configure filters for the desired construction types. This tool will use the current buildingplan filters for a building type.'
+    'Use the DFHack building planner to configure filters for the desired construction types. This tool will use the current buildingplan filters for a building type.'
 }
 
 HelpWindow = defclass(HelpWindow, widgets.Window)
@@ -147,22 +140,16 @@ HelpWindow.ATTRS{
     frame_title='gui/design Help',
     frame={w=43, h=20, t=10, l=10},
     resizable=true,
-    message=DESIGN_HELP_DEFAULT,
+    resize_min={h=10},
+    message='',
 }
 
 function HelpWindow:init()
     self:addviews{
-        widgets.ResizingPanel{
-            frame={t=0, l=0},
-            autoarrange_subviews=true,
-            subviews={
-                widgets.WrappedLabel{
-                    view_id='help_text',
-                    frame={t=0, l=0},
-                    text_to_wrap=function() return self.message end,
-                }
-            }
-        }
+        widgets.WrappedLabel{
+            auto_height=false,
+            text_to_wrap=function() return self.message end,
+        },
     }
 end
 
@@ -174,13 +161,13 @@ local BUTTON_PEN_RIGHT = to_pen{fg=COLOR_CYAN, tile=curry(textures.tp_control_pa
 
 -- Debug window
 
-SHOW_DEBUG_WINDOW = false
+SHOW_DEBUG_WINDOW = SHOW_DEBUG_WINDOW or false
 
 local function table_to_string(tbl, indent)
     indent = indent or ''
     local result = {}
     for k, v in pairs(tbl) do
-        local key = type(k) == 'number' and '[' .. tostring(k) .. ']' or tostring(k)
+        local key = type(k) == 'number' and ('[%d]'):format(k) or tostring(k)
         if type(v) == 'table' then
             table.insert(result, indent .. key .. ' = {')
             local subTable = table_to_string(v, indent .. '  ')
@@ -188,12 +175,9 @@ local function table_to_string(tbl, indent)
                 table.insert(result, line)
             end
             table.insert(result, indent .. '},')
-        elseif type(v) == 'function' then
-            local res = v()
-            local value = type(res) == 'number' and tostring(res) or '\'' .. tostring(res) .. '\''
-            table.insert(result, indent .. key .. ' = ' .. value .. ',')
         else
-            local value = type(v) == 'number' and tostring(v) or '\'' .. tostring(v) .. '\''
+            local val = utils.getval(v)
+            local value = type(val) == 'string' and ('"%s"'):format(val) or tostring(val)
             table.insert(result, indent .. key .. ' = ' .. value .. ',')
         end
     end
@@ -202,67 +186,56 @@ end
 
 DesignDebugWindow = defclass(DesignDebugWindow, widgets.Window)
 DesignDebugWindow.ATTRS {
-    frame_title = 'Debug',
-    frame = {
-        w = 47,
-        h = 40,
-        l = 10,
-        t = 8,
-    },
-    resizable = true,
-    resize_min = { h = 30 },
-    autoarrange_subviews = true,
-    autoarrange_gap = 1,
-    design_window = DEFAULT_NIL
+    frame_title='Debug',
+    frame={w=47, h=40, l=10, t=8},
+    resizable=true,
+    resize_min={w=20, h=30},
+    autoarrange_subviews=true,
+    autoarrange_gap=1,
+    design_window=DEFAULT_NIL,
 }
+
 function DesignDebugWindow:init()
 
     local attrs = {
-        -- 'shape', -- prints a lot of lines due to the self.arr, best to disable unless needed, TODO add a 'get debug string' function
-        'prio',
-        'autocommit',
-        'cur_shape',
-        'placing_extra',
-        'placing_mark',
-        'prev_center',
-        'start_center',
-        'extra_points',
-        'last_mouse_point',
         'needs_update',
+        'placing_mark',
         '#marks',
         'placing_mirror',
-        'mirror_point',
         'mirror',
-        'show_guides'
+        'mirror_point',
+        'placing_extra',
+        'extra_points',
+        'last_mouse_point',
+        'prev_center',
+        'start_center',
     }
 
-    if not self.design_window then
-        return
+    for _, attr in ipairs(attrs) do
+        self:addviews{
+            widgets.WrappedLabel{
+                text_to_wrap=function()
+                    local want_size = attr:startswith('#')
+                    local field = want_size and attr:sub(2) or attr
+                    if type(self.design_window[field]) ~= 'table' then
+                        return ('%s: %s'):format(field, self.design_window[field])
+                    end
+
+                    if want_size then
+                        return ('%s: %d'):format(attr, #self.design_window[field])
+                    else
+                        return ('%s: %s'):format(attr,
+                            table.concat(table_to_string(self.design_window[attr], '  ')))
+                    end
+                end,
+            },
+        }
     end
+end
 
-    for i, a in pairs(attrs) do
-        local attr = a
-        local sizeOnly = string.sub(attr, 1, 1) == '#'
-
-        if (sizeOnly) then
-            attr = string.sub(attr, 2)
-        end
-
-        self:addviews { widgets.WrappedLabel {
-            view_id = 'debug_label_' .. attr,
-            text_to_wrap = function()
-                if type(self.design_window[attr]) ~= 'table' then
-                    return tostring(attr) .. ': ' .. tostring(self.design_window[attr])
-                end
-
-                if sizeOnly then
-                    return '#' .. tostring(attr) .. ': ' .. tostring(#self.design_window[attr])
-                else
-                    return { tostring(attr) .. ': ', table.unpack(table_to_string(self.design_window[attr], '  ')) }
-                end
-            end,
-        } }
-    end
+function DesignDebugWindow:render(dc)
+    self:updateLayout()
+    DesignDebugWindow.super.render(self, dc)
 end
 
 --
@@ -1544,7 +1517,7 @@ function Design:dismiss_help()
 end
 
 function Design:get_anchor_pos()
-    -- TODO: return a pos when the player is actively drawing a box
+    -- TODO: return a pos when the player is actively drawing
     return nil
 end
 
