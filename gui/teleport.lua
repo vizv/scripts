@@ -9,13 +9,6 @@ saved_hostile = saved_hostile or (saved_hostile == nil and true)
 
 local indicator = df.global.game.main_interface.recenter_indicator_m
 
-local function get_dims(pos1, pos2)
-    local width, height, depth = math.abs(pos1.x - pos2.x) + 1,
-            math.abs(pos1.y - pos2.y) + 1,
-            math.abs(pos1.z - pos2.z) + 1
-    return width, height, depth
-end
-
 local function is_good_unit(include, unit)
     if not unit then return false end
     if dfhack.units.isDead(unit) or
@@ -360,7 +353,7 @@ end
 function Teleport:do_teleport(pos)
     pos = pos or dfhack.gui.getMousePos()
     if not pos then return end
-    print(('teleporting %d units'):format(#self.selected_units.list))
+    print(('teleporting %d unit(s)'):format(#self.selected_units.list))
     for _,unit in ipairs(self.selected_units.list) do
         dfhack.units.teleport(unit, pos)
     end
