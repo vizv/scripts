@@ -245,7 +245,7 @@ end
 Design = defclass(Design, widgets.Window)
 Design.ATTRS {
     frame_title = 'Design',
-    frame={w=40, h=46, r=2, t=18},
+    frame={w=40, h=48, r=2, t=18},
     resizable=true,
     autoarrange_subviews=true,
     autoarrange_gap=1,
@@ -753,11 +753,13 @@ function Design:init()
                             subviews={
                                 widgets.WrappedLabel{
                                     text_to_wrap=self:callback('get_action_text'),
+                                    text_pen=COLOR_YELLOW,
                                 },
                                 widgets.WrappedLabel{
                                     text_to_wrap=self:callback('get_area_text'),
                                 },
                                 widgets.WrappedLabel{
+                                    view_id='mark_text',
                                     text_to_wrap=self:callback('get_mark_text'),
                                 },
                             },
@@ -795,18 +797,18 @@ end
 
 function Design:get_action_text()
     local text = ''
-    if self.marks[1] and self.placing_mark.active then
-        text = 'Place the next point'
-    elseif not self.marks[1] then
-        text = 'Place the first point'
+    if self.marks[2] and self.placing_mark.active then
+        text = 'Click to place the point'
+    elseif not self.marks[2] then
+        text = 'Click to place the first point'
     elseif not self.placing_extra.active and not self.prev_center then
-        text = 'Select any draggable points'
+        text = 'Move any draggable points'
     elseif self.placing_extra.active then
         text = 'Place any extra points'
     elseif self.prev_center then
-        text = 'Place the center point'
+        text = 'Move the center point'
     else
-        text = 'Select any draggable points'
+        text = 'Move any draggable points'
     end
     return text .. ' with the mouse. Use right-click to dismiss points in order.'
 end
@@ -901,7 +903,7 @@ function Design:on_transform(val)
         elseif val == 'flipv' then
             y = center.y - (y - center.y)
         end
-        self.marks[i] = Point { x = math.floor(x + 0.5), y = math.floor(y + 0.5), z = self.marks[i].z }
+        self.marks[i] = Point{x=math.floor(x + 0.5), y=math.floor(y + 0.5), z=self.marks[i].z}
     end
 
     -- Transform extra points
@@ -916,7 +918,7 @@ function Design:on_transform(val)
         elseif val == 'flipv' then
             y = center.y - (y - center.y)
         end
-        self.extra_points[i] = Point { x = math.floor(x + 0.5), y = math.floor(y + 0.5), z = self.extra_points[i].z }
+        self.extra_points[i] = Point{x=math.floor(x + 0.5), y=math.floor(y + 0.5), z=self.extra_points[i].z}
     end
 
     -- Calculate center point after transformation
@@ -928,11 +930,11 @@ function Design:on_transform(val)
 
     -- Adjust marks and extra points based on delta
     for i, mark in ipairs(self.marks) do
-        self.marks[i] = mark + Point { x = delta.x, y = delta.y, z = 0 }
+        self.marks[i] = mark + Point{x=delta.x, y=delta.y, z=0}
     end
 
     for i, point in ipairs(self.extra_points) do
-        self.extra_points[i] = point + Point { x = delta.x, y = delta.y, z = 0 }
+        self.extra_points[i] = point + Point{x=delta.x, y=delta.y, z=0}
     end
 
     self.needs_update = true
@@ -951,6 +953,11 @@ function Design:get_view_bounds()
     local marks_plus_next = copyall(self.marks)
     local mouse_pos = getMousePoint()
     if mouse_pos then
+        if not self.placing_mark.active then
+            -- only get the z coord from the mouse position
+            mouse_pos.x = self.marks[1].x
+            mouse_pos.y = self.marks[1].y
+        end
         table.insert(marks_plus_next, mouse_pos)
     end
 
@@ -968,6 +975,7 @@ end
 
 -- TODO Function is too long
 function Design:onRenderFrame(dc, rect)
+    self.subviews.mark_text:updateLayout()
     Design.super.onRenderFrame(self, dc, rect)
 
     local mouse_pos = getMousePoint()
@@ -1045,9 +1053,9 @@ function Design:onRenderFrame(dc, rect)
     -- Show mouse guidelines
     if self.subviews.show_guides:getOptionValue() and mouse_pos and not self:getMouseFramePos() then
         local map_x, map_y = dfhack.maps.getTileSize()
-        local horiz_bounds = { x1 = 0, x2 = map_x, y1 = mouse_pos.y, y2 = mouse_pos.y, z1 = mouse_pos.z, z2 = mouse_pos.z }
+        local horiz_bounds = {x1=0, x2=map_x, y1=mouse_pos.y, y2=mouse_pos.y, z1=mouse_pos.z, z2=mouse_pos.z}
         guidm.renderMapOverlay(function() return guide_tile_pen end, horiz_bounds)
-        local vert_bounds = { x1 = mouse_pos.x, x2 = mouse_pos.x, y1 = 0, y2 = map_y, z1 = mouse_pos.z, z2 = mouse_pos.z }
+        local vert_bounds = {x1=mouse_pos.x, x2=mouse_pos.x, y1=0, y2=map_y, z1=mouse_pos.z, z2=mouse_pos.z}
         guidm.renderMapOverlay(function() return guide_tile_pen end, vert_bounds)
     end
 
@@ -1070,9 +1078,9 @@ function Design:onRenderFrame(dc, rect)
 
         if mirror_vert_value ~= 1 or mirror_diag_value ~= 1 then
             local vert_bounds = {
-                x1 = self.mirror_point.x, x2 = self.mirror_point.x,
-                y1 = 0, y2 = map_y,
-                z1 = self.mirror_point.z, z2 = self.mirror_point.z
+                x1=self.mirror_point.x, x2=self.mirror_point.x,
+                y1=0, y2=map_y,
+                z1=self.mirror_point.z, z2=self.mirror_point.z,
             }
             guidm.renderMapOverlay(function() return mirror_guide_pen end, vert_bounds)
         end
@@ -1083,23 +1091,23 @@ function Design:onRenderFrame(dc, rect)
     if #self.marks >= shape.min_points and shape.basic_shape then
         local shape_top_left, shape_bot_right = shape:get_point_dims()
         local drag_points = {
-            Point { x = shape_top_left.x, y = shape_top_left.y },
-            Point { x = shape_bot_right.x, y = shape_bot_right.y },
-            Point { x = shape_top_left.x, y = shape_bot_right.y },
-            Point { x = shape_bot_right.x, y = shape_top_left.y }
+            Point{x=shape_top_left.x, y=shape_top_left.y},
+            Point{x=shape_bot_right.x, y=shape_bot_right.y},
+            Point{x=shape_top_left.x, y=shape_bot_right.y},
+            Point{x=shape_bot_right.x, y=shape_top_left.y}
         }
-        plugin.design_draw_points({ drag_points, 'drag_point' })
+        plugin.design_draw_points({drag_points, 'drag_point'})
     else
-        plugin.design_draw_points({ self.marks, 'drag_point' })
+        plugin.design_draw_points({self.marks, 'drag_point'})
     end
 
-    plugin.design_draw_points({ self.extra_points, 'extra_point' })
+    plugin.design_draw_points({self.extra_points, 'extra_point'})
 
     if (shape.basic_shape and #self.marks == shape.max_points) or
         (not shape.basic_shape and not self.placing_mark.active and #self.marks > 0) then
-        plugin.design_draw_points({ { shape:get_center() }, 'extra_point' })
+        plugin.design_draw_points({{shape:get_center()}, 'extra_point'})
     end
-    plugin.design_draw_points({ { self.mirror_point }, 'extra_point' })
+    plugin.design_draw_points({{self.mirror_point}, 'extra_point'})
 end
 
 function Design:onInput(keys)
@@ -1171,13 +1179,14 @@ function Design:onInput(keys)
     end
 
     if keys._MOUSE_L and pos then
+        self.needs_update = true
+
         -- TODO Refactor this a bit
         if shape.max_points and #self.marks == shape.max_points and self.placing_mark.active then
             self.marks[self.placing_mark.index] = pos
             self.placing_mark.index = self.placing_mark.index + 1
             self.placing_mark.active = false
             -- The statement after the or is to allow the 1x1 special case for easy doorways
-            self.needs_update = true
             if self.subviews.autocommit:getOptionValue() or (self.marks[1] == self.marks[2]) then
                 self:commit()
             end
@@ -1189,14 +1198,11 @@ function Design:onInput(keys)
                 self.placing_mark.index = nil
                 self.placing_mark.active = false
             end
-            self.needs_update = true
         elseif self.placing_extra.active then
-            self.needs_update = true
             self.placing_extra.active = false
         elseif self.placing_mirror then
             self.mirror_point = pos
             self.placing_mirror = false
-            self.needs_update = true
         else
             -- Clicking center point
             if #self.marks > 0 then
@@ -1253,7 +1259,6 @@ function Design:onInput(keys)
             for i = 1, #self.extra_points do
                 if pos == self.extra_points[i] then
                     self.placing_extra = { active = true, index = i }
-                    self.needs_update = true
                     return true
                 end
             end
@@ -1263,12 +1268,12 @@ function Design:onInput(keys)
             end
         end
 
-        self.needs_update = true
         return true
     end
 
-    -- send movement and pause keys through, but otherwise we're a modal dialog
-    return not (keys.D_PAUSE or guidm.getMapKey(keys))
+    if guidm.getMapKey(keys) then
+        self.needs_update = true
+    end
 end
 
 -- Put any special logic for designation type here
