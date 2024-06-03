@@ -96,13 +96,13 @@ local function fixGiftedPets(nemesis)
                 if not owner_in_party then
                     print("the pet's owner is NOT a companion. We need to associate the pet with the owner correctly so the pet's unit is not inaccessible.")
                     fixGiftedPet(companion_record, pet_owner_record)
-                    queueCompanionErase[tostring(pet_record.id)] = true
+                    queueCompanionErase[pet_record.id] = true
                 end
             end
         end
     end
     for index = #nemesis.companions-1, 0, -1 do
-        if queueCompanionErase[tostring(nemesis.companions[index])] then
+        if queueCompanionErase[nemesis.companions[index]] then
             print("erasing bugged pet "..nemesis.companions[index].." from "..nemesis.id.."'s companions list")
             nemesis.companions:erase(index)
         end
