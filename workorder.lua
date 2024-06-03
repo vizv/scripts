@@ -76,18 +76,15 @@ local function orders_match(a, b)
         end
     end
 
-    local subtables = {
-        "item_category",
-        "material_category",
-    }
+    for key, value in ipairs(a.specflag.encrust_flags) do
+        if b.specflag.encrust_flags[key] ~= value then
+            return false
+        end
+    end
 
-    for _, fieldname in ipairs(subtables) do
-        local aa = a[fieldname]
-        local bb = b[fieldname]
-        for key, value in ipairs(aa) do
-            if bb[key] ~= value then
-                return false
-            end
+    for key, value in ipairs(a.material_category) do
+        if b.material_category[key] ~= value then
+            return false
         end
     end
 
@@ -246,7 +243,7 @@ function create_orders(orders, quiet)
         end
 
         if it["item_category"] then
-            local ok, bad = set_flags_from_list(it["item_category"], order.item_category)
+            local ok, bad = set_flags_from_list(it["item_category"], order.specflag.encrust_flags)
             if not ok then
                 qerror ("Invalid item_category value for manager order: " .. bad)
             end
@@ -351,7 +348,7 @@ function create_orders(orders, quiet)
                             break
                         end
                     end
-                    condition.inorganic_bearing = idx
+                    condition.metal_ore = idx
                                             or qerror( "Invalid item condition inorganic bearing type for manager order: " .. it2["bearing"] )
                 end
 
@@ -398,7 +395,7 @@ function create_orders(orders, quiet)
                 end)
             end
         end
-        --order.items = vector<job_item*>
+        --order.items.elements = vector<job_item*>
 
         local amount = it.amount_total
         if it.__reduce_amount then

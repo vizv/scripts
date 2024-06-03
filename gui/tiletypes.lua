@@ -658,7 +658,7 @@ function BoxSelection:init()
     guidm.setCursorPos(guidm.Viewport.get():getCenter())
 
     -- Show cursor
-    df.global.game.main_interface.main_designation_selected = df.main_designation_type.TOGGLE_ENGRAVING -- Alternative: df.main_designation_type.REMOVE_CONSTRUCTION
+    df.global.game.main_interface.main_designation_selected = df.main_designation_type.TOGGLE_ENGRAVING
 
     if self.screen then
         self.dimensions_tooltip = widgets.DimensionsTooltip{

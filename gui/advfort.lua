@@ -413,15 +413,14 @@ function SetCarveDir(args)
     local job=args.job
     local pos=args.pos
     local from_pos=args.from_pos
-    local dirs={up=18,down=19,right=20,left=21}
     if pos.x>from_pos.x then
-        job.item_category[dirs.right]=true
+        job.specflag.carve_track_flags.carve_track_east=true
     elseif pos.x<from_pos.x then
-        job.item_category[dirs.left]=true
+        job.specflag.carve_track_flags.carve_track_west=true
     elseif pos.y>from_pos.y then
-        job.item_category[dirs.down]=true
+        job.specflag.carve_track_flags.carve_track_south=true
     elseif pos.y<from_pos.y then
-        job.item_category[dirs.up]=true
+        job.specflag.carve_track_flags.carve_track_north=true
     end
 end
 function is_grasping_item( item_bp,unit )
@@ -799,7 +798,7 @@ function putItemsInBuilding(building,job_item_refs)
         if not dfhack.items.moveToBuilding(v.item,building,0) then
             print("Could not put item:",k,v.item)
         end
-        v.is_fetching=0
+        v.flags.is_fetching=false
     end
 end
 function putItemsInHauling(unit,job_item_refs)
@@ -810,7 +809,7 @@ function putItemsInHauling(unit,job_item_refs)
         if not dfhack.items.moveToInventory(v.item,unit,0,0) then
             print("Could not put item:",k,v.item)
         end
-        v.is_fetching=0
+        v.flags.is_fetching=false
     end
 end
 function finish_item_assign(args)
@@ -832,7 +831,7 @@ function finish_item_assign(args)
         end
     else
         job.flags.fetching=true
-        uncollected[1].is_fetching=1
+        uncollected[1].flags.is_fetching=true
     end
 end
 function EnumItems_with_settings( args )
@@ -845,7 +844,7 @@ function EnumItems_with_settings( args )
     end
 end
 function find_suitable_items(job,items,job_items)
-    job_items=job_items or job.job_items
+    job_items=job_items or job.job_items.elements
 
     local item_counts={}
     for job_id, trg_job_item in ipairs(job_items) do
@@ -899,7 +898,7 @@ function AssignJobItems(args)
         job.items:erase(#job.items-1)
     end]]
 
-    if settings.gui_item_select and #job.job_items>0 then
+    if settings.gui_item_select and #job.job_items.elements>0 then
         if settings.quick then --TODO not so nice hack. instead of rewriting logic for job item filling i'm using one in gui dialog...
             local item_editor=advfort_items.jobitemEditor{
                 job = job,
@@ -925,7 +924,7 @@ function AssignJobItems(args)
         end
     else
         if not settings.build_by_items then
-            for job_id, trg_job_item in ipairs(job.job_items) do
+            for job_id, trg_job_item in ipairs(job.job_items.elements) do
                 if item_counts[job_id]>0 then
                     print("Not enough items for this job")
                     return false, "Not enough items for this job"
@@ -1001,7 +1000,7 @@ function ContinueJob(unit)
     --reset suspends...
     c_job.flags.suspend=false
     for k,v in pairs(c_job.items) do --try fetching missing items
-        if v.is_fetching==1 then
+        if v.flags.is_fetching then
             unit.path.dest:assign(v.item.pos)
             return
         end
@@ -1277,7 +1276,7 @@ function setFiltersUp(specific,args)
         --printall(v)
         local filter=v
         filter.new=true
-        job.job_items:insert("#",filter)
+        job.job_items.elements:insert("#",filter)
     end
     return true
 end
