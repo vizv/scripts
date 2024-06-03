@@ -396,11 +396,6 @@ function Design:init()
                             initial_option='Cw',
                             options=build_options,
                         },
-                        widgets.Label {
-                            frame={t=1, l=0},
-                            text={{tile=BUTTON_PEN_LEFT}, {tile=HELP_PEN_CENTER}, {tile=BUTTON_PEN_RIGHT}},
-                            on_click=self:callback('show_help', CONSTRUCTION_HELP),
-                        },
                         widgets.CycleHotkeyLabel {
                             view_id='building_inner_tiles',
                             frame={t=1, l=4},
@@ -726,15 +721,7 @@ function Design:init()
                     key='CUSTOM_X',
                     label='Reset',
                     enabled=function() return #self.marks > 1 or #self.extra_points > 0 end,
-                    on_activate=function()
-                        self.marks = {}
-                        self.placing_mark.active = true
-                        self.placing_mark.index = 1
-                        self.extra_points = {}
-                        self.prev_center = nil
-                        self.start_center = nil
-                        self.needs_update = true
-                    end,
+                    on_activate=self:callback('reset'),
                 },
             }
         },
@@ -795,6 +782,18 @@ function Design:init()
     }
 end
 
+function Design:reset()
+    self.needs_update = true
+    self.marks = {}
+    self.extra_points = {}
+    self.placing_extra = {active=false, index=nil}
+    self.placing_mark = {active=true, index=1, continue=true}
+    self.placing_mirror = false
+    self.mirror = {horizontal=false, vertical=false}
+    self.prev_center = nil
+    self.start_center = nil
+end
+
 function Design:get_action_text()
     local text = ''
     if self.marks[2] and self.placing_mark.active then
@@ -821,7 +820,7 @@ function Design:get_area_text()
     local height = math.abs(bounds.y2 - bounds.y1) + 1
     local depth = math.abs(bounds.z2 - bounds.z1) + 1
     local tiles = self.subviews.shape:getOptionValue().num_tiles * depth
-    local plural = tiles > 1 and 's' or ''
+    local plural = tiles == 1 and '' or 's'
     return label .. ('%dx%dx%d (%d tile%s)'):format(width, height, depth, tiles, plural)
 end
 
