@@ -321,7 +321,7 @@ function Design:init()
             key_back='CUSTOM_SHIFT_F',
             label='Designation:',
             options=mode_options,
-            on_change=function() self:updateLayout() end,
+            on_change=function() self.needs_update = true end,
             button_specs=mode_button_specs,
             button_specs_selected=mode_button_specs_selected,
         },
@@ -339,7 +339,7 @@ function Design:init()
                             label='   Top stair type:',
                             visible=function()
                                 local bounds = self:get_view_bounds()
-                                return bounds and bounds.z1 ~= bounds.z2
+                                return bounds and bounds.z1 ~= bounds.z2 or false
                             end,
                             options={
                                 {label='Auto', value='auto'},
@@ -350,11 +350,11 @@ function Design:init()
                         widgets.CycleHotkeyLabel {
                             view_id='stairs_bottom_subtype',
                             frame={t=1, l=0},
-                            key='CUSTOM_B',
+                            key='CUSTOM_SHIFT_B',
                             label='Bottom Stair Type:',
                             visible=function()
                                 local bounds = self:get_view_bounds()
-                                return bounds and bounds.z1 ~= bounds.z2
+                                return bounds and bounds.z1 ~= bounds.z2 or false
                             end,
                             options={
                                 {label='Auto', value='auto'},
@@ -426,7 +426,14 @@ function Design:init()
                 widgets.HotkeyLabel{
                     key='CUSTOM_CTRL_X',
                     label='Clear entire z-level',
-                    on_activate=function() print('TODO: clear designations on level') end,
+                    on_activate=function()
+                        local map = df.global.world.map
+                        quickfort.apply_blueprint{
+                            mode='dig',
+                            data=('x(%dx%d)'):format(map.x_count, map.y_count),
+                            pos=xyz2pos(0, 0, df.global.window_z),
+                        }
+                    end,
                     visible=function()
                         local mode = self.subviews.mode:getOptionValue()
                         return mode.mode == 'dig' and mode.desig == 'x'
@@ -454,7 +461,6 @@ function Design:init()
                     end
                 end
                 self.needs_update = true
-                self:updateLayout()
             end,
             button_specs=shape_button_specs,
             button_specs_selected=shape_button_specs_selected,
@@ -469,69 +475,88 @@ function Design:init()
     }
 
     for _, shape in ipairs(shapes.all_shapes) do
-        for key, option in pairs(shape.options) do
-            if option.type == 'bool' then
-                shape_options_panel:addviews{
-                    widgets.ToggleHotkeyLabel{
-                        key=option.key,
-                        label=option.name,
-                        initial_option=option.value,
-                        enabled=option.enabled and function()
-                            return shape.options[option.enabled[1]].value == option.enabled[2]
-                        end or nil,
-                        on_change=function(val)
-                            option.value=val
-                            self.needs_update=true
-                        end,
-                        visible=function() return self.subviews.shape:getOptionValue() == shape end,
-                    }
+        for _, option in pairs(shape.options) do
+            if option.type ~= 'bool' then goto continue end
+            shape_options_panel:addviews{
+                widgets.ToggleHotkeyLabel{
+                    frame={h=1},
+                    auto_height=false,
+                    key=option.key,
+                    label=option.name..':',
+                    initial_option=option.value,
+                    enabled=option.enabled and function()
+                        return shape.options[option.enabled[1]].value == option.enabled[2]
+                    end or nil,
+                    on_change=function(val)
+                        option.value = val
+                        self.needs_update = true
+                    end,
+                    visible=function() return self.subviews.shape:getOptionValue() == shape end,
                 }
-            elseif option.type == 'plusminus' then
-                shape_options_panel:addviews{
-                    widgets.Panel{
-                        frame={h=1},
-                        visible=function() return self.subviews.shape:getOptionValue() == shape end,
-                        subviews={
-                            widgets.HotkeyLabel{
-                                frame={t=0, l=0, w=1},
-                                key=option.keys[1],
-                                key_sep='',
-                                enabled=function()
-                                    if option.enabled then
-                                        if shape.options[option.enabled[1]].value ~= option.enabled[2] then
-                                            return false
-                                        end
+            }
+            ::continue::
+        end
+        for _, option in pairs(shape.options) do
+            if option.type ~= 'plusminus' then goto continue end
+            shape_options_panel:addviews{
+                widgets.Panel{
+                    frame={h=1},
+                    visible=function() return self.subviews.shape:getOptionValue() == shape end,
+                    subviews={
+                        widgets.HotkeyLabel{
+                            frame={t=0, l=0, w=1},
+                            key=option.keys[1],
+                            key_sep='',
+                            enabled=function()
+                                if option.enabled then
+                                    if shape.options[option.enabled[1]].value ~= option.enabled[2] then
+                                        return false
                                     end
-                                    local min = utils.getval(option.min, shape)
-                                    return not min or option.value > min
-                                end,
-                                on_activate=function()
-                                    option.value = option.value - 1
-                                    self.needs_update = true
-                                end,
-                            },
-                            widgets.HotkeyLabel{
-                                frame={t=0, l=1},
-                                key=option.keys[2],
-                                label=function() return ('%s: %d'):format(option.name, option.value) end,
-                                enabled=function()
-                                    if option.enabled then
-                                        if shape.options[option.enabled[1]].value ~= option.enabled[2] then
-                                            return false
-                                        end
-                                    end
-                                    local max = utils.getval(option.max, shape)
-                                    return not max or option.value <= max
-                                end,
-                                on_activate=function()
-                                    option.value = option.value + 1
-                                    self.needs_update = true
-                                end,
-                            }
+                                end
+                                local min = utils.getval(option.min, shape)
+                                return not min or option.value > min
+                            end,
+                            on_activate=function()
+                                option.value = option.value - 1
+                                self.needs_update = true
+                            end,
                         },
+                        widgets.HotkeyLabel{
+                            frame={t=0, l=1},
+                            key=option.keys[2],
+                            label=function() return ('%s: %d'):format(option.name, option.value) end,
+                            enabled=function()
+                                if option.enabled then
+                                    if shape.options[option.enabled[1]].value ~= option.enabled[2] then
+                                        return false
+                                    end
+                                end
+                                local max = utils.getval(option.max, shape)
+                                return not max or option.value <= max
+                            end,
+                            on_activate=function()
+                                option.value = option.value + 1
+                                self.needs_update = true
+                            end,
+                        }
                     },
-                }
-            end
+                },
+            }
+            ::continue::
+        end
+        if shape.invertable then
+            shape_options_panel:addviews{
+                widgets.ToggleHotkeyLabel{
+                    key='CUSTOM_I',
+                    label='Invert:',
+                    initial_option=shape.invert,
+                    on_change=function(val)
+                        shape.invert = val
+                        self.needs_update = true
+                    end,
+                    visible=function() return self.subviews.shape:getOptionValue() == shape end,
+                },
+            }
         end
     end
 
@@ -552,46 +577,82 @@ function Design:init()
         widgets.ResizingPanel{
             autoarrange_subviews=true,
             subviews={
-                widgets.ToggleHotkeyLabel{
-                    view_id='transform',
-                    key='CUSTOM_SHIFT_Y',
-                    label='Transform',
-                    initial_option=false,
-                    on_change=function() self.needs_update = true end,
+                widgets.HotkeyLabel {
+                    key='CUSTOM_B',
+                    label=function()
+                        return self.placing_mark.active and 'Stop placing points' or 'Start placing more points'
+                    end,
+                    visible=function() return not self.subviews.shape:getOptionValue().max_points end,
+                    enabled=function() return not self.prev_center end,
+                    on_activate=function()
+                        self.placing_mark.active = not self.placing_mark.active
+                        self.placing_mark.index = self.placing_mark.active and #self.marks + 1 or nil
+                        if not self.placing_mark.active then
+                            table.remove(self.marks, #self.marks)
+                        else
+                            self.placing_mark.continue = true
+                        end
+                        self.needs_update=true
+                    end,
+                },
+                widgets.HotkeyLabel {
+                    key='CUSTOM_V',
+                    label=function()
+                        local msg='Add: '
+                        local shape = self.subviews.shape:getOptionValue()
+                        if #self.extra_points < #shape.extra_points then
+                            return msg .. shape.extra_points[#self.extra_points + 1].label
+                        end
+                        return msg .. 'N/A'
+                    end,
+                    enabled=function()
+                        return #self.marks > 1 and
+                            #self.extra_points < #self.subviews.shape:getOptionValue().extra_points
+                    end,
+                    visible=function() return #self.subviews.shape:getOptionValue().extra_points > 0 end,
+                    on_activate=function()
+                        if not self.placing_mark.active then
+                            self.placing_extra.active=true
+                            self.placing_extra.index=#self.extra_points + 1
+                        elseif #self.marks > 0 then
+                            local mouse_pos = getMousePoint()
+                            if mouse_pos then table.insert(self.extra_points, mouse_pos) end
+                        end
+                        self.needs_update = true
+                    end,
                 },
                 widgets.Panel{
-                    frame={h=3},
-                    visible=function() return self.subviews.transform:getOptionValue() end,
+                    frame={h=1},
                     subviews={
                         widgets.HotkeyLabel{
-                            frame={t=0, l=1, w=1},
+                            frame={t=0, l=0, w=1},
                             key='STRING_A040',
                             key_sep='',
+                            enabled=function() return #self.marks > 1 end,
                             on_activate=self:callback('on_transform', 'ccw'),
                         },
                         widgets.HotkeyLabel{
-                            frame={t=0, l=2},
+                            frame={t=0, l=1},
                             key='STRING_A041',
+                            label='Rotate',
+                            auto_width=true,
+                            enabled=function() return #self.marks > 1 end,
                             on_activate=self:callback('on_transform', 'cw'),
                         },
-                        widgets.Label{
-                            frame={t=0, l=5},
-                            text='Rotate',
-                        },
                         widgets.HotkeyLabel{
-                            frame={t=1, l=1, w=1},
+                            frame={t=0, l=12, w=1},
                             key='STRING_A095',
                             key_sep='',
+                            enabled=function() return #self.marks > 1 end,
                             on_activate=self:callback('on_transform', 'flipv'),
                         },
                         widgets.HotkeyLabel {
-                            frame={t=1, l=2},
+                            frame={t=0, l=13},
                             key='STRING_A061',
+                            label='Flip',
+                            auto_width=true,
+                            enabled=function() return #self.marks > 1 end,
                             on_activate=self:callback('on_transform', 'fliph'),
-                        },
-                        widgets.Label{
-                            frame={t=1, l=5},
-                            text='Flip',
                         },
                     }
                 },
@@ -599,13 +660,14 @@ function Design:init()
                     key='CUSTOM_M',
                     visible=function() return self.subviews.shape:getOptionValue().can_mirror end,
                     label=function()
-                        if not self.mirror_point then
-                            return 'Place Mirror Point'
+                        if not self.placing_mirror and not self.mirror_point then
+                            return 'Mirror across axis'
                         else
-                            return 'Delete Mirror Point'
+                            return 'Cancel mirror'
                         end
                     end,
                     enabled=function()
+                        if #self.marks < 2 then return false end
                         return not self.placing_extra.active and
                             not self.placing_mark.active and not self.prev_center
                     end,
@@ -622,58 +684,55 @@ function Design:init()
                         self.needs_update = true
                     end
                 },
-                widgets.Panel{
-                    frame={h=5},
-                    visible=function() return self.mirror_point end,
-                    subviews={
-                        widgets.CycleHotkeyLabel {
-                            view_id='mirror_horiz_label',
-                            frame={t=0, l=1},
-                            key='CUSTOM_SHIFT_J',
-                            key_sep='',
-                            label='Mirror Horizontal: ',
-                            options=mirror_options,
-                            on_change=function() self.needs_update = true end,
-                        },
-                        widgets.CycleHotkeyLabel {
-                            view_id='mirror_diag_label',
-                            frame={t=1, l=1},
-                            key='CUSTOM_SHIFT_O',
-                            key_sep='',
-                            label='Mirror Diagonal: ',
-                            options=mirror_options,
-                            on_change=function() self.needs_update = true end,
-                        },
-                        widgets.CycleHotkeyLabel {
-                            view_id='mirror_vert_label',
-                            frame={t=2, l=1},
-                            key='CUSTOM_SHIFT_K',
-                            key_sep='',
-                            label='Mirror Vertical: ',
-                            options=mirror_options,
-                            on_change=function() self.needs_update = true end,
-                        },
-                        widgets.HotkeyLabel {
-                            view_id='mirror_vert_label',
-                            frame={t=3, l=1},
-                            key='CUSTOM_SHIFT_M',
-                            label='Save Mirrored Points',
-                            on_activate=function()
-                                self.marks = self:get_mirrored_points(self.marks)
-                                self.mirror_point = nil
-                            end,
-                        },
-                    }
+                widgets.CycleHotkeyLabel {
+                    view_id='mirror_horiz_label',
+                    frame={l=1},
+                    key='CUSTOM_SHIFT_J',
+                    label='Mirror horizontal: ',
+                    options=mirror_options,
+                    on_change=function() self.needs_update = true end,
+                    visible=function() return self.placing_mirror or self.mirror_point end,
                 },
-                widgets.ToggleHotkeyLabel{
-                    view_id='invert_designation_label',
-                    key='CUSTOM_I',
-                    label='Invert: ',
-                    label_width=8,
-                    enabled=function() return self.subviews.shape:getOptionValue().invertable end,
-                    initial_option=false,
-                    on_change=function(val)
-                        self.subviews.shape:getOptionValue().invert = val
+                widgets.CycleHotkeyLabel {
+                    view_id='mirror_diag_label',
+                    frame={l=1},
+                    key='CUSTOM_SHIFT_O',
+                    label='Mirror diagonal: ',
+                    options=mirror_options,
+                    on_change=function() self.needs_update = true end,
+                    visible=function() return self.placing_mirror or self.mirror_point end,
+                },
+                widgets.CycleHotkeyLabel {
+                    view_id='mirror_vert_label',
+                    frame={l=1},
+                    key='CUSTOM_SHIFT_K',
+                    label='Mirror vertical: ',
+                    options=mirror_options,
+                    on_change=function() self.needs_update = true end,
+                    visible=function() return self.placing_mirror or self.mirror_point end,
+                },
+                widgets.HotkeyLabel {
+                    frame={l=1},
+                    key='CUSTOM_SHIFT_M',
+                    label='Commit mirror changes',
+                    on_activate=function()
+                        self.marks = self:get_mirrored_points(self.marks)
+                        self.mirror_point = nil
+                        self.needs_update = true
+                    end,
+                    visible=function() return self.placing_mirror or self.mirror_point end,
+                },
+                widgets.HotkeyLabel {
+                    key='CUSTOM_X',
+                    label='Reset',
+                    enabled=function() return #self.marks > 1 or #self.extra_points > 0 end,
+                    on_activate=function()
+                        self.marks = {}
+                        self.placing_mark.active = true
+                        self.placing_mark.index = 1
+                        self.extra_points = {}
+                        self.prev_center = nil
+                        self.start_center = nil
                         self.needs_update = true
                     end,
                 },
@@ -683,11 +742,12 @@ function Design:init()
             frame={b=0},
             subviews={
                 widgets.Panel{
-                    frame={t=0, b=2},
+                    frame={t=0, b=3},
                     frame_style=gui.FRAME_INTERIOR,
                     subviews={
                         widgets.Panel{
-                            frame={t=0, b=7},
+                            -- area expands with window
+                            frame={t=0, b=2},
                             autoarrange_subviews=true,
                             autoarrange_gap=1,
                             subviews={
@@ -702,97 +762,10 @@ function Design:init()
                                 },
                             },
                         },
-                        widgets.HotkeyLabel {
-                            frame={b=5, l=0},
-                            key='CUSTOM_V',
-                            label=function()
-                                local msg='Place extra point: '
-                                local shape = self.subviews.shape:getOptionValue()
-                                if #self.extra_points < #shape.extra_points then
-                                    return msg .. shape.extra_points[#self.extra_points + 1].label
-                                end
-                                return msg .. 'N/A'
-                            end,
-                            enabled=function() return #self.subviews.shape:getOptionValue().extra_points > 0 end,
-                            on_activate=function()
-                                if not self.placing_mark.active then
-                                    self.placing_extra.active=true
-                                    self.placing_extra.index=#self.extra_points + 1
-                                elseif #self.marks > 0 then
-                                    local mouse_pos = getMousePoint()
-                                    if mouse_pos then table.insert(self.extra_points, mouse_pos) end
-                                end
-                                self.needs_update = true
-                            end,
-                        },
-                        widgets.HotkeyLabel {
-                            frame={b=4, l=0},
-                            key='CUSTOM_B', --change
-                            label=function()
-                                return self.placing_mark.active and 'Stop placing' or 'Start placing'
-                            end,
-                            enabled=function()
-                                if not self.placing_mark.active and not self.prev_center then
-                                    local shape = self.subviews.shape:getOptionValue()
-                                    return not shape.max_points or #self.marks < shape.max_points
-                                elseif not self.placing_extra.active and not self.prev_centerl then
-                                    return true
-                                end
-                                return false
-                            end,
-                            on_activate=function()
-                                self.placing_mark.active = not self.placing_mark.active
-                                self.placing_mark.index = self.placing_mark.active and #self.marks + 1 or nil
-                                if not self.placing_mark.active then
-                                    table.remove(self.marks, #self.marks)
-                                else
-                                    self.placing_mark.continue = true
-                                end
-                                self.needs_update=true
-                            end,
-                        },
-                        widgets.HotkeyLabel {
-                            frame={b=3, l=0},
-                            key='CUSTOM_X',
-                            label='Clear all points',
-                            enabled=function()
-                                if #self.marks > 0 then return true end
-                                return #self.extra_points < #self.subviews.shape:getOptionValue().extra_points
-                            end,
-                            on_activate=function()
-                                self.marks = {}
-                                self.placing_mark.active = true
-                                self.placing_mark.index = 1
-                                self.extra_points = {}
-                                self.prev_center = nil
-                                self.start_center = nil
-                                self.needs_update = true
-                            end,
-                        },
-                        widgets.HotkeyLabel {
-                            frame={b=2, l=0},
-                            key='CUSTOM_SHIFT_X',
-                            label='Clear extra points',
-                            enabled=function() return #self.extra_points > 0 end,
-                            on_activate=function()
-                                self.extra_points = {}
-                                self.prev_center = nil
-                                self.start_center = nil
-                                self.placing_extra = {active=false, index=0}
-                                self.needs_update = true
-                            end,
-                        },
-                        widgets.ToggleHotkeyLabel{
-                            view_id='autocommit',
-                            frame={b=1, l=0},
-                            key='CUSTOM_ALT_C',
-                            label='Auto-commit on click: ',
-                            initial_option=false,
-                        },
                         widgets.HotkeyLabel{
                             frame={b=0, l=0},
                             key='SELECT',
-                            label='Commit designation',
+                            label='Commit shape to the map',
                             enabled=function() return #self.marks >= self.subviews.shape:getOptionValue().min_points end,
                             on_activate=function()
                                 self:commit()
@@ -803,10 +776,17 @@ function Design:init()
                 },
                 widgets.ToggleHotkeyLabel{
                     view_id='show_guides',
-                    frame={b=0, l=0},
+                    frame={b=1, l=0},
                     key='CUSTOM_SHIFT_G',
-                    label='Show alignment guides',
+                    label='Show alignment guides:',
                     initial_option=true,
+                },
+                widgets.ToggleHotkeyLabel{
+                    view_id='autocommit',
+                    frame={b=0, l=0},
+                    key='CUSTOM_ALT_C',
+                    label='Auto-commit on click:',
+                    initial_option=false,
                 },
             },
         },
@@ -832,22 +812,15 @@ function Design:get_action_text()
 end
 
 function Design:get_area_text()
-    local label = 'Area: '
-
     local bounds = self:get_view_bounds()
+    local label = 'Area: '
     if not bounds then return label .. 'N/A' end
     local width = math.abs(bounds.x2 - bounds.x1) + 1
     local height = math.abs(bounds.y2 - bounds.y1) + 1
     local depth = math.abs(bounds.z2 - bounds.z1) + 1
     local tiles = self.subviews.shape:getOptionValue().num_tiles * depth
     local plural = tiles > 1 and 's' or ''
-    return label .. ('%dx%dx%d (%d tile%s)'):format(
-        width,
-        height,
-        depth,
-        tiles,
-        plural
-    )
+    return label .. ('%dx%dx%d (%d tile%s)'):format(width, height, depth, tiles, plural)
 end
 
 function Design:get_mark_text()
@@ -962,7 +935,6 @@ function Design:on_transform(val)
         self.extra_points[i] = point + Point { x = delta.x, y = delta.y, z = 0 }
     end
 
-    self:updateLayout()
     self.needs_update = true
 end
 
@@ -996,59 +968,53 @@ end
 
 -- TODO Function is too long
 function Design:onRenderFrame(dc, rect)
-    if (SHOW_DEBUG_WINDOW) then
-        self.parent_view.debug_window:updateLayout()
-    end
-
     Design.super.onRenderFrame(self, dc, rect)
 
     local mouse_pos = getMousePoint()
     local shape = self.subviews.shape:getOptionValue()
 
-    -- self.subviews.info_panel:update_mark_labels()
+    if self.placing_mark.active and self.placing_mark.index and mouse_pos then
+        self.marks[self.placing_mark.index] = mouse_pos
+    end
 
-    -- if self.placing_mark.active and self.placing_mark.index and mouse_pos then
-    --     self.marks[self.placing_mark.index] = mouse_pos
-    -- end
+    -- Set the pos of the currently moving extra point
+    if self.placing_extra.active then
+        self.extra_points[self.placing_extra.index] = mouse_pos
+    end
 
-    -- -- Set the pos of the currently moving extra point
-    -- if self.placing_extra.active then
-    --     self.extra_points[self.placing_extra.index] = mouse_pos
-    -- end
+    if self.placing_mirror and mouse_pos then
+        if not self.mirror_point or (mouse_pos ~= self.mirror_point) then
+            self.needs_update = true
+        end
+        self.mirror_point = mouse_pos
+    end
 
-    -- if self.placing_mirror and mouse_pos then
-    --     if not self.mirror_point or (mouse_pos ~= self.mirror_point) then
-    --         self.needs_update = true
-    --     end
-    --     self.mirror_point = mouse_pos
-    -- end
+    -- Check if moving center, if so shift the shape by the delta between the previous and current points
+    if self.prev_center and
+        ((shape.basic_shape and #self.marks == shape.max_points)
+            or (not shape.basic_shape and not self.placing_mark.active))
+        and mouse_pos and (self.prev_center ~= mouse_pos)
+    then
+        self.needs_update = true
+        local transform = mouse_pos - self.prev_center
 
-    -- -- Check if moving center, if so shift the shape by the delta between the previous and current points
-    -- -- TODO clean this up
-    -- if self.prev_center and
-    --     ((shape.basic_shape and #self.marks == shape.max_points)
-    --         or (not shape.basic_shape and not self.placing_mark.active))
-    --     and mouse_pos and (self.prev_center ~= mouse_pos) then
-    --     self.needs_update = true
-    --     local transform = mouse_pos - self.prev_center
+        transform.z = transform.z or mouse_pos.z
 
-    --     transform.z = transform.z or mouse_pos.z
+        for i, mark in ipairs(self.marks) do
+            mark.z = mark.z or transform.z
+            self.marks[i] = mark + transform
+        end
 
-    --     for i, mark in ipairs(self.marks) do
-    --         mark.z = mark.z or transform.z
-    --         self.marks[i] = mark + transform
-    --     end
+        for i, point in ipairs(self.extra_points) do
+            self.extra_points[i] = point + transform
+        end
 
-    --     for i, point in ipairs(self.extra_points) do
-    --         self.extra_points[i] = point + transform
-    --     end
+        if self.mirror_point then
+            self.mirror_point = self.mirror_point + transform
+        end
 
-    --     if self.mirror_point then
-    --         self.mirror_point = self.mirror_point + transform
-    --     end
-
-    --     self.prev_center = mouse_pos
-    -- end
+        self.prev_center = mouse_pos
+    end
 
     -- Set main points
     local points = copyall(self.marks)
@@ -1136,7 +1102,6 @@ function Design:onRenderFrame(dc, rect)
     plugin.design_draw_points({ { self.mirror_point }, 'extra_point' })
 end
 
--- TODO function too long
 function Design:onInput(keys)
     if Design.super.onInput(self, keys) then
         return true
@@ -1144,14 +1109,12 @@ function Design:onInput(keys)
 
     local shape = self.subviews.shape:getOptionValue()
 
-    -- Secret shortcut to kill the panel if it becomes
-    -- unresponsive during development, should not release
-    -- if keys.CUSTOM_SHIFT_Q then
-    --     plugin.getPen(shape.arr)
-    --     return
-    -- end
-
     if keys.LEAVESCREEN or keys._MOUSE_R then
+        if dfhack.internal.getModifiers().shift then
+            -- shift right click always closes immediately
+            return false
+        end
+
         -- Close help window if open
         if view.help_window.visible then self:dismiss_help() return true end
 
@@ -1171,7 +1134,7 @@ function Design:onInput(keys)
             self.start_center = nil
             self.needs_update = true
             return true
-        end -- TODO
+        end
 
         -- If extra points, clear them and return
         if #self.extra_points > 0 or self.placing_extra.active then
@@ -1181,7 +1144,6 @@ function Design:onInput(keys)
             self.start_center = nil
             self.placing_extra.index = 0
             self.needs_update = true
-            self:updateLayout()
             return true
         end
 
@@ -1198,7 +1160,6 @@ function Design:onInput(keys)
 
         return true
     end
-
 
     local pos = nil
     if keys._MOUSE_L and not self:getMouseFramePos() then
@@ -1217,7 +1178,7 @@ function Design:onInput(keys)
             self.placing_mark.active = false
             -- The statement after the or is to allow the 1x1 special case for easy doorways
             self.needs_update = true
-            if self.autocommit or (self.marks[1] == self.marks[2]) then
+            if self.subviews.autocommit:getOptionValue() or (self.marks[1] == self.marks[2]) then
                 self:commit()
             end
         elseif not self.placing_extra.active and self.placing_mark.active then
@@ -1314,7 +1275,7 @@ end
 -- Right now it's setting the stair type based on the z-level
 -- Fell through, pass through the option directly from the options value
 function Design:get_designation(point)
-    local mode = self.subviews.mode_name:getOptionValue()
+    local mode = self.subviews.mode:getOptionValue()
 
     local view_bounds = self:get_view_bounds()
     local shape = self.subviews.shape:getOptionValue()
@@ -1328,10 +1289,10 @@ function Design:get_designation(point)
         if point.z == 0 then
             return stairs_bottom_type == 'auto' and 'u' or stairs_bottom_type
         elseif view_bounds and point.z == math.abs(view_bounds.z1 - view_bounds.z2) then
-            local pos = Point { x = view_bounds.x1, y = view_bounds.y1, z = view_bounds.z1} + point
-            local tile_type = dfhack.maps.getTileType({x = pos.x, y = pos.y, z = pos.z})
+            local pos = Point{x=view_bounds.x1, y=view_bounds.y1, z=view_bounds.z1} + point
+            local tile_type = dfhack.maps.getTileType(xyz2pos(pos.x, pos.y, pos.z))
             local tile_shape = tile_type and df.tile_attrs[tile_type].shape or nil
-            local designation = dfhack.maps.getTileFlags({x = pos.x, y = pos.y, z = pos.z})
+            local designation = dfhack.maps.getTileFlags(xyz2pos(pos.x, pos.y, pos.z))
 
             -- If top of the view_bounds is down stair, 'auto' should change it to up/down to match vanilla stair logic
             local up_or_updown_dug = (
@@ -1370,13 +1331,14 @@ end
 function Design:commit()
     local data = {}
     local shape = self.subviews.shape:getOptionValue()
+    local prio = self.subviews.priority:getOptionValue()
     local top_left, bot_right = shape:get_true_dims()
     local view_bounds = self:get_view_bounds()
 
     -- Means mo marks set
     if not view_bounds then return end
 
-    local mode = self.subviews.mode_name:getOptionValue().mode
+    local mode = self.subviews.mode:getOptionValue().mode
     -- Generates the params for quickfort API
     local function generate_params(grid, position)
         -- local top_left, bot_right = shape:get_true_dims()
@@ -1386,10 +1348,10 @@ function Design:commit()
                 data[zlevel][row] = {}
                 for col = 0, math.abs(bot_right.x - top_left.x) do
                     if grid[col] and grid[col][row] then
-                        local desig = self:get_designation(Point{x = col, y = row, z = zlevel})
+                        local desig = self:get_designation(Point{x=col, y=row, z=zlevel})
                         if desig ~= '`' then
                             data[zlevel][row][col] =
-                            desig .. (mode ~= 'build' and tostring(self.prio) or '')
+                            desig .. (mode ~= 'build' and tostring(prio) or '')
                         end
                     end
                 end
@@ -1422,9 +1384,10 @@ function Design:commit()
     quickfort.apply_blueprint(params)
 
     -- Only clear points if we're autocommit, or if we're doing a complex shape and still placing
-    if (self.autocommit and shape.basic_shape) or
+    local autocommit = self.subviews.autocommit:getOptionValue()
+    if (autocommit and shape.basic_shape) or
         (not shape.basic_shape and
-            (self.placing_mark.active or (self.autocommit and shape.max_points == #self.marks))) then
+            (self.placing_mark.active or (autocommit and shape.max_points == #self.marks))) then
         self.marks = {}
         self.placing_mark = { active = true, index = 1, continue = true }
         self.placing_extra = { active = false, index = nil }
@@ -1433,7 +1396,7 @@ function Design:commit()
         self.start_center = nil
     end
 
-    self:updateLayout()
+    self.needs_update = true
 end
 
 function Design:get_mirrored_points(points)
