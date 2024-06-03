@@ -962,7 +962,7 @@ function SelectDialogWindow:onInput(keys)
     if SelectDialogWindow.super.onInput(self, keys) then
         return true
     end
-    if keys.LEAVESCREEN then
+    if keys.LEAVESCREEN or keys._MOUSE_R then
         self.parent_view:dismiss()
         if self.on_cancel then
             self.on_cancel()
