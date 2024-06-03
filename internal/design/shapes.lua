@@ -470,10 +470,16 @@ function Line:plot_bresenham(x0, y0, x1, y1, thickness)
 
 end
 
+local function get_granularity(x0, y0, x1, y1)
+    local line_len = math.abs(x1 - x0) + math.abs(y1 - y0)
+    return 1 / (line_len * 10)
+end
+
 function Line:cubic_bezier(x0, y0, x1, y1, bezier_point1, bezier_point2, thickness)
     local t = 0
     local x2, y2 = bezier_point1.x, bezier_point1.y
     local x3, y3 = bezier_point2.x, bezier_point2.y
+    local granularity = get_granularity(x0, y0, x1, y1)
     while t <= 1 do
         local x = math.floor(((1 - t) ^ 3 * x0 + 3 * (1 - t) ^ 2 * t * x2 + 3 * (1 - t) * t ^ 2 * x3 + t ^ 3 * x1) +
             0.5)
@@ -488,7 +494,7 @@ function Line:cubic_bezier(x0, y0, x1, y1, bezier_point1, bezier_point2, thickne
                 end
             end
         end
-        t = t + 0.01
+        t = t + granularity
     end
 
     -- Get the last point
@@ -510,6 +516,7 @@ end
 function Line:quadratic_bezier(x0, y0, x1, y1, bezier_point1, thickness)
     local t = 0
     local x2, y2 = bezier_point1.x, bezier_point1.y
+    local granularity = get_granularity(x0, y0, x1, y1)
     while t <= 1 do
         local x = math.floor(((1 - t) ^ 2 * x0 + 2 * (1 - t) * t * x2 + t ^ 2 * x1) + 0.5)
         local y = math.floor(((1 - t) ^ 2 * y0 + 2 * (1 - t) * t * y2 + t ^ 2 * y1) + 0.5)
@@ -522,7 +529,7 @@ function Line:quadratic_bezier(x0, y0, x1, y1, bezier_point1, thickness)
                 end
             end
         end
-        t = t + 0.01
+        t = t + granularity
     end
 end
 
