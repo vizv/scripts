@@ -583,7 +583,7 @@ function Design:init()
                         return self.placing_mark.active and 'Stop placing points' or 'Start placing more points'
                     end,
                     visible=function() return not self.subviews.shape:getOptionValue().max_points end,
-                    enabled=function() return not self.prev_center end,
+                    enabled=function() return not self.prev_center and #self.marks > 2 end,
                     on_activate=function()
                         self.placing_mark.active = not self.placing_mark.active
                         self.placing_mark.index = self.placing_mark.active and #self.marks + 1 or nil
@@ -640,14 +640,14 @@ function Design:init()
                             on_activate=self:callback('on_transform', 'cw'),
                         },
                         widgets.HotkeyLabel{
-                            frame={t=0, l=12, w=1},
+                            frame={t=0, l=14, w=1},
                             key='STRING_A095',
                             key_sep='',
                             enabled=function() return #self.marks > 1 end,
                             on_activate=self:callback('on_transform', 'flipv'),
                         },
                         widgets.HotkeyLabel {
-                            frame={t=0, l=13},
+                            frame={t=0, l=15},
                             key='STRING_A061',
                             label='Flip',
                             auto_width=true,
@@ -1284,14 +1284,13 @@ function Design:get_designation(point)
     -- Stairs
     if mode.desig == 'i' then
         local stairs_top_type = self.subviews.stairs_top_subtype:getOptionValue()
-        local stairs_middle_type = self.subviews.stairs_middle_subtype:getOptionValue()
         local stairs_bottom_type = self.subviews.stairs_bottom_subtype:getOptionValue()
         if point.z == 0 then
             return stairs_bottom_type == 'auto' and 'u' or stairs_bottom_type
         elseif view_bounds and point.z == math.abs(view_bounds.z1 - view_bounds.z2) then
             local pos = Point{x=view_bounds.x1, y=view_bounds.y1, z=view_bounds.z1} + point
             local tile_type = dfhack.maps.getTileType(xyz2pos(pos.x, pos.y, pos.z))
-            local tile_shape = tile_type and df.tile_attrs[tile_type].shape or nil
+            local tile_shape = tile_type and df.tiletype.attrs[tile_type].shape or nil
             local designation = dfhack.maps.getTileFlags(xyz2pos(pos.x, pos.y, pos.z))
 
             -- If top of the view_bounds is down stair, 'auto' should change it to up/down to match vanilla stair logic
@@ -1306,7 +1305,7 @@ function Design:get_designation(point)
                 return stairs_top_type
             end
         else
-            return stairs_middle_type == 'auto' and 'i' or stairs_middle_type
+            return 'i'
         end
     elseif mode.desig == 'b' then
         local building_outer_tiles = self.subviews.building_outer_tiles:getOptionValue()
