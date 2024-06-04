@@ -8,7 +8,7 @@ local utils = require('utils')
 local widgets = require('gui.widgets')
 
 local UI_AREA = {r=2, t=18, w=38, h=35}
-local POPUP_UI_AREA = {r=41, t=18, w=30, h=19}
+local POPUP_UI_AREA = {r=41, t=18, w=30, h=22}
 
 local CONFIG_BUTTON = {
     { tile= dfhack.pen.parse{fg=COLOR_CYAN, tile=curry(textures.tp_control_panel, 7) or nil, ch=string.byte('[')} },
@@ -37,20 +37,26 @@ local UI_COLORS = {
 local TILESET = dfhack.textures.loadTileset('hack/data/art/tiletypes.png', 8, 12, true)
 local TILESET_STRIDE = 16
 
-local OPTION_SETTINGS = {
-    [-1] = { char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
-    [ 0] = { char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
-    [ 1] = { char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
+local DEFAULT_OPTIONS = {
+    { value= -1, char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
+    { value=  1, char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
+    { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
 }
 
 local MORE_OPTIONS = {
-    ["hidden"]       = { label= "Hidden" },
-    ["light"]        = { label= "Light" },
-    ["subterranean"] = { label= "Subterranean" },
-    ["skyview"]      = { label= "Skyview" },
-    ["aquifer"]      = { label= "Aquifer", overrides= {
-        { value= 1, char1= 173, char2= 173, offset= 109, pen = COLOR_LIGHTBLUE },
-        { value= 2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE }
+    ["hidden"]       = { label= "Hidden", values= DEFAULT_OPTIONS },
+    ["light"]        = { label= "Light", values= DEFAULT_OPTIONS },
+    ["subterranean"] = { label= "Subterranean", values= DEFAULT_OPTIONS },
+    ["skyview"]      = { label= "Skyview", values= DEFAULT_OPTIONS },
+    ["aquifer"]      = { label= "Aquifer", values= {
+        { value= -1, char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
+        { value=  1, char1= 173, char2= 173, offset= 109, pen = COLOR_LIGHTBLUE },
+        { value=  2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE },
+        { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
+    } },
+    ["surroundings"] = { label= "Surroundings", values= {
+        { value=  1, char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
+        { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
     } },
 }
 
@@ -129,6 +135,7 @@ CYCLE_VALUES = {
 ---@field subterranean? integer
 ---@field skyview? integer
 ---@field aquifer? integer
+---@field surroundings? integer
 ---@field stone_material? integer
 ---@field vein_type? df.inclusion_type
 
@@ -153,6 +160,7 @@ function setTile(pos, target)
         subterranean   = toValidOptionValue(target.subterranean),
         skyview        = toValidOptionValue(target.skyview),
         aquifer        = toValidOptionValue(target.aquifer),
+        surroundings   = target.surroundings == nil and 0 or target.surroundings,
     }
     tiletype.stone_material = tiletype.material == df.tiletype_material.STONE and target.stone_material or -1
     tiletype.vein_type      = tiletype.material ~= df.tiletype_material.STONE and -1 or toValidEnumValue(target.vein_type,  df.inclusion_type,  df.inclusion_type.CLUSTER)
@@ -1068,50 +1076,11 @@ function OptionsPopup:init()
     self.values = {}
     local height_offset = 0
     for key,option in pairs(MORE_OPTIONS) do
-        self.values[key] = -1
-        local options = {
-            {
-                value=-1,
-                label= makeInlineButtonLabelText{
-                    left_specs={
-                        chars={option.label},
-                        pens=OPTION_SETTINGS[-1].pen,
-                        pens_hover=UI_COLORS.HIGHLIGHTED,
-                    },
-                    right_specs={
-                        chars=makeUIChars(OPTION_SETTINGS[-1].char1, OPTION_SETTINGS[-1].char2),
-                        pens=makeUIPen(UI_COLORS.DESELECTED, OPTION_SETTINGS[-1].pen),
-                        pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, OPTION_SETTINGS[-1].pen),
-                        tileset=TILESET,
-                        tileset_offset=OPTION_SETTINGS[-1].offset,
-                        tileset_stride=TILESET_STRIDE,
-                    },
-                    width=width
-                },
-            },
-            {
-                value=0,
-                label= makeInlineButtonLabelText{
-                    left_specs={
-                        chars={option.label},
-                        pens=OPTION_SETTINGS[0].pen,
-                        pens_hover=UI_COLORS.HIGHLIGHTED,
-                    },
-                    right_specs={
-                        chars=makeUIChars(OPTION_SETTINGS[0].char1, OPTION_SETTINGS[0].char2),
-                        pens=makeUIPen(UI_COLORS.DESELECTED, OPTION_SETTINGS[0].pen),
-                        pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, OPTION_SETTINGS[0].pen),
-                        tileset=TILESET,
-                        tileset_offset=OPTION_SETTINGS[0].offset,
-                        tileset_stride=TILESET_STRIDE,
-                    },
-                    width=width
-                },
-            },
-        }
+        self.values[key] = option.values[1].value
+        local options = {}
 
         local addOption = function(value, pen, char1, char2, offset)
-            table.insert(options, #options, {
+            table.insert(options, {
                 value=value,
                 label= makeInlineButtonLabelText{
                     left_specs={
@@ -1132,18 +1101,14 @@ function OptionsPopup:init()
             })
         end
 
-        if option.overrides then
-            for _, value in pairs(option.overrides) do
-                addOption(value.value, value.pen, value.char1, value.char2, value.offset)
-            end
-        else
-            addOption(1, OPTION_SETTINGS[1].pen, OPTION_SETTINGS[1].char1, OPTION_SETTINGS[1].char2, OPTION_SETTINGS[1].offset)
+        for _, value in pairs(option.values) do
+            addOption(value.value, value.pen, value.char1, value.char2, value.offset)
         end
 
         table.insert(optionViews,
             CycleLabel {
                 frame={l=1,t=height_offset},
-                initial_option=-1,
+                initial_option=option.values[1].value,
                 options=options,
                 on_change=function(value) self.values[key] = value end
             }
@@ -1611,13 +1576,20 @@ function TiletypeWindow:confirm()
 
     if box then
         local settings = MODE_SETTINGS[self.cur_mode]
+        local option_values = self.options_popup.values
 
         if self.cur_mode == "remove" then
             ---@type TileType
             local emptyTiletype = {
-                shape = df.tiletype_shape.EMPTY,
-                material = df.tiletype_material.AIR,
-                special = df.tiletype_special.NORMAL,
+                shape          = df.tiletype_shape.EMPTY,
+                material       = df.tiletype_material.AIR,
+                special        = df.tiletype_special.NORMAL,
+                hidden         = option_values.hidden,
+                light          = option_values.light,
+                subterranean   = option_values.subterranean,
+                skyview        = option_values.skyview,
+                aquifer        = option_values.aquifer,
+                surroundings   = option_values.surroundings,
             }
             box:iterate(function(pos)
                 if settings.validator(pos) then
@@ -1625,7 +1597,6 @@ function TiletypeWindow:confirm()
                 end
             end)
         else
-            local option_values = self.options_popup.values
 
             ---@type TileType
             local tiletype = {
@@ -1638,6 +1609,7 @@ function TiletypeWindow:confirm()
                 subterranean   = option_values.subterranean,
                 skyview        = option_values.skyview,
                 aquifer        = option_values.aquifer,
+                surroundings   = option_values.surroundings,
                 stone_material = self.cur_stone,
                 vein_type      = self.cur_vein_type,
             }
