@@ -14,7 +14,6 @@ end
 
 function setNewAdvNemFlags(nem)
     nem.flags.ACTIVE_ADVENTURER = true
-    nem.flags.RETIRED_ADVENTURER = false
     nem.flags.ADVENTURER = true
 end
 
