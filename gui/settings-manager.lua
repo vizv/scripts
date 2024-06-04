@@ -38,8 +38,8 @@ local function save_difficulty(df_difficulty)
     -- replace top-level button states to say "Custom"
     -- one of the vanilla presets might actually apply, but we don't know that
     -- unless we do some diffing
-    difficulty.difficulty_enemies = 3
-    difficulty.difficulty_economy = 2
+    difficulty.difficulty_enemies = df.setting_difficulty_enemies_type.Custom
+    difficulty.difficulty_economy = df.setting_difficulty_economy_type.Custom
     config.data.difficulty = difficulty
     config:write()
 end
