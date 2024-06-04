@@ -1,5 +1,6 @@
 -- Fixes pets gifted to another unit in Adventure Mode
 -- Fixes pets owned by companions missing from the companions list
+local utils = require 'utils'
 
 local function isPetOf(petNemesis, ownerNemesis)
     if petNemesis.unit then
@@ -17,7 +18,6 @@ local function isPetOf(petNemesis, ownerNemesis)
     return false
 end
 
-
 local function findPetOwnerOf(petNemesis)
     if petNemesis.figure then
         for _, link in ipairs(petNemesis.figure.histfig_links) do
@@ -31,12 +31,7 @@ local function findPetOwnerOf(petNemesis)
 end
 
 local function findInParty(party, histfig_id)
-    for k, v in ipairs(party) do
-        if v == histfig_id then
-            return true
-        end
-    end
-    return false
+    return utils.linear_index(party, histfig_id) ~= nil
 end
 
 local function fixMissingCompanionPets(nemesis)
@@ -68,11 +63,7 @@ local function fixGiftedPet(pet_record, pet_owner_record)
         link._type == df.histfig_site_link_home_site_realization_sulst or
         link._type == df.histfig_site_link_home_site_saved_civzones then
             -- Make a copy of the link
-            local new_site_link = df.new(link)
-            -- Assign the same data
-            new_site_link.site = link.site
-            new_site_link.sub_id = link.sub_id
-            new_site_link.entity = link.entity
+            local new_site_link = link:new()
             -- Insert that data into the pet's historical figure data
             pet_record.figure.site_links:insert('#', new_site_link)
         end
@@ -96,7 +87,7 @@ local function fixGiftedPets(nemesis)
                 if not owner_in_party then
                     print("the pet's owner is NOT a companion. We need to associate the pet with the owner correctly so the pet's unit is not inaccessible.")
                     fixGiftedPet(companion_record, pet_owner_record)
-                    queueCompanionErase[pet_record.id] = true
+                    queueCompanionErase[companion_record.id] = true
                 end
             end
         end
