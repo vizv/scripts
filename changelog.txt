@@ -49,6 +49,8 @@ Template for new versions:
 - `gui/unit-info-viewer`: shows a unit's relative size to its race's average.
 - `caravan`: optional overlay to hide vanilla bring trade goods to depot button (if you prefer to always use the DFHack version and don't want to accidentally click on the vanilla button). enable ``caravan.movegoods_hider`` in `gui/control-panel` UI Overlays tab to use.
 - `gui/design`: significant redesign of UI for much improved usability
+- `gui/quickfort`: delete blueprints from the blueprint load dialog
+- `quickfort`: new ``delete`` command for deleting player-owned blueprints (library and mod-added blueprints cannot be deleted)
 
 ## Removed
 - `max-wave`: merged into `pop-control`
