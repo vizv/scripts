@@ -592,6 +592,10 @@ end
 --================================--
 -- Allows for selecting a box
 
+---@class BoxTileMap
+---@field getPenKey fun(nesw: { n: boolean, e: boolean, s: boolean, w: boolean }): any
+---@field createPens? fun(): { key: dfhack.pen }
+---@field pens? { key: dfhack.pen }
 local TILE_MAP = {
     getPenKey= function(nesw)
         local out = 0
@@ -601,29 +605,31 @@ local TILE_MAP = {
         return out
     end
 }
-TILE_MAP.pens= {
-    [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  2), fg=COLOR_GREEN, ch='X'}, -- INSIDE
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  1), fg=COLOR_GREEN, ch='X'}, -- NW
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  1), fg=COLOR_GREEN, ch='X'}, -- NORTH
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  1), fg=COLOR_GREEN, ch='X'}, -- NE
-    [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  2), fg=COLOR_GREEN, ch='X'}, -- WEST
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  2), fg=COLOR_GREEN, ch='X'}, -- EAST
-    [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  3), fg=COLOR_GREEN, ch='X'}, -- SW
-    [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  3), fg=COLOR_GREEN, ch='X'}, -- SOUTH
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  3), fg=COLOR_GREEN, ch='X'}, -- SE
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  2), fg=COLOR_GREEN, ch='X'}, -- N_NUB
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 5,  1), fg=COLOR_GREEN, ch='X'}, -- E_NUB
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  1), fg=COLOR_GREEN, ch='X'}, -- W_NUB
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  2), fg=COLOR_GREEN, ch='X'}, -- S_NUB
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  3), fg=COLOR_GREEN, ch='X'}, -- VERT_NS
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  1), fg=COLOR_GREEN, ch='X'}, -- VERT_EW
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  3), fg=COLOR_GREEN, ch='X'}, -- POINT
-}
+TILE_MAP.createPens= function()
+    return {
+        [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  2), fg=COLOR_GREEN, ch='X'}, -- INSIDE
+        [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  1), fg=COLOR_GREEN, ch='X'}, -- NW
+        [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  1), fg=COLOR_GREEN, ch='X'}, -- NORTH
+        [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  1), fg=COLOR_GREEN, ch='X'}, -- NE
+        [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  2), fg=COLOR_GREEN, ch='X'}, -- WEST
+        [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  2), fg=COLOR_GREEN, ch='X'}, -- EAST
+        [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  3), fg=COLOR_GREEN, ch='X'}, -- SW
+        [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  3), fg=COLOR_GREEN, ch='X'}, -- SOUTH
+        [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  3), fg=COLOR_GREEN, ch='X'}, -- SE
+        [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  2), fg=COLOR_GREEN, ch='X'}, -- N_NUB
+        [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 5,  1), fg=COLOR_GREEN, ch='X'}, -- E_NUB
+        [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  1), fg=COLOR_GREEN, ch='X'}, -- W_NUB
+        [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  2), fg=COLOR_GREEN, ch='X'}, -- S_NUB
+        [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  3), fg=COLOR_GREEN, ch='X'}, -- VERT_NS
+        [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  1), fg=COLOR_GREEN, ch='X'}, -- VERT_EW
+        [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  3), fg=COLOR_GREEN, ch='X'}, -- POINT
+    }
+end
 
 ---@class BoxSelection.attrs: widgets.Window.attrs
 ---@field tooltip_enabled? boolean,
 ---@field screen? gui.Screen
----@field tile_map? { pens: { key: dfhack.pen }, getPenKey: fun(nesw: { n: boolean, e: boolean, s: boolean, w: boolean }): any }
+---@field tile_map? BoxTileMap
 ---@field avoid_view? gui.View|fun():gui.View
 ---@field on_confirm? fun(box: Box)
 ---@field flat boolean
@@ -652,8 +658,15 @@ function BoxSelection:init()
     self.first_point=nil
     self.last_point=nil
 
+    if self.tile_map then
+        if self.tile_map.createPens then
+            self.tile_map.pens = self.tile_map.createPens()
+        end
+    else
+        error("No tile map provided")
+    end
+
     -- Set the cursor to the center of the screen
-    local dims = dfhack.gui.getDwarfmodeViewDims()
     guidm.setCursorPos(guidm.Viewport.get():getCenter())
 
     -- Show cursor
