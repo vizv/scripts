@@ -406,23 +406,20 @@ end
 -- Box data class
 
 ---@class Box.attrs
----@field valid boolean
----@field min df.coord
----@field max df.coord
 
 ---@class Box.attrs.partial: Box.attrs
 
 ---@class Box: Box.attrs
 ---@field ATTRS Box.attrs|fun(attributes: Box.attrs.partial)
+---@field valid boolean
+---@field min df.coord
+---@field max df.coord
 ---@overload fun(init_table: Box.attrs.partial): self
 Box = defclass(Box)
-Box.ATTRS {
-    valid = true, -- For output
-    min = DEFAULT_NIL,
-    max = DEFAULT_NIL
-}
+Box.ATTRS {}
 
 function Box:init(points)
+    self.valid = true
     self.min = nil
     self.max = nil
     for _,value in pairs(points) do
@@ -624,22 +621,24 @@ TILE_MAP.pens= {
 }
 
 ---@class BoxSelection.attrs: widgets.Window.attrs
----@field box? Box
+---@field tooltip_enabled? boolean,
 ---@field screen? gui.Screen
 ---@field tile_map? { pens: { key: dfhack.pen }, getPenKey: fun(nesw: { n: boolean, e: boolean, s: boolean, w: boolean }): any }
 ---@field avoid_view? gui.View|fun():gui.View
 ---@field on_confirm? fun(box: Box)
----@field first_point? df.coord
----@field last_point? df.coord
 ---@field flat boolean
 ---@field ascii_fill boolean
 
 ---@class BoxSelection.attrs.partial: BoxSelection.attrs
 
 ---@class BoxSelection: widgets.Window, BoxSelection.attrs
+---@field box? Box
+---@field first_point? df.coord
+---@field last_point? df.coord
 BoxSelection = defclass(BoxSelection, widgets.Window)
 BoxSelection.ATTRS {
-    screen=DEFAULT_NIL, -- Allows the DimensionsTooltip to be shown
+    tooltip_enabled=true,
+    screen=DEFAULT_NIL,
     tile_map=TILE_MAP,
     avoid_view=DEFAULT_NIL,
     on_confirm=DEFAULT_NIL,
@@ -660,20 +659,22 @@ function BoxSelection:init()
     -- Show cursor
     df.global.game.main_interface.main_designation_selected = df.main_designation_type.TOGGLE_ENGRAVING
 
-    if self.screen then
-        self.dimensions_tooltip = widgets.DimensionsTooltip{
-            get_anchor_pos_fn=function()
-                if self.first_point and self.flat then
-                    return xyz2pos(self.first_point.x, self.first_point.y, df.global.window_z)
-                end
-                return self.first_point
-            end,
-        }
-        self.screen:addviews{
-            self.dimensions_tooltip
-        }
-    else
-        error("No screen provided to BoxSelection, unable to display DimensionsTooltip")
+    if self.tooltip_enabled then
+        if self.screen then
+            self.dimensions_tooltip = widgets.DimensionsTooltip{
+                get_anchor_pos_fn=function()
+                    if self.first_point and self.flat then
+                        return xyz2pos(self.first_point.x, self.first_point.y, df.global.window_z)
+                    end
+                    return self.first_point
+                end,
+            }
+            self.screen:addviews{
+                self.dimensions_tooltip
+            }
+        else
+            error("No screen provided to BoxSelection, unable to display DimensionsTooltip")
+        end
     end
 end
 
@@ -772,7 +773,7 @@ function BoxSelection:onRenderFrame(dc, rect)
         and self.lastMousePos.x == df.global.gps.mouse_x and self.lastMousePos.y == df.global.gps.mouse_y
     self.lastMousePos = xy2pos(df.global.gps.mouse_x, df.global.gps.mouse_y)
 
-    if self.screen and self.dimensions_tooltip then
+    if self.tooltip_enabled and self.screen and self.dimensions_tooltip then
         self.dimensions_tooltip.visible = not self.useCursor
     end
 
