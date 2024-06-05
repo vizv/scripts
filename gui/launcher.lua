@@ -40,7 +40,7 @@ local function get_default_tag_filter()
     if not dev_mode then
         ret.excludes.dev = true
         ret.excludes.unavailable = true
-        if dfhack.getHideArmokTools() then
+        if dfhack.getMortalMode() then
             ret.excludes.armok = true
         end
     end
@@ -61,7 +61,7 @@ local function toggle_dev_mode()
     tag_filter.excludes.unavailable = dev_mode or nil
     if not dev_mode then
         tag_filter.excludes.armok = nil
-    elseif dfhack.getHideArmokTools() then
+    elseif dfhack.getMortalMode() then
         tag_filter.excludes.armok = true
     end
     dev_mode = not dev_mode
@@ -1000,7 +1000,7 @@ local function add_top_related_entries(entries, entry, n)
     local dev_ok = dev_mode or helpdb.get_entry_tags(entry).dev
     local tags = helpdb.get_entry_tags(entry)
     local affinities, buckets = {}, {}
-    local skip_armok = dfhack.getHideArmokTools()
+    local skip_armok = dfhack.getMortalMode()
     for tag in pairs(tags) do
         for _,peer in ipairs(helpdb.get_tag_data(tag)) do
             if not skip_armok or not helpdb.get_entry_tags(peer).armok then

@@ -136,8 +136,8 @@ PREFERENCES_BY_IDX = {
         label='Mortal mode: hide "armok" tools',
         desc='Don\'t show tools that give you god-like powers wherever DFHack tools are listed.',
         default=false,
-        get_fn=function() return dfhack.HIDE_ARMOK_TOOLS end,
-        set_fn=function(val) dfhack.HIDE_ARMOK_TOOLS = val end,
+        get_fn=dfhack.getMortalMode,
+        set_fn=dfhack.setMortalMode,
     },
     {
         name='FILTER_FULL_TEXT',
@@ -152,8 +152,8 @@ PREFERENCES_BY_IDX = {
         label='Hide console on startup (MS Windows only)',
         desc='Hide the external DFHack terminal window on startup. Use the "show" command to unhide it.',
         default=true,
-        get_fn=function() return dfhack.HIDE_CONSOLE_ON_STARTUP end,
-        set_fn=function(val) dfhack.HIDE_CONSOLE_ON_STARTUP = val end,
+        get_fn=dfhack.getHideConsoleOnStartup,
+        set_fn=dfhack.setHideConsoleOnStartup,
     },
     {
         name='DEFAULT_INITIAL_PAUSE',
