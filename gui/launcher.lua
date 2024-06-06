@@ -32,7 +32,7 @@ user_freq = user_freq or json.open('dfhack-config/command_counts.json')
 -- track whether the user has enabled dev mode
 dev_mode = dev_mode or false
 
-local function get_default_tag_filter()
+local function get_default_tag_filter_base(mortal_mode)
     local ret = {
         includes={},
         excludes={},
@@ -40,11 +40,15 @@ local function get_default_tag_filter()
     if not dev_mode then
         ret.excludes.dev = true
         ret.excludes.unavailable = true
-        if dfhack.getMortalMode() then
+        if mortal_mode then
             ret.excludes.armok = true
         end
     end
     return ret
+end
+
+local function get_default_tag_filter(force_mortal_mode)
+    return get_default_tag_filter_base(dfhack.getMortalMode())
 end
 
 _tag_filter = _tag_filter or nil
@@ -82,6 +86,13 @@ local function is_default_filter()
     local default_filter = get_default_tag_filter()
     return matches(tag_filter.includes, default_filter.includes) and
         matches(tag_filter.excludes, default_filter.excludes)
+end
+
+function set_armok_filter_if_default(mortal_mode)
+    if not is_default_filter() then return end
+    _tag_filter = get_default_tag_filter_base(mortal_mode)
+    if not view then return end
+    view.subviews.main:refresh_autocomplete()
 end
 
 local function get_filter_text()
