@@ -332,21 +332,35 @@ local function get_dead_chunk(unit)
     return {text=dfhack.units.getReadableName(unit)..str, pen=pen}
 end
 
-local function get_conceivable_comparison(unit, comparison_unit)
+-- the metrics of the universe
+local ELEPHANT_SIZE = 500000
+local DWARF_SIZE = 6000
+local CAT_SIZE = 500
+
+local function get_conceivable_comparison(unit)
     --[[ the objective here is to get a (resaonably) small number to help concieve
     how large a thing is. "83 dwarves" doesn't really help convey the size of an
     elephant much better than 5m cc, so at certain breakpoints we will use
     different animals --]]
     local size = unit.body.size_info.size_cur
-    local dwarf_size = 6000
-    if size > dwarf_size*20 and get_creature_data(unit).creature_id ~= "ELEPHANT" then
-        return string.format('%.1f average elephants', size/500000)
-    elseif size <= dwarf_size*0.25 and get_creature_data(unit).creature_id ~= "CAT" then
-        return string.format('%.2f average cats', size/500)
+    local comparison_name, comparison_name_plural, comparison_size
+    if size > DWARF_SIZE*20 and get_creature_data(unit).creature_id ~= "ELEPHANT" then
+        comparison_name, comparison_name_plural, comparison_size = 'elephant', 'elephants', ELEPHANT_SIZE
+    elseif size <= DWARF_SIZE*0.25 and get_creature_data(unit).creature_id ~= "CAT" then
+        comparison_name, comparison_name_plural, comparison_size = 'cat', 'cats', CAT_SIZE
     else
-        return string.format('%.1f average dwarves', size/6000)
+        comparison_name, comparison_name_plural, comparison_size = 'dwarf', 'dwarves', DWARF_SIZE
     end
-
+    local ratio = size / comparison_size
+    if ratio == 1 then
+        return ('1 average %s'):format(comparison_name)
+    end
+    for precision=1,4 do
+        if ratio >= 1/(10^precision) then
+            return ('%%.%df average %%s'):format(precision):format(ratio, comparison_name_plural)
+        end
+    end
+    return string.format('a miniscule part of an %s', comparison_name)
 end
 
 local function get_size_compared_to_median(unit)
@@ -361,12 +375,19 @@ local function get_size_compared_to_median(unit)
 end
 
 local function get_body_chunk(unit)
-    local blurb = ('%s weighs about as much as %s'):format(get_pronoun(unit), get_conceivable_comparison(unit, comparison_unit))
+    local blurb = ('%s weighs about as much as %s'):format(get_pronoun(unit), get_conceivable_comparison(unit))
     return {text=blurb, pen=COLOR_LIGHTBLUE}
 end
 
+local function format_size_in_cc(unit)
+    -- internal measure is cubic centimeters divided by 10
+    local cc = unit.body.size_info.size_cur * 10
+    return dfhack.formatInt(cc)
+end
+
 local function get_average_size(unit)
-    local blurb = ('%s is %s in size.'):format(get_pronoun(unit), get_size_compared_to_median(unit))
+    local blurb = ('%s is %s cc, which is %s in size.')
+        :format(get_pronoun(unit), format_size_in_cc(unit), get_size_compared_to_median(unit))
     return{text=blurb, pen=COLOR_LIGHTCYAN}
 end
 
@@ -481,10 +502,10 @@ function UnitInfo:refresh(unit, width)
     add_chunk(chunks, get_max_age_chunk(unit), width)
     add_chunk(chunks, get_ghostly_chunk(unit), width)
     add_chunk(chunks, get_dead_chunk(unit), width)
+    add_chunk(chunks, get_average_size(unit), width)
     if get_creature_data(unit).creature_id ~= "DWARF" then
         add_chunk(chunks, get_body_chunk(unit), width)
     end
-    add_chunk(chunks, get_average_size(unit), width)
     add_chunk(chunks, get_grazer_chunk(unit), width)
     add_chunk(chunks, get_milkable_chunk(unit), width)
     add_chunk(chunks, get_shearable_chunk(unit), width)
