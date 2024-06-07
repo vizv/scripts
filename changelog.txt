@@ -34,6 +34,7 @@ Template for new versions:
 - `gui/tiletypes`: interface for modifying map tiles and tile properties
 - `fix/population-cap`: fixes the situation where you continue to get migrant waves even when you are above your configured population cap
 - `fix/occupancy`: fixes issues where you can't build somewhere because the game tells you an item/unit/building is in the way but there's nothing there
+- `add-to-core-party`: promotes one of your companions to become a controllable adventurer
 
 ## New Features
 - `buildingplan`: dimension tooltip is now displayed for constructions and buildings that are designated over an area
