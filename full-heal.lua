@@ -110,7 +110,6 @@ function heal(unit, resurrect, keep_corpse)
     --print("Resetting status flags...")
     unit.flags2.has_breaks = false
     unit.flags2.gutted = false
-    unit.flags2.circulatory_spray = false
     unit.flags2.vision_good = true
     unit.flags2.vision_damaged = false
     unit.flags2.vision_missing = false
