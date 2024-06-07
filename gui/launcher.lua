@@ -32,6 +32,12 @@ user_freq = user_freq or json.open('dfhack-config/command_counts.json')
 -- track whether the user has enabled dev mode
 dev_mode = dev_mode or false
 
+-- track the last value of mortal mode
+prev_mortal_mode = prev_mortal_mode
+if prev_mortal_mode == nil then
+    prev_mortal_mode = dfhack.getMortalMode()
+end
+
 local function get_default_tag_filter_base(mortal_mode)
     local ret = {
         includes={},
@@ -47,7 +53,7 @@ local function get_default_tag_filter_base(mortal_mode)
     return ret
 end
 
-local function get_default_tag_filter(force_mortal_mode)
+local function get_default_tag_filter()
     return get_default_tag_filter_base(dfhack.getMortalMode())
 end
 
@@ -81,18 +87,15 @@ local function matches(a, b)
     return true
 end
 
-local function is_default_filter()
+local function is_default_filter_base(mortal_mode)
     local tag_filter = get_tag_filter()
-    local default_filter = get_default_tag_filter()
+    local default_filter = get_default_tag_filter_base(mortal_mode)
     return matches(tag_filter.includes, default_filter.includes) and
         matches(tag_filter.excludes, default_filter.excludes)
 end
 
-function set_armok_filter_if_default(mortal_mode)
-    if not is_default_filter() then return end
-    _tag_filter = get_default_tag_filter_base(mortal_mode)
-    if not view then return end
-    view.subviews.main:refresh_autocomplete()
+local function is_default_filter()
+    return is_default_filter_base(dfhack.getMortalMode())
 end
 
 local function get_filter_text()
@@ -873,7 +876,7 @@ local function get_frame_r()
     return 0
 end
 
-function LauncherUI:init(args)
+function LauncherUI:init()
     self.firstword = ""
 
     local main_panel = MainPanel{
@@ -1148,6 +1151,18 @@ function LauncherUI:run_command(reappear, command)
     if not reappear then
         self:dismiss()
     end
+end
+
+function LauncherUI:render(dc)
+    local mortal_mode = dfhack.getMortalMode()
+    if mortal_mode ~= prev_mortal_mode then
+        prev_mortal_mode = mortal_mode
+        if is_default_filter_base(not mortal_mode) then
+            _tag_filter = get_default_tag_filter_base(mortal_mode)
+            self.subviews.main:refresh_autocomplete()
+        end
+    end
+    LauncherUI.super.render(self, dc)
 end
 
 function LauncherUI:onDismiss()
