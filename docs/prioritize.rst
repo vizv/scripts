@@ -127,7 +127,7 @@ Overlay
 
 This script also provides an overlay that is managed by the `overlay`
 framework. A panel is added to the info sheet for buildings that are queued for
-construction. If a unit has taken the construction job, their name will be
+construction or destruction. If a unit has taken the job, their name will be
 listed. Click on the name to zoom to the unit. There is also a toggle button
 for high priority status for the job. Toggle it on if the job is not being
-taken and you need it to be built quickly.
+taken and you need it to be completed quickly.

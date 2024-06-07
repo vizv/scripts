@@ -664,7 +664,7 @@ function EnRouteOverlay:init()
         widgets.Label{
             frame={t=0, l=0},
             text={
-                'Construction job taken by:',
+                'Job taken by:',
                 {gap=1, text=self:callback('get_builder_name'), pen=self:callback('get_builder_name_pen')}
             },
             on_click=self:callback('zoom_to_builder'),
@@ -695,7 +695,7 @@ end
 
 function EnRouteOverlay:zoom_to_builder()
     local job = dfhack.gui.getSelectedJob(true)
-    if not job or job.job_type ~= df.job_type.ConstructBuilding then return end
+    if not job then return end
     local builder = dfhack.job.getWorker(job)
     if builder then
         dfhack.gui.revealInDwarfmodeMap(xyz2pos(dfhack.units.getPosition(builder)), true, true)
@@ -703,10 +703,13 @@ function EnRouteOverlay:zoom_to_builder()
 end
 
 function EnRouteOverlay:render(dc)
-    local bld = dfhack.gui.getSelectedBuilding(true)
-    if bld:getBuildStage() == bld:getMaxBuildStage() then return end
     local job = dfhack.gui.getSelectedJob(true)
-    if not job or job.job_type ~= df.job_type.ConstructBuilding then return end
+    if not job then return end
+    if job.job_type ~= df.job_type.DestroyBuilding and
+        job.job_type ~= df.job_type.ConstructBuilding
+    then
+        return
+    end
     self.builder = dfhack.job.getWorker(job)
     self.subviews.do_now:setOption(job.flags.do_now)
     EnRouteOverlay.super.render(self, dc)
