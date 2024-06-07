@@ -434,7 +434,7 @@ local function save_work_details()
         local detail = {
             name=wd.name,
             icon=wd.icon,
-            work_detail_flags=clone_wd_flags(wd.work_detail_flags),
+            flags=clone_wd_flags(wd.flags),
             allowed_labors=utils.clone(wd.allowed_labors),
         }
         details[idx+1] = detail
@@ -455,7 +455,7 @@ local function load_work_details()
             new=df.work_detail,
             name=wd.name,
             icon=wd.icon,
-            work_detail_flags=wd.work_detail_flags,
+            flags=wd.flags or wd.work_detail_flags, -- compat for old name
         }
         li.work_details[idx-1] = detail
         local al = li.work_details[idx-1].allowed_labors
