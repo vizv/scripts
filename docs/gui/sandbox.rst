@@ -16,7 +16,7 @@ You can choose whether spawned units are:
 - hostile undead
 - independent/wild
 - friendly
-- citizens/pets
+- citizens/pets (only available when launching from fort mode)
 
 Note that if you create new citizens and you're not using `autolabor`, you'll
 have to got into the labors screen and make at least one change (any change) to
@@ -35,3 +35,6 @@ Caveats
 If running from adventure mode, the map will show fort-mode "dig" markers on
 tiles that were within the code of vision of your adventurers. This is visually
 distracting, but it is not an error and can be ignored.
+
+When spawning undead, you'll need to save and reload before they gain their
+distinctive purple cast.
