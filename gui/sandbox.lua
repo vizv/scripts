@@ -226,9 +226,10 @@ end
 function Sandbox:find_zombie_syndrome()
     if self.zombie_syndrome then return self.zombie_syndrome end
     for _,syn in ipairs(df.global.world.raws.syndromes.all) do
-        local has_flags = false
+        local has_flags, has_flash = false, false
         for _,effect in ipairs(syn.ce) do
             if df.creature_interaction_effect_display_namest:is_instance(effect) then
+                -- we don't want named zombie syndromes; they're usually necro experiments
                 goto continue
             end
             if df.creature_interaction_effect_add_simple_flagst:is_instance(effect) and
@@ -237,8 +238,11 @@ function Sandbox:find_zombie_syndrome()
             then
                 has_flags = true
             end
+            if df.creature_interaction_effect_flash_symbolst:is_instance(effect) then
+                has_flash = true
+            end
         end
-        if has_flags then
+        if has_flags and has_flash then
             self.zombie_syndrome = syn
             return syn
         end
