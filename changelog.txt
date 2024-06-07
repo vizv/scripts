@@ -43,6 +43,8 @@ Template for new versions:
 - `assign-profile`: fix handling of unit option for setting target unit id
 - `gui/gm-unit`: correctly display skill levels above Legendary+5
 - `quickfort`: fix merge logic for disjoint stockpiles that are given the same label
+- `makeown`: set target animals to tame and domesticated
+- `gui/sandbox`: created citizens can now be useful military squad members
 
 ## Misc Improvements
 - `gui/unit-info-viewer`: now displays a unit's weight, relative to either dwarves, elephants or cats

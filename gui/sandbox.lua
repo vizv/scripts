@@ -57,8 +57,6 @@ local function finalize_animal(unit, disposition)
         -- noop; units are created friendly by default
     elseif disposition == DISPOSITIONS.FORT then
         makeown.make_own(unit)
-        unit.flags1.tame = true
-        unit.training_level = df.animal_training_level.Domesticated
     end
 end
 
@@ -96,6 +94,17 @@ end
 function Sandbox:init()
     self.spawn_group = 1
     self.first_unit_id = df.global.unit_next_id
+
+    local disposition_options = {
+        {label='hostile', value=DISPOSITIONS.HOSTILE, pen=COLOR_LIGHTRED},
+        {label='hostile (undead)', value=DISPOSITIONS.HOSTILE_UNDEAD, pen=COLOR_RED},
+        {label='independent/wild', value=DISPOSITIONS.WILD, pen=COLOR_YELLOW},
+        {label='friendly', value=DISPOSITIONS.FRIENDLY, pen=COLOR_GREEN},
+    }
+
+    if dfhack.world.isFortressMode() then
+        table.insert(disposition_options, {label='citizens/pets', value=DISPOSITIONS.FORT, pen=COLOR_BLUE})
+    end
 
     self:addviews{
         widgets.ResizingPanel{
@@ -141,13 +150,7 @@ function Sandbox:init()
                     key_back='CUSTOM_SHIFT_A',
                     label='Group disposition',
                     label_below=true,
-                    options={
-                        {label='hostile', value=DISPOSITIONS.HOSTILE, pen=COLOR_LIGHTRED},
-                        {label='hostile (undead)', value=DISPOSITIONS.HOSTILE_UNDEAD, pen=COLOR_RED},
-                        {label='independent/wild', value=DISPOSITIONS.WILD, pen=COLOR_YELLOW},
-                        {label='friendly', value=DISPOSITIONS.FRIENDLY, pen=COLOR_GREEN},
-                        {label='citizens/pets', value=DISPOSITIONS.FORT, pen=COLOR_BLUE},
-                    },
+                    options=disposition_options,
                 },
             },
         },
