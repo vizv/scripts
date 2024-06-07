@@ -57,8 +57,6 @@ local function finalize_animal(unit, disposition)
         -- noop; units are created friendly by default
     elseif disposition == DISPOSITIONS.FORT then
         makeown.make_own(unit)
-        unit.flags1.tame = true
-        unit.training_level = df.animal_training_level.Domesticated
     end
 end
 
