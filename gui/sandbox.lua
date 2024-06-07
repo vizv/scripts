@@ -82,7 +82,6 @@ local function finalize_units(first_created_unit_id, disposition, syndrome)
         unit.profession = df.profession.STANDARD
         if syndrome then
             syndrome_util.infectWithSyndrome(unit, syndrome)
-            unit.flags1.zombie = true;
         end
         unit.name.has_name = false
         if is_sentient(unit) then

@@ -242,7 +242,7 @@ function addJobAction(job,unit) --what about job2?
     if job==nil then
         error("invalid job")
     end
-    if findAction(unit,df.unit_action_type.Job) or findAction(unit,df.unit_action_type.Job2) then
+    if findAction(unit,df.unit_action_type.Job) or findAction(unit,df.unit_action_type.JobRecover) then
         print("Already has job action")
         return
     end
@@ -253,7 +253,7 @@ function addJobAction(job,unit) --what about job2?
     --job
     local data={type=df.unit_action_type.Job,data={job={x=pos.x,y=pos.y,z=pos.z,timer=10}}}
     --job2:
-    --local data={type=df.unit_action_type.Job2,data={job2={timer=10}}}
+    --local data={type=df.unit_action_type.JobRecover,data={job2={timer=10}}}
     add_action(unit,data)
     --add_action(unit,{type=df.unit_action_type.Unsteady,data={unsteady={timer=5}}})
 end
