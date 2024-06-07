@@ -1,5 +1,5 @@
 add-to-core-party
-==========
+=================
 
 .. dfhack-tool::
     :summary: Promotes one of your companions to become a controllable adventurer.
