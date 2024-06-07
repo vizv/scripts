@@ -96,9 +96,9 @@ local function do_burrow(ctx, db_entry, pos)
             stats['burrow_tiles_'..(db_entry.add and 'added' or 'removed')].value + 1
         if db_entry.civalert then
             if db_entry.add then
-                civalert.set_civalert_burrow_if_unset(b)
+                civalert.add_civalert_burrow(b.id)
             else
-                civalert.unset_civalert_burrow_if_set(b)
+                civalert.remove_civalert_burrow(b.id)
             end
         end
         if db_entry.autochop_clear or db_entry.autochop_chop then
