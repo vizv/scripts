@@ -28,38 +28,14 @@ end
 
 local function showExtraPartyPrompt(advSetUpScreen)
     local choices = {}
-    for _, figure_id in ipairs(df.global.adventure.interactions.party_extra_members) do
-        -- shamelessly copy-pasted from unretire-anyone.lua
-        local histFig = df.historical_figure.find(figure_id)
-        local nemesis = df.nemesis_record.find(histFig.nemesis_id)
-        local histFlags = histFig.flags
-        local creature = df.creature_raw.find(histFig.race).caste[histFig.caste]
-        local name = creature.caste_name[0]
-        if histFig.died_year >= -1 then
-            histFig.died_year = -1
-            histFig.died_seconds = -1
-        end
-        if histFig.info and histFig.info.curse then
-            local curse = histFig.info.curse
-            if curse.name ~= '' then
-                name = name .. ' ' .. curse.name
-            end
-            if curse.undead_name ~= '' then
-                name = curse.undead_name .. " - reanimated " .. name
-            end
-        end
-        if histFlags.ghost then
-            name = name .. " ghost"
-        end
-        local sym = df.pronoun_type.attrs[creature.sex].symbol
-        if sym then
-            name = name .. ' (' .. sym .. ')'
-        end
-        if histFig.name.has_name then
-            name = dfhack.TranslateName(histFig.name) ..
-                " - (" .. dfhack.TranslateName(histFig.name, true) .. ") - " .. name
-        end
-        table.insert(choices, { text = name, nemesis = nemesis, search_key = name:lower() })
+    for _, histfig_id in ipairs(df.global.adventure.interactions.party_extra_members) do
+        local hf = df.historical_figure.find(histfig_id)
+        if not hf then goto continue end
+        local nemesis, unit = df.nemesis_record.find(hf.nemesis_id), df.unit.find(hf.unit_id)
+        if not nemesis or not unit or unit.flags2.killed then goto continue end
+        local name = dfhack.units.getReadableName(unit)
+        table.insert(choices, {text=name, nemesis=nemesis, search_key=dfhack.toSearchNormalized(name)})
+        ::continue::
     end
     dialogs.showListPrompt('add-to-core-party', "Select someone to add to your \"Core Party\" (able to assume control, able to unretire):", COLOR_WHITE,
         choices, function(id, choice)
