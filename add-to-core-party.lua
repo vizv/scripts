@@ -18,7 +18,6 @@ local function addToCoreParty(nemesis)
     end
     -- Adds them to unretire list
     nemesis.flags.ADVENTURER = true
-    nemesis.flags.ACTIVE_ADVENTURER = true
 end
 
 local function showExtraPartyPrompt(advSetUpScreen)
