@@ -18,12 +18,7 @@ local function addToCoreParty(nemesis)
     end
     -- Adds them to unretire list
     nemesis.flags.ADVENTURER = true
-
-    -- Ideally, this is always true but you never know...
-    if nemesis.unit then
-        -- Allow their control to be changeable from manual to AI and vice versa (companion screen bugs out if this isn't true)
-        nemesis.unit.status.unit_command_flag.HAVE_COMMAND_GAIT = true
-    end
+    nemesis.flags.ACTIVE_ADVENTURER = true
 end
 
 local function showExtraPartyPrompt(advSetUpScreen)
