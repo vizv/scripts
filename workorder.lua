@@ -94,7 +94,7 @@ end
 -- Get the remaining quantity for open matching orders in the queue.
 local function cur_order_quantity(order)
     local amount, cur_order, cur_idx = 0, nil, nil
-    for idx, managed in ipairs(world.manager_orders) do
+    for idx, managed in ipairs(world.manager_orders.all) do
         if orders_match(order, managed) then
             -- if infinity, don't plan anything
             if 0 == managed.amount_total then
@@ -187,8 +187,8 @@ function create_orders(orders, quiet)
     -- we need id mapping to restore saved order_conditions
     local id_mapping = {}
     for _, it in ipairs(orders) do
-        id_mapping[it["id"]] = world.manager_order_next_id
-        world.manager_order_next_id = world.manager_order_next_id + 1
+        id_mapping[it["id"]] = world.manager_orders.manager_order_next_id
+        world.manager_orders.manager_order_next_id = world.manager_orders.manager_order_next_id + 1
     end
 
     for _, it in ipairs (orders) do
@@ -412,7 +412,7 @@ function create_orders(orders, quiet)
                     cur_order.amount_total = cur_order.amount_total + diff
                     if cur_order.amount_left <= 0 then
                         if verbose then print('negative amount; removing existing order') end
-                        world.manager_orders:erase(cur_order_idx)
+                        world.manager_orders.all:erase(cur_order_idx)
                         cur_order:delete()
                     end
                 end
@@ -437,7 +437,7 @@ function create_orders(orders, quiet)
                 print("Queuing " .. job_type
                     .. (amount==0 and " infinitely" or " x"..amount))
             end
-            world.manager_orders:insert('#', order)
+            world.manager_orders.all:insert('#', order)
         end
         end)
     end

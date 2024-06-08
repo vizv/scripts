@@ -196,11 +196,11 @@ function advGlobalPos()
     local map=df.global.world.map
     local wd=df.global.world.world_data
     local adv=df.global.world.units.active[0]
-    --wd.adv_region_x*16+wd.adv_emb_x,wd.adv_region_y*16+wd.adv_emb_y
-    --return wd.adv_region_x*16+wd.adv_emb_x,wd.adv_region_y*16+wd.adv_emb_y
-    --return wd.adv_region_x*16+wd.adv_emb_x+adv.pos.x/16,wd.adv_region_y*16+wd.adv_emb_y+adv.pos.y/16
+    --wd.midmap_data.adv_region_x*16+wd.midmap_data.adv_emb_x,wd.midmap_data.adv_region_y*16+wd.midmap_data.adv_emb_y
+    --return wd.midmap_data.adv_region_x*16+wd.midmap_data.adv_emb_x,wd.midmap_data.adv_region_y*16+wd.midmap_data.adv_emb_y
+    --return wd.midmap_data.adv_region_x*16+wd.midmap_data.adv_emb_x+adv.pos.x/16,wd.midmap_data.adv_region_y*16+wd.midmap_data.adv_emb_y+adv.pos.y/16
     --print(map.region_x,map.region_y,adv.pos.x,adv.pos.y)
-    --print(map.region_x+adv.pos.x/48, map.region_y+adv.pos.y/48,wd.adv_region_x*16+wd.adv_emb_x,wd.adv_region_y*16+wd.adv_emb_y)
+    --print(map.region_x+adv.pos.x/48, map.region_y+adv.pos.y/48,wd.midmap_data.adv_region_x*16+wd.midmap_data.adv_emb_x,wd.midmap_data.adv_region_y*16+wd.midmap_data.adv_emb_y)
     return math.floor(map.region_x+adv.pos.x/48), math.floor(map.region_y+adv.pos.y/48)
 end
 function inSite()

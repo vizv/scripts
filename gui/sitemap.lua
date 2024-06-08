@@ -29,7 +29,7 @@ local function get_location_desc(loc)
         if not prof then return 'Guildhall', COLOR_MAGENTA end
         return ('%s guildhall'):format(to_title_case(prof)), COLOR_MAGENTA
     elseif df.abstract_building_templest:is_instance(loc) then
-        local is_deity = loc.deity_type == df.temple_deity_type.Deity
+        local is_deity = loc.deity_type == df.religious_practice_type.WORSHIP_HFID
         local id = loc.deity_data[is_deity and 'Deity' or 'Religion']
         local entity = is_deity and df.historical_figure.find(id) or df.historical_entity.find(id)
         local desc = 'Temple'

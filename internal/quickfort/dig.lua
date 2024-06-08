@@ -705,7 +705,7 @@ end
 local function ensure_engravings_cache(ctx)
     if ctx.engravings_cache then return end
     local engravings_cache = {}
-    for _,engraving in ipairs(df.global.world.engravings) do
+    for _,engraving in ipairs(df.global.world.event.engravings) do
         local pos = engraving.pos
         local grid = ensure_key(engravings_cache, pos.z)
         local row = ensure_key(grid, pos.y)

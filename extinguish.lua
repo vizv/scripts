@@ -98,12 +98,12 @@ function extinguishUnit(unit)
 end
 
 function extinguishAll()
-    local fires = df.global.world.fires
+    local fires = df.global.world.event.fires
     for i = #fires - 1, 0, -1 do
         extinguishTile(pos2xyz(fires[i].pos))
         fires:erase(i)
     end
-    local campfires = df.global.world.campfires
+    local campfires = df.global.world.event.campfires
     for i = #campfires - 1, 0, -1 do
         extinguishTile(pos2xyz(campfires[i].pos))
         campfires:erase(i)
@@ -118,14 +118,14 @@ end
 
 function extinguishLocation(x, y, z)
     local pos = xyz2pos(x, y, z)
-    local fires = df.global.world.fires
+    local fires = df.global.world.event.fires
     for i = #fires - 1, 0, -1 do
         if same_xyz(pos, fires[i].pos) then
             extinguishTile(x, y, z)
             fires:erase(i)
         end
     end
-    local campfires = df.global.world.campfires
+    local campfires = df.global.world.event.campfires
     for i = #campfires - 1, 0, -1 do
         if same_xyz(pos, campfires[i].pos) then
             extinguishTile(x, y, z)
