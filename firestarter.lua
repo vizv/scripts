@@ -9,7 +9,7 @@ elseif dfhack.gui.getSelectedUnit(true) then
         entry.item.flags.on_fire = true
     end
 elseif guidm.getCursorPos() then
-    df.global.world.fires:insert('#', {
+    df.global.world.event.fires:insert('#', {
         new=df.fire,
         timer=1000,
         pos=guidm.getCursorPos(),

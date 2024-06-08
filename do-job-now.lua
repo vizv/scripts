@@ -134,7 +134,7 @@ local function getSelectedWorkOrder()
     local orders
     local idx
     if df.viewscreen_jobmanagementst:is_instance(scr) then
-        orders = df.global.world.manager_orders
+        orders = df.global.world.manager_orders.all
         idx = scr.sel_idx
     elseif df.viewscreen_workshop_profilest:is_instance(scr)
         and scr.tab == df.viewscreen_workshop_profilest.T_tab.Orders

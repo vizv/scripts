@@ -28,7 +28,7 @@ function LegendsManager:init()
     -- missing, but it shows that jumping back and forth between modes is not
     -- safe.
     self.region_details_backup = {} --as:df.world_region_details[]
-    local vec = df.global.world.world_data.region_details
+    local vec = df.global.world.world_data.midmap_data.region_details
     utils.assign(self.region_details_backup, vec)
     vec:resize(0)
 
@@ -68,7 +68,7 @@ function LegendsManager:onDestroy()
     else
         df.global.gametype = self.gametype_backup
 
-        local vec = df.global.world.world_data.region_details
+        local vec = df.global.world.world_data.midmap_data.region_details
         vec:resize(0)
         utils.assign(vec, self.region_details_backup)
 

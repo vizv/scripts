@@ -48,7 +48,7 @@ function test.changeOrderDetails()
     send_keys('D_JOBLIST', 'UNITJOB_MANAGER')
     expect.true_(df.viewscreen_jobmanagementst:is_instance(dfhack.gui.getCurViewscreen(true)), "We need to be in the jobmanagement/Main screen")
 
-    local ordercount = #df.global.world.manager_orders
+    local ordercount = #df.global.world.manager_orders.all
 
     --- create an order
     dfhack.run_command [[workorder "{ \"frequency\" : \"OneTime\", \"job\" : \"CutGems\", \"material\" : \"INORGANIC:SLADE\" }"]]
@@ -57,7 +57,7 @@ function test.changeOrderDetails()
     wait()
     send_keys('MANAGER_DETAILS')
     expect.true_(df.viewscreen_workquota_detailsst:is_instance(dfhack.gui.getCurViewscreen(true)), "We need to be in the workquota_details screen")
-    expect.eq(ordercount + 1, #df.global.world.manager_orders, "Test order should have been added")
+    expect.eq(ordercount + 1, #df.global.world.manager_orders.all, "Test order should have been added")
     local job = dfhack.gui.getCurViewscreen(true).order
     local item = job.items[0]
 
@@ -90,7 +90,7 @@ function test.changeOrderDetails()
     wait()
     send_keys('LEAVESCREEN', 'LEAVESCREEN', 'MANAGER_REMOVE')
     confirmRemove()
-    expect.eq(ordercount, #df.global.world.manager_orders, "Test order should've been removed")
+    expect.eq(ordercount, #df.global.world.manager_orders.all, "Test order should've been removed")
     -- go back to map screen
     wait()
     send_keys('LEAVESCREEN', 'LEAVESCREEN')
@@ -109,11 +109,11 @@ function test.unsetAllItemTraits()
     send_keys('D_JOBLIST', 'UNITJOB_MANAGER')
     expect.true_(df.viewscreen_jobmanagementst:is_instance(dfhack.gui.getCurViewscreen(true)), "We need to be in the jobmanagement/Main screen")
 
-    local ordercount = #df.global.world.manager_orders
+    local ordercount = #df.global.world.manager_orders.all
 
     --- create an order
     dfhack.run_command [[workorder "{ \"frequency\" : \"OneTime\", \"job\" : \"CutGems\", \"material\" : \"INORGANIC:SLADE\" }"]]
-    expect.eq(ordercount + 1, #df.global.world.manager_orders, "Test order should have been added")
+    expect.eq(ordercount + 1, #df.global.world.manager_orders.all, "Test order should have been added")
     wait()
     send_keys('STANDARDSCROLL_UP') -- move cursor to newly created CUT SLADE
     wait()
@@ -152,7 +152,7 @@ function test.unsetAllItemTraits()
     wait()
     send_keys('LEAVESCREEN', 'LEAVESCREEN', 'MANAGER_REMOVE')
     confirmRemove()
-    expect.eq(ordercount, #df.global.world.manager_orders, "Test order should've been removed")
+    expect.eq(ordercount, #df.global.world.manager_orders.all, "Test order should've been removed")
     -- go back to map screen
     wait()
     send_keys('LEAVESCREEN', 'LEAVESCREEN')

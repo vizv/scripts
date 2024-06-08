@@ -47,13 +47,13 @@ function queue_beds(amount)
     end
 
     order = df.manager_order:new()
-    order.id = df.global.world.manager_order_next_id
-    df.global.world.manager_order_next_id = df.global.world.manager_order_next_id + 1
+    order.id = df.global.world.manager_orders.manager_order_next_id
+    df.global.world.manager_orders.manager_order_next_id = df.global.world.manager_orders.manager_order_next_id + 1
     order.job_type = df.job_type.ConstructBed
     order.material_category.wood = true
     order.amount_left = amount
     order.amount_total = amount
-    df.global.world.manager_orders:insert('#', order)
+    df.global.world.manager_orders.all:insert('#', order)
 end
 
 status_overlay = defclass(status_overlay, gui.Screen)
@@ -172,7 +172,7 @@ function bedroom_list:refresh()
         end
     end
     self.queued_beds = 0
-    for _, order in pairs(df.global.world.manager_orders) do
+    for _, order in pairs(df.global.world.manager_orders.all) do
         if order.job_type == df.job_type.ConstructBed then
             self.queued_beds = self.queued_beds + order.amount_left
         end

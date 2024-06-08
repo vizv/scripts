@@ -61,7 +61,7 @@ function getTargetFromScreens()
         if dfhack.gui.matchFocusString('dwarfmode/ViewSheets/ENGRAVING', dfhack.gui.getDFViewscreen(true)) then
             local sheet = df.global.game.main_interface.view_sheets
             local pos = xyz2pos(sheet.viewing_x, sheet.viewing_y, sheet.viewing_z)
-            for _, engraving in ipairs(df.global.world.engravings) do
+            for _, engraving in ipairs(df.global.world.event.engravings) do
                 if same_xyz(engraving.pos, pos) then
                     my_trg = engraving
                     break
