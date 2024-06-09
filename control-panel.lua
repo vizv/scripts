@@ -41,7 +41,7 @@ local function apply_fort_loaded_config()
     end
     local enabled_repeats = dfhack.persistent.getSiteData(common.REPEATS_GLOBAL_KEY, {})
     for _, data in ipairs(registry.COMMANDS_BY_IDX) do
-        if data.mode == 'repeat' and enabled_repeats[data.command] ~= false then
+        if data.mode == 'repeat' then
             common.apply_command(data)
         end
     end
