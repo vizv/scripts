@@ -63,14 +63,8 @@ TrackStopOverlay.ATTRS{
   frame_background=gui.CLEAR_PEN,
 }
 
-function TrackStopOverlay:getFriction()
-  return dfhack.gui.getSelectedBuilding().friction
-end
-
 function TrackStopOverlay:setFriction(friction)
-  local building = dfhack.gui.getSelectedBuilding()
-
-  building.friction = FRICTION_MAP[friction]
+  dfhack.gui.getSelectedBuilding().track_stop_info.friction = FRICTION_MAP[friction]
 end
 
 function TrackStopOverlay:getDumpDirection()
@@ -121,9 +115,8 @@ function TrackStopOverlay:setDumpDirection(direction)
 end
 
 function TrackStopOverlay:render(dc)
-  local building = dfhack.gui.getSelectedBuilding()
-  local friction = building.friction
   local friction_cycle = self.subviews.friction
+  local friction = dfhack.gui.getSelectedBuilding().track_stop_info.friction
 
   friction_cycle:setOption(FRICTION_MAP_REVERSE[friction])
 
