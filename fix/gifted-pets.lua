@@ -4,7 +4,7 @@ local utils = require 'utils'
 
 local function isPetOf(petNemesis, ownerNemesis)
     if petNemesis.unit then
-        local owner_id = petNemesis.unit.relationship_ids.Pet
+        local owner_id = petNemesis.unit.relationship_ids.PetOwner
         if owner_id ~= -1 and owner_id == ownerNemesis.unit_id then
             return true
         end
@@ -49,7 +49,7 @@ end
 local function fixGiftedPet(pet_record, pet_owner_record)
     -- associate the unit relationships
     if pet_record.unit then
-        pet_record.unit.relationship_ids.Pet = pet_owner_record.unit_id
+        pet_record.unit.relationship_ids.PetOwner = pet_owner_record.unit_id
         pet_record.unit.relationship_ids.GroupLeader = pet_owner_record.unit_id
         pet_record.group_leader_id = pet_owner_record.id
     end
