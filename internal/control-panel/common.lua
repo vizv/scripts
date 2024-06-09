@@ -110,12 +110,15 @@ function get_description(data)
     return helpdb.is_entry(first_word) and helpdb.get_entry_short_help(first_word) or ''
 end
 
-local function persist_enabled_repeats()
+local function persist_repeats()
     local cp_repeats = {}
-    for munged_name in pairs(repeatUtil.repeating) do
-        local name = unmunge_repeat_name(munged_name)
-        if name then
-            cp_repeats[name] = true
+    for _, data in ipairs(registry.COMMANDS_BY_IDX) do
+        if data.mode == 'repeat' then
+            if repeatUtil.repeating['control-panel/' .. data.command] then
+                cp_repeats[data.command] = true
+            else
+                cp_repeats[data.command] = false
+            end
         end
     end
     dfhack.persistent.saveSiteData(REPEATS_GLOBAL_KEY, cp_repeats)
@@ -155,7 +158,7 @@ function apply_command(data, enabled_map, enabled)
         else
             repeatUtil.cancel(munged_name)
         end
-        persist_enabled_repeats()
+        persist_repeats()
     elseif data.mode == 'run' then
         if enabled then
             dfhack.run_command(data.command)
