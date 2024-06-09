@@ -11,7 +11,7 @@ local buildings = df.global.world.buildings
 local caravans = df.global.plotinfo.caravans
 local units = df.global.world.units
 
-local function for_iter(vec, match_fn, action_fn, reverse)
+function for_iter(vec, match_fn, action_fn, reverse)
     local offset = type(vec) == 'table' and 1 or 0
     local idx1 = reverse and #vec-1+offset or offset
     local idx2 = reverse and offset or #vec-1+offset
@@ -147,20 +147,13 @@ local function for_wildlife(fn, reverse)
     end, fn, reverse)
 end
 
-local function for_idle(fn, reverse)
-    for_iter(dfhack.units.getCitizens(true), function(unit)
-        local job = unit.job.current_job
-        return not job
-    end, fn, reverse)
-end
-
 local function for_injured(fn, reverse)
     for_iter(dfhack.units.getCitizens(true), function(unit)
         return unit.health and unit.health.flags.needs_healthcare
     end, fn, reverse)
 end
 
-local function count_units(for_fn, which)
+function count_units(for_fn, which)
     local count = 0
     for_fn(function() count = count + 1 end)
     if count > 0 then
@@ -223,7 +216,7 @@ local function summarize_units(for_fn)
     return ('Wildlife: %s'):format(table.concat(strs, ', '))
 end
 
-local function zoom_to_next(for_fn, state, reverse)
+function zoom_to_next(for_fn, state, reverse)
     local first_found, ret
     for_fn(function(unit)
         if not first_found then
@@ -424,13 +417,6 @@ NOTIFICATIONS_BY_IDX = {
         default=true,
         fn=curry(injured_units, for_injured, 'injured citizen'),
         on_click=curry(zoom_to_next, for_injured),
-    },
-    {
-        name='idlers',
-        desc='Shows number of idle citizens.',
-        default=false,
-        fn=curry(count_units, for_idle, 'idle citizen'),
-        on_click=curry(zoom_to_next, for_idle),
     },
 }
 
