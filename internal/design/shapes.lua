@@ -263,7 +263,7 @@ function Ellipse:has_point(x, y)
             if dx ~= 0 or dy ~= 0 then
                 local surr_x, surr_y = x + dx, y + dy
                 local surr_point_x, surr_point_y = math.abs(surr_x-center_x)-bias, math.abs(surr_y-center_y)-bias
-                if 1 < (surr_point_x / center_x) ^ 2 + (surr_point_y / center_y) ^ 2 then
+                if 1 <= (surr_point_x / center_x) ^ 2 + (surr_point_y / center_y) ^ 2 then
                     all_points_inside = false
                     break
                 end
