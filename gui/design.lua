@@ -717,7 +717,7 @@ function Design:init()
                 widgets.HotkeyLabel {
                     key='CUSTOM_X',
                     label='Reset',
-                    enabled=function() return #self.marks > 1 or #self.extra_points > 0 end,
+                    enabled=function() return #self.marks > 0 or #self.extra_points > 0 end,
                     on_activate=self:callback('reset'),
                 },
             }
@@ -1239,7 +1239,8 @@ function Design:onInput(keys)
                     if pos == info.pos and shape.drag_corners[info.corner] then
                         self.marks[1] = Point { x = info.opposite_x, y = info.opposite_y, z = self.marks[1].z }
                         table.remove(self.marks, 2)
-                        self.placing_mark = { active = true, index = 2 }
+                        self.placing_mark.active = true
+                        self.placing_mark.index = 2
                         break
                     end
                 end
