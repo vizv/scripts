@@ -19,6 +19,14 @@ for k, v in pairs(STATUS) do
     STATUS_REVMAP[v.value] = k
 end
 
+-- save filters (sans search string) between dialog invocations
+local filters = {
+    min_quality=0,
+    max_quality=6,
+    hide_unreachable=true,
+    hide_forbidden=false,
+}
+
 -- -------------------
 -- AssignItems
 --
@@ -214,8 +222,9 @@ function AssignItems:init()
                                 {label=common.CH_MONEY..'Masterful'..common.CH_MONEY, value=5},
                                 {label='Artifact', value=6},
                             },
-                            initial_option=0,
+                            initial_option=filters.min_quality,
                             on_change=function(val)
+                                filters.min_quality = val
                                 if self.subviews.max_quality:getOptionValue() < val then
                                     self.subviews.max_quality:setOption(val)
                                 end
@@ -238,8 +247,9 @@ function AssignItems:init()
                                 {label=common.CH_MONEY..'Masterful'..common.CH_MONEY, value=5},
                                 {label='Artifact', value=6},
                             },
-                            initial_option=6,
+                            initial_option=filters.max_quality,
                             on_change=function(val)
+                                filters.max_quality = val
                                 if self.subviews.min_quality:getOptionValue() > val then
                                     self.subviews.min_quality:setOption(val)
                                 end
@@ -269,8 +279,11 @@ function AssignItems:init()
                         {label='Yes', value=true, pen=COLOR_GREEN},
                         {label='No', value=false}
                     },
-                    initial_option=true,
-                    on_change=function() self:refresh_list() end,
+                    initial_option=filters.hide_unreachable,
+                    on_change=function(val)
+                        filters.hide_unreachable = val
+                        self:refresh_list()
+                    end,
                 },
                 widgets.ToggleHotkeyLabel{
                     view_id='hide_forbidden',
@@ -281,8 +294,12 @@ function AssignItems:init()
                         {label='Yes', value=true, pen=COLOR_GREEN},
                         {label='No', value=false}
                     },
-                    initial_option=false,
-                    on_change=function() self:refresh_list() end,
+                    option_gap=3,
+                    initial_option=filters.hide_forbidden,
+                    on_change=function(val)
+                        filters.hide_forbidden = val
+                        self:refresh_list()
+                    end,
                 },
             },
         },
