@@ -25,6 +25,7 @@ local filters = {
     max_quality=6,
     hide_unreachable=true,
     hide_forbidden=false,
+    inside_containers=true,
 }
 
 -- -------------------
@@ -383,8 +384,11 @@ function AssignItems:init()
                 {label='Yes', value=true, pen=COLOR_GREEN},
                 {label='No', value=false}
             },
-            initial_option=true,
-            on_change=function() self:refresh_list() end,
+            initial_option=filters.inside_containers,
+            on_change=function(val)
+                filters.inside_containers = val
+                self:refresh_list()
+            end,
         },
         widgets.WrappedLabel{
             frame={b=0, l=0, r=0},
