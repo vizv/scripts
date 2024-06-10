@@ -448,14 +448,11 @@ function Design:init()
             key_back='CUSTOM_SHIFT_Z',
             label='Shape:',
             options=shape_options,
-            on_change=function(shape)
-                if shape.max_points and #self.marks > shape.max_points then
-                    -- pop marks until we're down to the max of the new shape
-                    for i = #self.marks, shape.max_points, -1 do
-                        table.remove(self.marks, i)
-                    end
-                end
+            on_change=function(shape, prev_shape)
                 self.needs_update = true
+                if shape.max_points ~= prev_shape.max_points then
+                    self:reset()
+                end
             end,
             button_specs=shape_button_specs,
             button_specs_selected=shape_button_specs_selected,
@@ -578,7 +575,7 @@ function Design:init()
                         return self.placing_mark.active and 'Stop placing points' or 'Start placing more points'
                     end,
                     visible=function() return not self.subviews.shape:getOptionValue().max_points end,
-                    enabled=function() return not self.prev_center and #self.marks > 2 end,
+                    enabled=function() return not self.prev_center end,
                     on_activate=function()
                         self.placing_mark.active = not self.placing_mark.active
                         self.placing_mark.index = self.placing_mark.active and #self.marks + 1 or nil
