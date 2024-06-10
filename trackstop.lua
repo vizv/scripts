@@ -68,10 +68,10 @@ function TrackStopOverlay:setFriction(friction)
 end
 
 function TrackStopOverlay:getDumpDirection()
-  local building = dfhack.gui.getSelectedBuilding()
-  local use_dump = building.track_flags.use_dump
-  local dump_x_shift = building.dump_x_shift
-  local dump_y_shift = building.dump_y_shift
+  local track_stop_info = dfhack.gui.getSelectedBuilding().track_stop_info
+  local use_dump = track_stop_info.track_flags.use_dump
+  local dump_x_shift = track_stop_info.dump_x_shift
+  local dump_y_shift = track_stop_info.dump_y_shift
 
   if not use_dump then
     return NONE
@@ -89,28 +89,28 @@ function TrackStopOverlay:getDumpDirection()
 end
 
 function TrackStopOverlay:setDumpDirection(direction)
-  local building = dfhack.gui.getSelectedBuilding()
+  local track_stop_info = dfhack.gui.getSelectedBuilding().track_stop_info
 
   if direction == NONE then
-    building.track_flags.use_dump = false
-    building.dump_x_shift = 0
-    building.dump_y_shift = 0
+    track_stop_info.track_flags.use_dump = false
+    track_stop_info.dump_x_shift = 0
+    track_stop_info.dump_y_shift = 0
   elseif direction == NORTH then
-    building.track_flags.use_dump = true
-    building.dump_x_shift = 0
-    building.dump_y_shift = -1
+    track_stop_info.track_flags.use_dump = true
+    track_stop_info.dump_x_shift = 0
+    track_stop_info.dump_y_shift = -1
   elseif direction == EAST then
-    building.track_flags.use_dump = true
-    building.dump_x_shift = 1
-    building.dump_y_shift = 0
+    track_stop_info.track_flags.use_dump = true
+    track_stop_info.dump_x_shift = 1
+    track_stop_info.dump_y_shift = 0
   elseif direction == SOUTH then
-    building.track_flags.use_dump = true
-    building.dump_x_shift = 0
-    building.dump_y_shift = 1
+    track_stop_info.track_flags.use_dump = true
+    track_stop_info.dump_x_shift = 0
+    track_stop_info.dump_y_shift = 1
   elseif direction == WEST then
-    building.track_flags.use_dump = true
-    building.dump_x_shift = -1
-    building.dump_y_shift = 0
+    track_stop_info.track_flags.use_dump = true
+    track_stop_info.dump_x_shift = -1
+    track_stop_info.dump_y_shift = 0
   end
 end
 
