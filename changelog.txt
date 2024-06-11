@@ -62,6 +62,7 @@ Template for new versions:
 - `quickfort`: new ``delete`` command for deleting player-owned blueprints (library and mod-added blueprints cannot be deleted)
 - `gui/launcher`: refresh default tag filter when mortal mode is toggled in `gui/control-panel` so changes to which tools autocomplete take effect immediately
 - `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
+- `lever`: enable use of ``reqscript`` to access lever pulling functions.
 
 ## Removed
 - `max-wave`: merged into `pop-control`
