@@ -64,6 +64,7 @@ Template for new versions:
 - `gui/launcher`: refresh default tag filter when mortal mode is toggled in `gui/control-panel` so changes to which tools autocomplete take effect immediately
 - `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
 - `lever`: enable use of ``reqscript`` to access lever pulling functions.
+- `exterminate`: add ``all`` target for convenient scorched earth tactics
 
 ## Removed
 - `max-wave`: merged into `pop-control`
