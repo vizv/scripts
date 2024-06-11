@@ -39,6 +39,11 @@ Usage
     (e.g. ``-m build``) and/or strings to search for in a path, filename, mode,
     or comment. The id numbers in the reported list may not be contiguous if
     there are hidden or filtered blueprints that are not being shown.
+``quickfort delete <filename> [<filename> ...]``
+    Delete the specified blueprint file(s). Only player-owned blueprints (stored
+    in the ``dfhack-config/blueprints`` directory) can be deleted. Blueprints
+    provided by mods or the standard DFHack library cannot be deleted by this
+    command.
 ``quickfort gui [<filename or search terms>]``
     Invokes the quickfort UI with the specified parameters, giving you an
     interactive blueprint preview to work with before you apply it to the map.

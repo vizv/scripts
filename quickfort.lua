@@ -83,6 +83,7 @@ local action_switch = {
     set=quickfort_set.do_set,
     reset=do_reset,
     list=quickfort_list.do_list,
+    delete=quickfort_list.do_delete,
     gui=do_gui,
     run=quickfort_command.do_command,
     orders=quickfort_command.do_command,

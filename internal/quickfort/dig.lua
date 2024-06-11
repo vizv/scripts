@@ -112,6 +112,7 @@ end
 
 local values_run = {
     dig_default=df.tile_dig_designation.Default,
+    dig_chop=dfhack.designations.markPlant,
     dig_channel=df.tile_dig_designation.Channel,
     dig_upstair=df.tile_dig_designation.UpStair,
     dig_downstair=df.tile_dig_designation.DownStair,
@@ -140,6 +141,7 @@ local values_run = {
 -- if there is demand, though.
 local values_undo = {
     dig_default=df.tile_dig_designation.No,
+    dig_chop=dfhack.designations.unmarkPlant,
     dig_channel=df.tile_dig_designation.No,
     dig_upstair=df.tile_dig_designation.No,
     dig_downstair=df.tile_dig_designation.No,
@@ -181,7 +183,10 @@ end
 local function do_chop(digctx)
     if digctx.flags.hidden then return nil end
     if is_tree(digctx.tileattrs) then
-        return function() digctx.flags.dig = values.dig_default end
+        return function()
+            local plant = dfhack.maps.getPlantAtTile(digctx.pos)
+            if plant then values.dig_chop(plant) end
+        end
     end
     return function() end -- noop, but not an error
 end
@@ -265,8 +270,9 @@ end
 local function do_remove_ramps(digctx)
     if digctx.on_map_edge or digctx.flags.hidden then return nil end
     if is_construction(digctx.tileattrs) or
-            not is_removable_shape(digctx.tileattrs) then
-        return nil;
+        not is_removable_shape(digctx.tileattrs)
+    then
+        return function() end -- noop, but not an error
     end
     return function() digctx.flags.dig = values.dig_default end
 end
@@ -699,7 +705,7 @@ end
 local function ensure_engravings_cache(ctx)
     if ctx.engravings_cache then return end
     local engravings_cache = {}
-    for _,engraving in ipairs(df.global.world.engravings) do
+    for _,engraving in ipairs(df.global.world.event.engravings) do
         local pos = engraving.pos
         local grid = ensure_key(engravings_cache, pos.z)
         local row = ensure_key(grid, pos.y)

@@ -9,13 +9,6 @@ saved_hostile = saved_hostile or (saved_hostile == nil and true)
 
 local indicator = df.global.game.main_interface.recenter_indicator_m
 
-local function get_dims(pos1, pos2)
-    local width, height, depth = math.abs(pos1.x - pos2.x) + 1,
-            math.abs(pos1.y - pos2.y) + 1,
-            math.abs(pos1.z - pos2.z) + 1
-    return width, height, depth
-end
-
 local function is_good_unit(include, unit)
     if not unit then return false end
     if dfhack.units.isDead(unit) or
@@ -39,7 +32,7 @@ end
 Teleport = defclass(Teleport, widgets.Window)
 Teleport.ATTRS {
     frame_title='Teleport',
-    frame={w=45, h=28, r=2, t=18},
+    frame={w=45, h=26, r=2, t=18},
     resizable=true,
     resize_min={h=20},
     autoarrange_subviews=true,
@@ -64,19 +57,6 @@ function Teleport:init()
         widgets.WrappedLabel{
             frame={l=0},
             text_to_wrap=self:callback('get_help_text'),
-        },
-        widgets.Panel{
-            frame={h=2},
-            subviews={
-                widgets.Label{
-                    frame={l=0, t=0},
-                    text={
-                        'Selected area: ',
-                        {text=self:callback('get_selection_area_text')}
-                    },
-                },
-            },
-            visible=function() return self.mark end,
         },
         widgets.HotkeyLabel{
             frame={l=0},
@@ -275,13 +255,6 @@ function Teleport:get_help_text()
     return help_text
 end
 
-function Teleport:get_selection_area_text()
-    local mark = self.mark
-    if not mark then return '' end
-    local cursor = dfhack.gui.getMousePos() or {x=mark.x, y=mark.y, z=df.global.window_z}
-    return ('%dx%dx%d'):format(get_dims(mark, cursor))
-end
-
 function Teleport:get_bounds(cursor, mark)
     cursor = cursor or self.mark
     mark = mark or self.mark or cursor
@@ -380,7 +353,7 @@ end
 function Teleport:do_teleport(pos)
     pos = pos or dfhack.gui.getMousePos()
     if not pos then return end
-    print(('teleporting %d units'):format(#self.selected_units.list))
+    print(('teleporting %d unit(s)'):format(#self.selected_units.list))
     for _,unit in ipairs(self.selected_units.list) do
         dfhack.units.teleport(unit, pos)
     end
@@ -402,7 +375,13 @@ TeleportScreen.ATTRS {
 }
 
 function TeleportScreen:init()
-    self:addviews{Teleport{}}
+    local window = Teleport{}
+    self:addviews{
+        window,
+        widgets.DimensionsTooltip{
+            get_anchor_pos_fn=function() return window.mark end,
+        },
+    }
 end
 
 function TeleportScreen:onDismiss()

@@ -160,7 +160,7 @@ local EffectFlagDescription = {
         return ("REMOVES: \n%s"):format(table.concat(tags, "  \n"))
     end,
     [df.creature_interaction_effect_type.DISPLAY_TILE] = function(effect)
-        return ("TILE: %s %s"):format(effect.color, effect.tile)
+        return ("TILE: %s (%s, %s, %s)"):format(effect.tile, effect.sym_color[0], effect.sym_color[1], effect.sym_color[2])
     end,
     [df.creature_interaction_effect_type.FLASH_TILE] = function(effect)
         return ("FLASH TILE: %s %s"):format(effect.sym_color[1], effect.sym_color[0])

@@ -22,7 +22,7 @@ MoveGoods.ATTRS {
     depot=DEFAULT_NIL,
 }
 
-local STATUS_COL_WIDTH = 7
+local DIST_COL_WIDTH = 7
 local VALUE_COL_WIDTH = 9
 local QTY_COL_WIDTH = 5
 
@@ -65,20 +65,36 @@ local function sort_by_value_asc(a, b)
     return a.data[value_field] < b.data[value_field]
 end
 
-local function sort_by_status_desc(a, b)
+local function sort_by_dist_desc(a, b)
     local a_unselected = a.data.selected == 0 or (a.item_id and not a.data.items[a.item_id].pending)
     local b_unselected = b.data.selected == 0 or (b.item_id and not b.data.items[b.item_id].pending)
     if a_unselected == b_unselected then
-        return sort_by_value_desc(a, b)
+        local a_at_depot = a.data.num_at_depot == a.data.quantity
+        local b_at_depot = b.data.num_at_depot == b.data.quantity
+        if a_at_depot ~= b_at_depot then
+            return a_at_depot
+        end
+        if a.data.dist == b.data.dist then
+            return sort_by_value_desc(a, b)
+        end
+        return a.data.dist < b.data.dist
     end
     return not a_unselected
 end
 
-local function sort_by_status_asc(a, b)
+local function sort_by_dist_asc(a, b)
     local a_unselected = a.data.selected == 0 or (a.item_id and not a.data.items[a.item_id].pending)
     local b_unselected = b.data.selected == 0 or (b.item_id and not b.data.items[b.item_id].pending)
     if a_unselected == b_unselected then
-        return sort_by_value_desc(a, b)
+        local a_at_depot = a.data.num_at_depot == a.data.quantity
+        local b_at_depot = b.data.num_at_depot == b.data.quantity
+        if a_at_depot ~= b_at_depot then
+            return b_at_depot
+        end
+        if a.data.dist == b.data.dist then
+            return sort_by_value_desc(a, b)
+        end
+        return a.data.dist > b.data.dist
     end
     return not b_unselected
 end
@@ -143,8 +159,8 @@ function MoveGoods:init()
             label='Sort by:',
             key='CUSTOM_SHIFT_S',
             options={
-                {label='status'..common.CH_DN, value=sort_by_status_desc},
-                {label='status'..common.CH_UP, value=sort_by_status_asc},
+                {label='dist'..common.CH_DN, value=sort_by_dist_desc},
+                {label='dist'..common.CH_UP, value=sort_by_dist_asc},
                 {label='value'..common.CH_DN, value=sort_by_value_desc},
                 {label='value'..common.CH_UP, value=sort_by_value_asc},
                 {label='qty'..common.CH_DN, value=sort_by_quantity_desc},
@@ -152,7 +168,7 @@ function MoveGoods:init()
                 {label='name'..common.CH_DN, value=sort_by_name_desc},
                 {label='name'..common.CH_UP, value=sort_by_name_asc},
             },
-            initial_option=sort_by_status_desc,
+            initial_option=sort_by_dist_desc,
             on_change=self:callback('refresh_list', 'sort'),
         },
         widgets.EditField{
@@ -185,20 +201,20 @@ function MoveGoods:init()
             frame={t=17, l=0, r=0, b=6},
             subviews={
                 widgets.CycleHotkeyLabel{
-                    view_id='sort_status',
-                    frame={t=0, l=STATUS_COL_WIDTH+1-7, w=7},
+                    view_id='sort_dist',
+                    frame={t=0, l=DIST_COL_WIDTH+1-7, w=7},
                     options={
-                        {label='status', value=sort_noop},
-                        {label='status'..common.CH_DN, value=sort_by_status_desc},
-                        {label='status'..common.CH_UP, value=sort_by_status_asc},
+                        {label='dist', value=sort_noop},
+                        {label='dist'..common.CH_DN, value=sort_by_dist_desc},
+                        {label='dist'..common.CH_UP, value=sort_by_dist_asc},
                     },
-                    initial_option=sort_by_status_desc,
+                    initial_option=sort_by_dist_desc,
                     option_gap=0,
-                    on_change=self:callback('refresh_list', 'sort_status'),
+                    on_change=self:callback('refresh_list', 'sort_dist'),
                 },
                 widgets.CycleHotkeyLabel{
                     view_id='sort_value',
-                    frame={t=0, l=STATUS_COL_WIDTH+2+VALUE_COL_WIDTH+1-6, w=6},
+                    frame={t=0, l=DIST_COL_WIDTH+2+VALUE_COL_WIDTH+1-6, w=6},
                     options={
                         {label='value', value=sort_noop},
                         {label='value'..common.CH_DN, value=sort_by_value_desc},
@@ -209,7 +225,7 @@ function MoveGoods:init()
                 },
                 widgets.CycleHotkeyLabel{
                     view_id='sort_quantity',
-                    frame={t=0, l=STATUS_COL_WIDTH+2+VALUE_COL_WIDTH+2+QTY_COL_WIDTH+1-4, w=4},
+                    frame={t=0, l=DIST_COL_WIDTH+2+VALUE_COL_WIDTH+2+QTY_COL_WIDTH+1-4, w=4},
                     options={
                         {label='qty', value=sort_noop},
                         {label='qty'..common.CH_DN, value=sort_by_quantity_desc},
@@ -220,7 +236,7 @@ function MoveGoods:init()
                 },
                 widgets.CycleHotkeyLabel{
                     view_id='sort_name',
-                    frame={t=0, l=STATUS_COL_WIDTH+2+VALUE_COL_WIDTH+2+QTY_COL_WIDTH+2, w=5},
+                    frame={t=0, l=DIST_COL_WIDTH+2+VALUE_COL_WIDTH+2+QTY_COL_WIDTH+2, w=5},
                     options={
                         {label='name', value=sort_noop},
                         {label='name'..common.CH_DN, value=sort_by_name_desc},
@@ -300,7 +316,7 @@ function MoveGoods:refresh_list(sort_widget, sort_fn)
         self.subviews[sort_widget]:cycle()
         return
     end
-    for _,widget_name in ipairs{'sort', 'sort_status', 'sort_value', 'sort_quantity', 'sort_name'} do
+    for _,widget_name in ipairs{'sort', 'sort_dist', 'sort_value', 'sort_quantity', 'sort_name'} do
         self.subviews[widget_name]:setOption(sort_fn)
     end
     local list = self.subviews.list
@@ -335,7 +351,7 @@ local function is_tradeable_item(item, depot)
     if item.flags.in_inventory then
         local gref = dfhack.items.getGeneralRef(item, df.general_ref_type.CONTAINED_IN_ITEM)
         if not gref then return false end
-        if not is_container(df.item.find(gref.item_id)) or item:isLiquidPowder() then
+        if not is_container(gref:getItem()) or item:isLiquidPowder() then
             return false
         end
     end
@@ -365,9 +381,9 @@ local function get_entry_icon(data, item_id)
     return common.SOME_PEN
 end
 
-local function make_choice_text(at_depot, value, quantity, desc)
+local function make_choice_text(at_depot, dist, value, quantity, desc)
     return {
-        {width=STATUS_COL_WIDTH-2, text=at_depot and 'depot' or ''},
+        {width=DIST_COL_WIDTH-2, rjustify=true, text=at_depot and 'depot' or tostring(dist)},
         {gap=2, width=VALUE_COL_WIDTH, rjustify=true, text=common.obfuscate_value(value)},
         {gap=2, width=QTY_COL_WIDTH, rjustify=true, text=quantity},
         {gap=2, text=desc},
@@ -415,7 +431,7 @@ local function make_container_search_key(item, desc)
     local words = {}
     common.add_words(words, desc)
     for _, contained_item in ipairs(dfhack.items.getContainedItems(item)) do
-        common.add_words(words, common.get_item_description(contained_item))
+        common.add_words(words, dfhack.items.getReadableDescription(contained_item))
     end
     return table.concat(words, ' ')
 end
@@ -434,6 +450,10 @@ local function contains_non_liquid_powder(container)
     return false
 end
 
+local function get_distance(bld, pos)
+    return math.max(math.abs(bld.centerx - pos.x), math.abs(bld.centery - pos.y)) + math.abs(bld.z - pos.z)
+end
+
 function MoveGoods:cache_choices()
     local group_items = self.subviews.group_items:getOptionValue()
     local inside_containers = self.subviews.inside_containers:getOptionValue()
@@ -442,27 +462,29 @@ function MoveGoods:cache_choices()
 
     local pending = self.pending_item_ids
     local groups = {}
-    for _, item in ipairs(df.global.world.items.all) do
-        local item_id = item.id
+    for _, item in ipairs(df.global.world.items.other.IN_PLAY) do
         if not item or not is_tradeable_item(item, self.depot) then goto continue end
         if inside_containers and is_container(item) and contains_non_liquid_powder(item) then
             goto continue
         elseif not inside_containers and item.flags.in_inventory then
             goto continue
         end
+        local item_id = item.id
         local value = common.get_perceived_value(item)
         if value <= 0 then goto continue end
+        local dist = get_distance(self.depot, xyz2pos(dfhack.items.getPosition(item)))
         local is_pending = not not pending[item_id] or item.flags.in_building
         local is_forbidden = item.flags.forbid
         local is_banned, is_risky = common.scan_banned(item, self.risky_items)
         local is_requested = dfhack.items.isRequestedTradeGood(item)
         local wear_level = item:getWear()
-        local desc = common.get_item_description(item)
+        local desc = dfhack.items.getReadableDescription(item)
         local key = ('%s/%d'):format(desc, value)
         if groups[key] then
             local group = groups[key]
             group.data.items[item_id] = {item=item, pending=is_pending, banned=is_banned, requested=is_requested}
             group.data.quantity = group.data.quantity + 1
+            group.data.dist = math.min(group.data.dist or math.huge, dist)
             group.data.selected = group.data.selected + (is_pending and 1 or 0)
             group.data.num_at_depot = group.data.num_at_depot + (item.flags.in_building and 1 or 0)
             group.data.has_forbidden = group.data.has_forbidden or is_forbidden
@@ -480,6 +502,7 @@ function MoveGoods:cache_choices()
                 item_subtype=item:getSubtype(),
                 quantity=1,
                 quality=item.flags.artifact and 6 or item:getQuality(),
+                dist=dist,
                 wear=wear_level,
                 selected=is_pending and 1 or 0,
                 num_at_depot=item.flags.in_building and 1 or 0,
@@ -512,12 +535,13 @@ function MoveGoods:cache_choices()
         for item_id, item_data in pairs(data.items) do
             local nogroup_choice = copyall(group)
             nogroup_choice.icon = curry(get_entry_icon, data, item_id)
-            nogroup_choice.text = make_choice_text(item_data.item.flags.in_building, data.per_item_value, 1, data.desc)
+            nogroup_choice.text = make_choice_text(item_data.item.flags.in_building,
+                data.dist, data.per_item_value, 1, data.desc)
             nogroup_choice.item_id = item_id
             table.insert(nogroup_choices, nogroup_choice)
         end
         data.total_value = data.per_item_value * data.quantity
-        group.text = make_choice_text(data.num_at_depot == data.quantity, data.total_value, data.quantity, data.desc)
+        group.text = make_choice_text(data.num_at_depot == data.quantity, data.dist, data.total_value, data.quantity, data.desc)
         table.insert(group_choices, group)
         self.value_pending = self.value_pending + (data.per_item_value * data.selected)
     end
@@ -715,16 +739,6 @@ end
 -- MoveGoodsOverlay
 --
 
-MoveGoodsOverlay = defclass(MoveGoodsOverlay, overlay.OverlayWidget)
-MoveGoodsOverlay.ATTRS{
-    desc='Adds link to trade depot building to launch the DFHack trade goods UI.',
-    default_pos={x=-64, y=10},
-    default_enabled=true,
-    viewscreens='dwarfmode/ViewSheets/BUILDING/TradeDepot',
-    frame={w=33, h=1},
-    frame_background=gui.CLEAR_PEN,
-}
-
 local function has_trade_depot_and_caravan()
     local bld = dfhack.gui.getSelectedBuilding(true)
     if not bld or bld:getBuildStage() < bld:getMaxBuildStage() then
@@ -749,6 +763,17 @@ local function has_trade_depot_and_caravan()
     return false
 end
 
+MoveGoodsOverlay = defclass(MoveGoodsOverlay, overlay.OverlayWidget)
+MoveGoodsOverlay.ATTRS{
+    desc='Adds link to trade depot building to launch the DFHack trade goods UI.',
+    default_pos={x=-64, y=10},
+    default_enabled=true,
+    viewscreens='dwarfmode/ViewSheets/BUILDING/TradeDepot',
+    frame={w=33, h=1},
+    frame_background=gui.CLEAR_PEN,
+    visible=has_trade_depot_and_caravan,
+}
+
 function MoveGoodsOverlay:init()
     self:addviews{
         widgets.TextButton{
@@ -756,9 +781,26 @@ function MoveGoodsOverlay:init()
             label='DFHack move trade goods',
             key='CUSTOM_CTRL_T',
             on_activate=function() MoveGoodsModal{}:show() end,
-            enabled=has_trade_depot_and_caravan,
         },
     }
+end
+
+-- -------------------
+-- MoveGoodsHiderOverlay
+--
+
+MoveGoodsHiderOverlay = defclass(MoveGoodsHiderOverlay, overlay.OverlayWidget)
+MoveGoodsHiderOverlay.ATTRS{
+    desc='Hides the vanilla trade goods selection button.',
+    default_pos={x=-70, y=12},
+    viewscreens='dwarfmode/ViewSheets/BUILDING/TradeDepot',
+    frame={w=27, h=3},
+    frame_background=gui.CLEAR_PEN,
+    visible=has_trade_depot_and_caravan,
+}
+
+function MoveGoodsHiderOverlay:onInput(keys)
+    return keys._MOUSE_L and self:getMouseFramePos()
 end
 
 -- -------------------

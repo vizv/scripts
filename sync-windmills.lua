@@ -3,7 +3,7 @@ local argparse = require('argparse')
 local function process_windmills(rotate_fn, timer_fn)
     for _, bld in ipairs(df.global.world.buildings.other.WINDMILL) do
         if bld.is_working ~= 0 then
-            bld.visual_rotated = rotate_fn()
+            bld.rotation = rotate_fn()
             bld.rotate_timer = timer_fn()
         end
     end
@@ -24,8 +24,8 @@ end
 
 process_windmills(
     (opts.randomize or opts.timing) and
-        function() return math.random(1, 2) == 1 end or
-        function() return false end,
+        function() return math.random(0, 1) end or
+        function() return 0 end,
     opts.randomize and not opts.timing and
         function() return math.random(0, 74) end or
         function() return 0 end)

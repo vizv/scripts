@@ -3,7 +3,7 @@ gui/reveal
 
 .. dfhack-tool::
     :summary: Reveal map tiles.
-    :tags: fort armok map
+    :tags: adventure fort armok map
 
 This script provides a means for you to safely glimpse at unexplored areas of
 the map, such as aquifers or the caverns, so you can plan your fort with full

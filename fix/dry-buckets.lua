@@ -2,7 +2,7 @@ local emptied = 0
 local in_building = 0
 local water_type = dfhack.matinfo.find('WATER').type
 
-for _,item in ipairs(df.global.world.items.all) do
+for _,item in ipairs(df.global.world.items.other.IN_PLAY) do
     local container = dfhack.items.getContainer(item)
     if container
         and container:getType() == df.item_type.BUCKET

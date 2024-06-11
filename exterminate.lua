@@ -213,6 +213,28 @@ if race_name:lower() == 'undead' then
             count = count + 1
         end
     end
+elseif positionals[1]:split(':')[1] == "all" then
+    local selected_caste = positionals[1]:split(':')[2]
+
+    for _, unit in ipairs(df.global.world.units.active) do
+
+        if not checkUnit(unit) then
+            goto skipunit
+        end
+        if options.only_visible and not dfhack.units.isVisible(unit) then
+            goto skipunit
+        end
+        if not options.include_friendly and isUnitFriendly(unit) then
+            goto skipunit
+        end
+        if selected_caste and selected_caste ~= df.creature_raw.find(unit.race).caste[unit.caste].caste_id then
+            goto skipunit
+        end
+
+        killUnit(unit, options.method)
+        count = count + 1
+        :: skipunit ::
+    end
 else
     local selected_race, selected_caste = race_name, nil
 

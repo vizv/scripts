@@ -1,6 +1,3 @@
--- Embark underground.
--- author: Atomic Chicken
-
 --@ module = true
 
 local utils = require 'utils'
@@ -50,8 +47,8 @@ function getFeatureBlocks(featureID)
 end
 
 function isValidTiletype(tiletype)
-  local tiletype = df.tiletype[tiletype]
-  local tiletypeAttrs = df.tiletype.attrs[tiletype]
+  local tt = df.tiletype[tiletype]
+  local tiletypeAttrs = df.tiletype.attrs[tt]
   local material = tiletypeAttrs.material
   local forbiddenMaterials = {
     df.tiletype_material.TREE, -- so as not to embark stranded on top of a tree
@@ -95,7 +92,7 @@ function blockGlowingBarrierAnnouncements(recenter)
   dfhack.timeout(1,'ticks', function() -- barrier disappears after 1 tick
     announcementFlags:assign(oldFlags) -- restore announcement settings
     if recenter then
---    Remove glowing barrier notifications:
+      -- Remove glowing barrier notifications:
       local status = df.global.world.status
       local announcements = status.announcements
       for i = #announcements-1, 0, -1 do
@@ -125,7 +122,7 @@ function reveal(pos)
   local tiletype = block.tiletype[x%16][y%16]
   if tiletype ~= df.tiletype.GlowingBarrier then -- to avoid multiple instances
     block.tiletype[x%16][y%16] = df.tiletype.GlowingBarrier
-    local barriers = df.global.world.glowing_barriers
+    local barriers = df.global.world.event.glowing_barriers
     local barrier = df.glowing_barrier:new()
     barrier.buildings:insert('#',-1) -- being unbound to a building makes the barrier disappear immediately
     barrier.pos:assign(pos)
@@ -258,7 +255,7 @@ end
 
 function disableSpireDemons()
 --  marks underworld spires on the map as having been breached already, preventing HFS events
-  for _, spire in ipairs(df.global.world.deep_vein_hollows) do
+  for _, spire in ipairs(df.global.world.event.deep_vein_hollows) do
     spire.triggered = true
   end
 end

@@ -159,11 +159,18 @@ local function is_tile_generic_and_wall_adjacent(pos)
             is_shape_at(xyz2pos(pos.x, pos.y-1, pos.z), allowed_door_shapes)
 end
 
+local function is_floor(pos)
+    local tt = dfhack.maps.getTileType(pos)
+    if not tt then return false end
+    local shape = df.tiletype.attrs[tt].shape
+    return df.tiletype_shape.attrs[shape].basic_shape == df.tiletype_shape_basic.Floor
+end
+
 local function is_tile_floor_adjacent(pos)
-    return is_valid_tile_generic(xyz2pos(pos.x+1, pos.y, pos.z)) or
-            is_valid_tile_generic(xyz2pos(pos.x-1, pos.y, pos.z)) or
-            is_valid_tile_generic(xyz2pos(pos.x, pos.y+1, pos.z)) or
-            is_valid_tile_generic(xyz2pos(pos.x, pos.y-1, pos.z))
+    return is_floor(xyz2pos(pos.x+1, pos.y, pos.z)) or
+        is_floor(xyz2pos(pos.x-1, pos.y, pos.z)) or
+        is_floor(xyz2pos(pos.x, pos.y+1, pos.z)) or
+        is_floor(xyz2pos(pos.x, pos.y-1, pos.z))
 end
 
 -- for wells
@@ -339,7 +346,7 @@ local function do_trackstop_props(db_entry, props)
         (props.friction == '50000' or props.friction == '10000' or props.friction == '500' or
          props.friction == '50' or props.friction == '10')
     then
-        db_entry.props.friction = tonumber(props.friction)
+        ensure_key(db_entry.props, 'track_stop_info').friction = tonumber(props.friction)
         props.friction = nil
     end
     if props.take_from then
@@ -385,10 +392,17 @@ local function add_stop(name, pos, adjustments)
         id=stop_id,
         pos=pos,
     })
-    stockpiles.import_route('library/everything', route.id, stop_id, 'set')
+    local opts = {
+        route_id=route.id,
+        stop_id=stop_id,
+        mode='set',
+    }
+    stockpiles.import_settings('library/everything', opts)
     for _, adj in ipairs(adjustments) do
         log('applying stockpile preset: %s %s', adj.mode, adj.name)
-        stockpiles.import_route(adj.name, route.id, stop_id, adj.mode, adj.filters)
+        opts.mode = adj.mode
+        opts.filters = adj.filters
+        stockpiles.import_settings(adj.name, opts)
     end
     return route.stops[#route.stops-1]
 end
@@ -618,13 +632,13 @@ local function make_transform_trackstop_fn(vector, friction)
     return make_transform_building_fn(vector, trackstop_revmap, post_fn)
 end
 local function make_trackstop_entry(direction, friction)
-    local label, fields, transform = 'No Dump', {friction=friction}, nil
+    local label, fields, transform = 'No Dump', {track_stop_info={friction=friction}}, nil
     if direction then
-        fields.use_dump = 1
+        ensure_key(fields.track_stop_info, 'track_flags').use_dump = true
         for k,v in pairs(direction) do
             local trackstop_data_entry = trackstop_data[k][v]
             label = trackstop_data_entry.label
-            fields[k] = v
+            fields.track_stop_info[k] = v
             transform = make_transform_trackstop_fn(
                     trackstop_data_entry.vector, friction)
         end
@@ -788,8 +802,7 @@ local building_db_raw = {
     Mrsssqq=make_roller_entry(df.screw_pump_direction.FromWest, 30000),
     Mrsssqqq=make_roller_entry(df.screw_pump_direction.FromWest, 20000),
     Mrsssqqqq=make_roller_entry(df.screw_pump_direction.FromWest, 10000),
-    -- Instruments are not yet supported by DFHack
-    -- I={label='Instrument', type=df.building_type.Instrument},
+    I={label='Instrument', type=df.building_type.Instrument},
     S={label='Support', type=df.building_type.Support,
        is_valid_tile_fn=is_valid_tile_has_space},
     m={label='Animal Trap', type=df.building_type.AnimalTrap},

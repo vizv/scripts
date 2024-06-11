@@ -183,8 +183,8 @@ function makePartList(caste)
 
   for index, modifier in ipairs(caste.bp_appearance.modifiers) do
     local name
-    if modifier.noun ~= "" then
-      name = modifier.noun
+    if modifier.modifier.noun ~= "" then
+      name = modifier.modifier.noun
     else
       name = caste.body_info.body_parts[modifier.body_parts[0]].name_singular[0].value -- Use the name of the first body part modified
     end

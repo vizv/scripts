@@ -38,8 +38,8 @@ local function save_difficulty(df_difficulty)
     -- replace top-level button states to say "Custom"
     -- one of the vanilla presets might actually apply, but we don't know that
     -- unless we do some diffing
-    difficulty.difficulty_enemies = 3
-    difficulty.difficulty_economy = 2
+    difficulty.difficulty_enemies = df.setting_difficulty_enemies_type.Custom
+    difficulty.difficulty_economy = df.setting_difficulty_economy_type.Custom
     config.data.difficulty = difficulty
     config:write()
 end
@@ -434,7 +434,7 @@ local function save_work_details()
         local detail = {
             name=wd.name,
             icon=wd.icon,
-            work_detail_flags=clone_wd_flags(wd.work_detail_flags),
+            flags=clone_wd_flags(wd.flags),
             allowed_labors=utils.clone(wd.allowed_labors),
         }
         details[idx+1] = detail
@@ -455,7 +455,7 @@ local function load_work_details()
             new=df.work_detail,
             name=wd.name,
             icon=wd.icon,
-            work_detail_flags=wd.work_detail_flags,
+            flags=wd.flags or wd.work_detail_flags, -- compat for old name
         }
         li.work_details[idx-1] = detail
         local al = li.work_details[idx-1].allowed_labors
