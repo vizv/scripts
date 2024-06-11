@@ -39,6 +39,7 @@ Template for new versions:
 - `gui/gm-unit`: correctly display skill levels above Legendary+5
 
 ## Misc Improvements
+- `gui/launcher`: "space space to toggle pause" behavior is skipped if the game was paused when `gui/launcher` came up to prevent accidental unpausing
 - `gui/unit-info-viewer`: now displays a unit's weight, relative to either dwarves, elephants or cats
 - `gui/unit-info-viewer`: shows a unit's relative size to its race's average.
 
