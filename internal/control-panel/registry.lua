@@ -164,6 +164,15 @@ PREFERENCES_BY_IDX = {
         set_fn=function(val) gui.DEFAULT_INITIAL_PAUSE = val end,
     },
     {
+        name='NUMBER_FORMAT',
+        label='Large number formatting',
+        desc='Format numbers (e.g. with commas) in DFHack tool UIs. 0: No formatting, 1: English, 2: Use system locale, 3: Scientific.',
+        default=0,
+        max=3,
+        get_fn=dfhack.internal.getPreferredNumberFormat,
+        set_fn=dfhack.internal.setPreferredNumberFormat,
+    },
+    {
         name='INTERCEPT_HANDLED_HOTKEYS',
         label='Intercept handled hotkeys',
         desc='Prevent key events handled by DFHack windows from also affecting the vanilla widgets.',
