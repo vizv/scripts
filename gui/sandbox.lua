@@ -357,7 +357,8 @@ local function init_arena()
     arena.race:resize(0)
     arena.caste:resize(0)
     arena.creature_cnt:resize(0)
-    arena.type = -1
+    arena.last_race = -1
+    arena.last_caste = -1
     arena_unit.race = 0
     arena_unit.caste = 0
     arena_unit.races_filtered:resize(0)
@@ -430,7 +431,7 @@ local function init_arena()
                     item_subtype=itemdef.subtype,
                     mattype=mattype,
                     matindex=matindex,
-                    unk_c=1}
+                    on=1}
                 if #list > list_size then
                     utils.assign(list[list_size], element)
                 else
