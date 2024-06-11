@@ -17,6 +17,7 @@ Usage
     exterminate
     exterminate this [<options>]
     exterminate undead [<options>]
+    exterminate all [<options>]
     exterminate <race>[:<caste>] [<options>]
 
 Race and caste names are case insensitive.
