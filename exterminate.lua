@@ -182,14 +182,9 @@ if positionals[1]:lower() == 'undead' then
         end
     end
 elseif positionals[1]:split(':')[1] == "all" then
-    local selected_caste = nil
+    local selected_caste = positionals[1]:split(':')[2]
   
-    if string.find(positionals[1], ':') then
-        local tokens = positionals[1]:split(':')
-        selected_caste = tokens[2]
-    end
-  
-    for _, unit in pairs(df.global.world.units.active) do
+    for _, unit in ipairs(df.global.world.units.active) do
   
         if not checkUnit(unit) then
             goto skipunit
