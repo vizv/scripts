@@ -51,6 +51,7 @@ Template for new versions:
 - `gui/sandbox`: created undead now have a purple shade (after save and reload)
 
 ## Misc Improvements
+- `gui/launcher`: "space space to toggle pause" behavior is skipped if the game was paused when `gui/launcher` came up to prevent accidental unpausing
 - `gui/unit-info-viewer`: now displays a unit's weight, relative to either dwarves, elephants or cats
 - `gui/unit-info-viewer`: shows a unit's relative size to its race's average.
 - `caravan`: optional overlay to hide vanilla bring trade goods to depot button (if you prefer to always use the DFHack version and don't want to accidentally click on the vanilla button). enable ``caravan.movegoods_hider`` in `gui/control-panel` UI Overlays tab to use.
