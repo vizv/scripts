@@ -690,7 +690,7 @@ function IntegerInputDialog:init()
         widgets.EditField{
             view_id='input_edit',
             frame={t=4, l=0},
-            on_char=function(ch) return ch:match('%d') end,
+            on_char=function(ch) return ch:match('[%-%d]') end,
         },
         widgets.HotkeyLabel{
             frame={b=0, l=0},
