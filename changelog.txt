@@ -27,23 +27,48 @@ Template for new versions:
 # Future
 
 ## New Tools
+- `adv-rumors`: (reinstated) add additional searchable keywords for conversation topics
+- `pop-control`: (reinstated) limit the maximum size of migrant waves
+- `bodyswap`: (reinstated) take control of another unit in adventure mode
 - `gui/sitemap`: list and zoom to nearby people, locations, and artifacts
 - `devel/tree-info`: print a visualization of tree_info data
+- `gui/tiletypes`: interface for modifying map tiles and tile properties
+- `fix/population-cap`: fixes the situation where you continue to get migrant waves even when you are above your configured population cap
+- `fix/occupancy`: fixes issues where you can't build somewhere because the game tells you an item/unit/building is in the way but there's nothing there
 
 ## New Features
 - `buildingplan`: dimension tooltip is now displayed for constructions and buildings that are designated over an area
+- `gui/notify`: new notification type: injured citizens; click to zoom to injured units; also displays warning if your hospital is not functional (or if you have no hospital)
+- `prioritize`: new info panel on under-construction buildings showing if the construction job has been taken and by whom. click to zoom to builder; toggle high priority status for job if it's not yet taken and you need it to be built ASAP
 
 ## Fixes
 - `item`: don't match uncollected spider webs when you search for "silk"
 - `assign-profile`: fix handling of unit option for setting target unit id
 - `gui/gm-unit`: correctly display skill levels above Legendary+5
+- `quickfort`: fix merge logic for disjoint stockpiles that are given the same label
+- `makeown`: set target animals to tame and domesticated
+- `gui/sandbox`: created citizens can now be useful military squad members
+- `gui/sandbox`: created undead now have a purple shade (after save and reload)
 
 ## Misc Improvements
 - `gui/launcher`: "space space to toggle pause" behavior is skipped if the game was paused when `gui/launcher` came up to prevent accidental unpausing
 - `gui/unit-info-viewer`: now displays a unit's weight, relative to either dwarves, elephants or cats
 - `gui/unit-info-viewer`: shows a unit's relative size to its race's average.
+- `caravan`: optional overlay to hide vanilla bring trade goods to depot button (if you prefer to always use the DFHack version and don't want to accidentally click on the vanilla button). enable ``caravan.movegoods_hider`` in `gui/control-panel` UI Overlays tab to use.
+- `caravan`: bring goods to depot screen now shows (approximate) distance from item to depot
+- `gui/design`: significant redesign of UI for much improved usability
+- `gui/design`: circles are more circular
+- `gui/unit-info-viewer`: add precise unit size in cc (cubic centimeters) for comparison against the wiki values
+- `gui/quickfort`: delete blueprints from the blueprint load dialog
+- `quickfort`: new ``delete`` command for deleting player-owned blueprints (library and mod-added blueprints cannot be deleted)
+- `gui/launcher`: refresh default tag filter when mortal mode is toggled in `gui/control-panel` so changes to which tools autocomplete take effect immediately
+- `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
+- `lever`: enable use of ``reqscript`` to access lever pulling functions.
 
 ## Removed
+- `max-wave`: merged into `pop-control`
+- `devel/find-offsets`, `devel/find-twbt`, `devel/prepare-save`: remove development scripts that are no longer useful
+- `fix/item-occupancy`, `fix/tile-occupancy`: merged into `fix/occupancy`
 
 # 50.13-r2
 

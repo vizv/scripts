@@ -344,7 +344,6 @@ ConfirmSpec{
         local _, sh = dfhack.screen.getWindowSize()
         local num_sections = (sh - 20) // 3
         local selected_section = mouse_offset.y // 3
-        print('num_sections, selected_section', num_sections, selected_section)
         -- if this isn't a button section, exit early
         if selected_section % 2 ~= 0 then return false end
         -- if this hotkey isn't set, then all actions are ok

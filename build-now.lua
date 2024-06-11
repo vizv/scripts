@@ -65,7 +65,7 @@ local function get_jobs(opts)
 
         -- job_items are not items, they're filters that describe the kinds of
         -- items that need to be attached.
-        for _,job_item in ipairs(job.job_items) do
+        for _,job_item in ipairs(job.job_items.elements) do
             -- we have to check for quantity != 0 instead of just the existence
             -- of the job_item since buildingplan leaves 0-quantity job_items in
             -- place to protect against persistence errors.

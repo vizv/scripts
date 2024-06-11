@@ -141,8 +141,8 @@ local function createCorpsePiece(creator, bodypart, partlayer, creatureID, caste
             item.corpse_flags.tooth = true
             item.material_amount.Tooth = 1
         elseif layerName == 'NERVE' then    -- check if nervous tissue
-            item.corpse_flags.skull1 = true -- apparently "skull1" is supposed to be named "rots/can_rot"
-            item.corpse_flags.separated_part = true
+            item.corpse_flags.rottable = true
+            item.corpse_flags.use_blood_color = true
             -- elseif layerName == "NAIL" then -- check if nail (NO SPECIAL FLAGS)
         elseif layerName == 'HORN' or layerName == 'HOOF' then -- check if nail
             item.corpse_flags.horn = true
@@ -153,7 +153,7 @@ local function createCorpsePiece(creator, bodypart, partlayer, creatureID, caste
         end
         -- checking for skull
         if not generic and not isCorpse and creatorBody.body_parts[bodypart].token == 'SKULL' then
-            item.corpse_flags.skull2 = true
+            item.corpse_flags.skull = true
         end
     end
     local matType
@@ -176,10 +176,10 @@ local function createCorpsePiece(creator, bodypart, partlayer, creatureID, caste
         end
         -- on a dwarf tissue index 3 (bone) is 22, but this is not always the case for all creatures, so we get the mat_type of index 3 instead
         -- here we also set the actual referenced creature material of the corpsepiece
-        item.bone1.mat_type = matType
-        item.bone1.mat_index = creatureID
-        item.bone2.mat_type = matType
-        item.bone2.mat_index = creatureID
+        item.largest_tissue.mat_type = matType
+        item.largest_tissue.mat_index = creatureID
+        item.largest_unrottable_tissue.mat_type = matType
+        item.largest_unrottable_tissue.mat_index = creatureID
         -- skin (and presumably other parts) use body part modifiers for size or amount
         for i = 0,200 do                          -- fuck it this works
             -- inserts
@@ -226,7 +226,7 @@ local function createCorpsePiece(creator, bodypart, partlayer, creatureID, caste
         if wholePart then
             for i in pairs(creatorBody.body_parts[bodypart].layers) do
                 item.body.components.layer_status[creatorBody.body_parts[bodypart].layers[i].layer_id].gone = false
-                item.corpse_flags.separated_part = true
+                item.corpse_flags.use_blood_color = true
                 item.corpse_flags.unbutchered = true
             end
         end

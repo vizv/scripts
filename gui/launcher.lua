@@ -32,7 +32,13 @@ user_freq = user_freq or json.open('dfhack-config/command_counts.json')
 -- track whether the user has enabled dev mode
 dev_mode = dev_mode or false
 
-local function get_default_tag_filter()
+-- track the last value of mortal mode
+prev_mortal_mode = prev_mortal_mode
+if prev_mortal_mode == nil then
+    prev_mortal_mode = dfhack.getMortalMode()
+end
+
+local function get_default_tag_filter_base(mortal_mode)
     local ret = {
         includes={},
         excludes={},
@@ -40,11 +46,15 @@ local function get_default_tag_filter()
     if not dev_mode then
         ret.excludes.dev = true
         ret.excludes.unavailable = true
-        if dfhack.getHideArmokTools() then
+        if mortal_mode then
             ret.excludes.armok = true
         end
     end
     return ret
+end
+
+local function get_default_tag_filter()
+    return get_default_tag_filter_base(dfhack.getMortalMode())
 end
 
 _tag_filter = _tag_filter or nil
@@ -61,7 +71,7 @@ local function toggle_dev_mode()
     tag_filter.excludes.unavailable = dev_mode or nil
     if not dev_mode then
         tag_filter.excludes.armok = nil
-    elseif dfhack.getHideArmokTools() then
+    elseif dfhack.getMortalMode() then
         tag_filter.excludes.armok = true
     end
     dev_mode = not dev_mode
@@ -77,11 +87,15 @@ local function matches(a, b)
     return true
 end
 
-local function is_default_filter()
+local function is_default_filter_base(mortal_mode)
     local tag_filter = get_tag_filter()
-    local default_filter = get_default_tag_filter()
+    local default_filter = get_default_tag_filter_base(mortal_mode)
     return matches(tag_filter.includes, default_filter.includes) and
         matches(tag_filter.excludes, default_filter.excludes)
+end
+
+local function is_default_filter()
+    return is_default_filter_base(dfhack.getMortalMode())
 end
 
 local function get_filter_text()
@@ -865,7 +879,7 @@ local function get_frame_r()
     return 0
 end
 
-function LauncherUI:init(args)
+function LauncherUI:init()
     self.firstword = ""
 
     local main_panel = MainPanel{
@@ -1003,7 +1017,7 @@ local function add_top_related_entries(entries, entry, n)
     local dev_ok = dev_mode or helpdb.get_entry_tags(entry).dev
     local tags = helpdb.get_entry_tags(entry)
     local affinities, buckets = {}, {}
-    local skip_armok = dfhack.getHideArmokTools()
+    local skip_armok = dfhack.getMortalMode()
     for tag in pairs(tags) do
         for _,peer in ipairs(helpdb.get_tag_data(tag)) do
             if not skip_armok or not helpdb.get_entry_tags(peer).armok then
@@ -1140,6 +1154,18 @@ function LauncherUI:run_command(reappear, command)
     if not reappear then
         self:dismiss()
     end
+end
+
+function LauncherUI:render(dc)
+    local mortal_mode = dfhack.getMortalMode()
+    if mortal_mode ~= prev_mortal_mode then
+        prev_mortal_mode = mortal_mode
+        if is_default_filter_base(not mortal_mode) then
+            _tag_filter = get_default_tag_filter_base(mortal_mode)
+            self.subviews.main:refresh_autocomplete()
+        end
+    end
+    LauncherUI.super.render(self, dc)
 end
 
 function LauncherUI:onDismiss()

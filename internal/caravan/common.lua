@@ -11,7 +11,7 @@ CH_EXCEPTIONAL = string.char(240)
 
 local to_pen = dfhack.pen.parse
 SOME_PEN = to_pen{ch=':', fg=COLOR_YELLOW}
-ALL_PEN = to_pen{ch='+', fg=COLOR_LIGHTGREEN}
+ALL_PEN = to_pen{ch=string.char(251), fg=COLOR_LIGHTGREEN}
 
 function add_words(words, str)
     for word in str:gmatch("[%w]+") do

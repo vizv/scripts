@@ -1,3 +1,4 @@
+local argparse = require('argparse')
 local workorder = reqscript('workorder')
 
 -- civilization ID of the player civilization
@@ -74,7 +75,7 @@ local function print_list()
     end
 end
 
-local function order_instrument(name, amount)
+local function order_instrument(name, amount, quiet)
     local instrument = nil
 
     for _, instr in ipairs(raws.itemdefs.instruments) do
@@ -129,21 +130,33 @@ local function order_instrument(name, amount)
 
     orders = workorder.preprocess_orders(orders)
     workorder.fillin_defaults(orders)
-    workorder.create_orders(orders)
+    workorder.create_orders(orders, quiet)
 
-    print("\nCreated " .. #orders .. " work orders")
+    if not quiet then
+        print("\nCreated " .. #orders .. " work orders")
+    end
 end
 
-local args = { ... }
+local help = false
+local quiet = false
+local positionals = argparse.processArgsGetopt({...}, {
+    {'h', 'help', handler=function() help = true end},
+    {'q', 'quiet', handler=function() quiet = true end},
+})
 
-if #args == 0 or args[1] == "list" then
+if help or positionals[1] == 'help' then
+    print(dfhack.script_help())
+    return
+end
+
+if #positionals == 0 or positionals[1] == "list" then
     print_list()
-elseif args[1] == "order" then
-    local instrument_name = args[2]
+elseif positionals[1] == "order" then
+    local instrument_name = positionals[2]
     if not instrument_name then
         qerror("Usage: instruments order <instrument_name> [<amount>]")
     end
 
-    local amount = args[3] or 1
-    order_instrument(instrument_name, amount)
+    local amount = positionals[3] or 1
+    order_instrument(instrument_name, amount, quiet)
 end

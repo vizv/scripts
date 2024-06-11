@@ -270,8 +270,9 @@ end
 local function do_remove_ramps(digctx)
     if digctx.on_map_edge or digctx.flags.hidden then return nil end
     if is_construction(digctx.tileattrs) or
-            not is_removable_shape(digctx.tileattrs) then
-        return nil;
+        not is_removable_shape(digctx.tileattrs)
+    then
+        return function() end -- noop, but not an error
     end
     return function() digctx.flags.dig = values.dig_default end
 end
@@ -704,7 +705,7 @@ end
 local function ensure_engravings_cache(ctx)
     if ctx.engravings_cache then return end
     local engravings_cache = {}
-    for _,engraving in ipairs(df.global.world.engravings) do
+    for _,engraving in ipairs(df.global.world.event.engravings) do
         local pos = engraving.pos
         local grid = ensure_key(engravings_cache, pos.z)
         local row = ensure_key(grid, pos.y)

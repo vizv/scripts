@@ -11,7 +11,7 @@ local buildings = df.global.world.buildings
 local caravans = df.global.plotinfo.caravans
 local units = df.global.world.units
 
-local function for_iter(vec, match_fn, action_fn, reverse)
+function for_iter(vec, match_fn, action_fn, reverse)
     local offset = type(vec) == 'table' and 1 or 0
     local idx1 = reverse and #vec-1+offset or offset
     local idx2 = reverse and offset or #vec-1+offset
@@ -147,7 +147,13 @@ local function for_wildlife(fn, reverse)
     end, fn, reverse)
 end
 
-local function count_units(for_fn, which)
+local function for_injured(fn, reverse)
+    for_iter(dfhack.units.getCitizens(true), function(unit)
+        return unit.health and unit.health.flags.needs_healthcare
+    end, fn, reverse)
+end
+
+function count_units(for_fn, which)
     local count = 0
     for_fn(function() count = count + 1 end)
     if count > 0 then
@@ -159,7 +165,43 @@ local function count_units(for_fn, which)
     end
 end
 
-local function summarize_units(for_fn, which)
+local function has_functional_hospital(site)
+    for _,loc in ipairs(site.buildings) do
+        if not df.abstract_building_hospitalst:is_instance(loc) or loc.flags.DOES_NOT_EXIST then
+            goto continue
+        end
+        local diag, bone, surg = false, false, false
+        for _,occ in ipairs(loc.occupations) do
+            if df.unit.find(occ.unit_id) then
+                if occ.type == df.occupation_type.DOCTOR or occ.type == df.occupation_type.DIAGNOSTICIAN then
+                    diag = true
+                end
+                if occ.type == df.occupation_type.DOCTOR or occ.type == df.occupation_type.BONE_DOCTOR then
+                    bone = true
+                end
+                if occ.type == df.occupation_type.DOCTOR or occ.type == df.occupation_type.SURGEON then
+                    surg = true
+                end
+            end
+        end
+        if diag and bone and surg then
+            return true
+        end
+        ::continue::
+    end
+end
+
+local function injured_units(for_fn, which)
+    local message = count_units(for_fn, which)
+    if message then
+        if not has_functional_hospital(dfhack.world.getCurrentSite()) then
+            message = message .. '; no functional hospital!'
+        end
+        return message
+    end
+end
+
+local function summarize_units(for_fn)
     local counts = {}
     for_fn(function(unit)
         local names = races[unit.race].caste[unit.caste].caste_name
@@ -174,7 +216,7 @@ local function summarize_units(for_fn, which)
     return ('Wildlife: %s'):format(table.concat(strs, ', '))
 end
 
-local function zoom_to_next(for_fn, state, reverse)
+function zoom_to_next(for_fn, state, reverse)
     local first_found, ret
     for_fn(function(unit)
         if not first_found then
@@ -368,6 +410,13 @@ NOTIFICATIONS_BY_IDX = {
         default=false,
         fn=curry(summarize_units, for_wildlife),
         on_click=curry(zoom_to_next, for_wildlife),
+    },
+    {
+        name='injured',
+        desc='Shows number of injured citizens and a warning if there is no functional hospital.',
+        default=true,
+        fn=curry(injured_units, for_injured, 'injured citizen'),
+        on_click=curry(zoom_to_next, for_injured),
     },
 }
 

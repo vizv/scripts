@@ -346,7 +346,7 @@ local function do_trackstop_props(db_entry, props)
         (props.friction == '50000' or props.friction == '10000' or props.friction == '500' or
          props.friction == '50' or props.friction == '10')
     then
-        db_entry.props.friction = tonumber(props.friction)
+        ensure_key(db_entry.props, 'track_stop_info').friction = tonumber(props.friction)
         props.friction = nil
     end
     if props.take_from then
@@ -632,13 +632,13 @@ local function make_transform_trackstop_fn(vector, friction)
     return make_transform_building_fn(vector, trackstop_revmap, post_fn)
 end
 local function make_trackstop_entry(direction, friction)
-    local label, fields, transform = 'No Dump', {friction=friction}, nil
+    local label, fields, transform = 'No Dump', {track_stop_info={friction=friction}}, nil
     if direction then
-        ensure_key(fields, 'track_flags').use_dump = true
+        ensure_key(fields.track_stop_info, 'track_flags').use_dump = true
         for k,v in pairs(direction) do
             local trackstop_data_entry = trackstop_data[k][v]
             label = trackstop_data_entry.label
-            fields[k] = v
+            fields.track_stop_info[k] = v
             transform = make_transform_trackstop_fn(
                     trackstop_data_entry.vector, friction)
         end
@@ -802,8 +802,7 @@ local building_db_raw = {
     Mrsssqq=make_roller_entry(df.screw_pump_direction.FromWest, 30000),
     Mrsssqqq=make_roller_entry(df.screw_pump_direction.FromWest, 20000),
     Mrsssqqqq=make_roller_entry(df.screw_pump_direction.FromWest, 10000),
-    -- Instruments are not yet supported by DFHack
-    -- I={label='Instrument', type=df.building_type.Instrument},
+    I={label='Instrument', type=df.building_type.Instrument},
     S={label='Support', type=df.building_type.Support,
        is_valid_tile_fn=is_valid_tile_has_space},
     m={label='Animal Trap', type=df.building_type.AnimalTrap},

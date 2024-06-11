@@ -136,7 +136,7 @@ local aliases = {}
 
 local valid_locations = {
     tavern={new=df.abstract_building_inn_tavernst,
-        assign={name={type=df.language_name_type.SymbolFood},
+        assign={name={type=df.language_name_type.FoodStore},
                 contents={desired_goblets=10, desired_instruments=5,
                 need_more={goblets=true, instruments=true}}}},
     hospital={new=df.abstract_building_hospitalst,
@@ -255,7 +255,7 @@ local function parse_zone_config(c, props)
             zone_data.assigned_unit = get_noble_unit('captain_of_the_guard')
         end
         if not zone_data.assigned_unit then
-            dfhack.printerr(('could not find a unit assigned to noble position: "%s"'):format(props.assigned_unit))
+            log('could not find a unit assigned to noble position: "%s"', props.assigned_unit)
         end
         props.assigned_unit = nil
     end

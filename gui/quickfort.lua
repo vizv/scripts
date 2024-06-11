@@ -33,74 +33,123 @@ transform = transform or false
 transformations = transformations or {}
 
 --
--- BlueprintDetails
---
-
--- displays blueprint details, such as the full modeline and comment, that
--- otherwise might be truncated for length in the blueprint selection list
-BlueprintDetails = defclass(BlueprintDetails, dialogs.MessageBox)
-BlueprintDetails.ATTRS{
-    focus_path='quickfort/dialog/details',
-    frame_title='Details',
-    frame_width=28, -- minimum width required for the bottom frame text
-}
-
--- adds hint about left arrow being a valid "exit" key for this dialog
-function BlueprintDetails:onRenderFrame(dc, rect)
-    BlueprintDetails.super.onRenderFrame(self, dc, rect)
-    dc:seek(rect.x1+2, rect.y2):string('Ctrl+D', dc.cur_key_pen):
-            string(': Back', COLOR_GREY)
-end
-
-function BlueprintDetails:onInput(keys)
-    if keys.CUSTOM_CTRL_D or keys.SELECT
-            or keys.LEAVESCREEN or keys._MOUSE_R then
-        self:dismiss()
-    end
-end
-
---
 -- BlueprintDialog
 --
 
 -- blueprint selection dialog, shown when the script starts or when a user wants
 -- to load a new blueprint into the ui
-BlueprintDialog = defclass(BlueprintDialog, dialogs.ListBox)
+BlueprintDialog = defclass(SelectDialog, gui.ZScreenModal)
 BlueprintDialog.ATTRS{
     focus_path='quickfort/dialog',
-    frame_title='Load quickfort blueprint',
-    with_filter=true,
-    frame_width=dialog_width,
-    row_height=2,
-    frame_inset={t=0,l=1,r=0,b=1},
-    list_frame_inset={t=1},
+    on_select=DEFAULT_NIL,
+    on_cancel=DEFAULT_NIL,
 }
 
 function BlueprintDialog:init()
+    local options={
+        {label='Show', value=true, pen=COLOR_GREEN},
+        {label='Hide', value=false}
+    }
+
     self:addviews{
-        widgets.Label{frame={t=0, l=1}, text='Filters:', text_pen=COLOR_GREY},
-        widgets.ToggleHotkeyLabel{frame={t=0, l=12}, label='Library',
-                key='CUSTOM_ALT_L', initial_option=show_library,
-                text_pen=COLOR_GREY,
-                on_change=self:callback('update_setting', 'show_library')},
-        widgets.ToggleHotkeyLabel{frame={t=0, l=34}, label='Hidden',
-                key='CUSTOM_ALT_H', initial_option=show_hidden,
-                text_pen=COLOR_GREY,
-                on_change=self:callback('update_setting', 'show_hidden')}
+        widgets.Window{
+            frame={w=80, h=35},
+            frame_title='Load quickfort blueprint',
+            resizable=true,
+            subviews={
+                widgets.Label{
+                    frame={t=0, l=1},
+                    text='Filters:',
+                    text_pen=COLOR_GREY,
+                },
+                widgets.ToggleHotkeyLabel{
+                    frame={t=0, l=12},
+                    key='CUSTOM_ALT_L',
+                    label='Library:',
+                    options=options,
+                    initial_option=show_library,
+                    text_pen=COLOR_GREY,
+                    on_change=self:callback('update_setting', 'show_library')
+                },
+                widgets.ToggleHotkeyLabel{
+                    frame={t=0, l=35},
+                    key='CUSTOM_ALT_H',
+                    label='Hidden:',
+                    options=options,
+                    initial_option=show_hidden,
+                    text_pen=COLOR_GREY,
+                    on_change=self:callback('update_setting', 'show_hidden')
+                },
+                widgets.FilteredList{
+                    view_id='list',
+                    frame={t=2, b=9},
+                    row_height=2,
+                    on_select=function()
+                        local desc = self.subviews.desc
+                        if desc.frame_body then desc:updateLayout() end
+                    end,
+                    on_double_click=self:callback('commit'),
+                    on_submit2=self:callback('delete_blueprint'),
+                    on_double_click2=self:callback('delete_blueprint'),
+                },
+                widgets.Panel{
+                    frame={b=3, h=5},
+                    frame_style=gui.FRAME_INTERIOR,
+                    subviews={
+                        widgets.WrappedLabel{
+                            frame={l=0, h=3},
+                            view_id='desc',
+                            auto_height=false,
+                            text_to_wrap=function()
+                                local list = self.subviews.list
+                                local _, choice = list:getSelected()
+                                return choice and choice.desc or ''
+                            end,
+                        },
+                    },
+                },
+                widgets.Label{
+                    frame={b=1, l=0},
+                    text='Double click or',
+                },
+                widgets.HotkeyLabel{
+                    frame={b=1, l=16},
+                    key='SELECT',
+                    label='Load selected blueprint',
+                    on_activate=self:callback('commit'),
+                    enabled=function()
+                        local list = self.subviews.list
+                        local _, choice = list:getSelected()
+                        return choice
+                    end,
+                },
+                widgets.Label{
+                    frame={b=0, l=0},
+                    text='Shift click or',
+                },
+                widgets.HotkeyLabel{
+                    frame={b=0, l=15},
+                    key='SELECT_ALL', -- TODO: change to SEC_SELECT once 51.01 is stable
+                    label='Delete selected blueprint',
+                    on_activate=self:callback('delete_blueprint'),
+                    enabled=function()
+                        local list = self.subviews.list
+                        local _, choice = list:getSelected()
+                        return choice and not choice.library
+                    end,
+                },
+            },
+        },
     }
 end
 
--- always keep our list big enough to display 10 items so we don't jarringly
--- resize when the filter is being edited and it suddenly matches no blueprints
-function BlueprintDialog:getWantedFrameSize()
-    local mw, mh = BlueprintDialog.super.getWantedFrameSize(self)
-    return mw, math.max(mh, 24)
-end
-
-function BlueprintDialog:onRenderFrame(dc, rect)
-    BlueprintDialog.super.onRenderFrame(self, dc, rect)
-    dc:seek(rect.x1+2, rect.y2):string('Ctrl+D', dc.cur_key_pen):
-            string(': Show details', COLOR_GREY)
+function BlueprintDialog:commit()
+    local list = self.subviews.list
+    local _, choice = list:getSelected()
+    if choice then
+        self:dismiss()
+        self.on_select(choice.id)
+    end
 end
 
 function BlueprintDialog:update_setting(setting, value)
@@ -108,32 +157,10 @@ function BlueprintDialog:update_setting(setting, value)
     self:refresh()
 end
 
--- ensures each newline-delimited sequence within text is no longer than
--- width characters long. also ensures that no more than max_lines lines are
--- returned in the truncated string.
-local more_marker = '...'
-local function truncate(text, width, max_lines)
-    local truncated_text = {}
-    for line in text:gmatch('[^'..NEWLINE..']*') do
-        if #line > width then
-            line = line:sub(1, width-#more_marker) .. more_marker
-        end
-        table.insert(truncated_text, line)
-        if #truncated_text >= max_lines then break end
-    end
-    return table.concat(truncated_text, NEWLINE)
-end
-
--- extracts the blueprint list id from a dialog list entry
-local function get_id(text)
-    local _, _, id = text:find('^(%d+)')
-    return tonumber(id)
-end
-
 local function save_selection(list)
-    local _, obj = list:getSelected()
-    if obj then
-        selected_id = get_id(obj.text)
+    local _, choice = list:getSelected()
+    if choice then
+        selected_id = choice.id
     end
 end
 
@@ -142,7 +169,7 @@ end
 local function restore_selection(list)
     local best_idx = 1
     for idx,v in ipairs(list:getVisibleChoices()) do
-        local cur_id = get_id(v.text)
+        local cur_id = v.id
         if selected_id >= cur_id then best_idx = idx end
         if selected_id <= cur_id then break end
     end
@@ -164,55 +191,73 @@ function BlueprintDialog:refresh()
         return false
     end
     for _,v in ipairs(results) do
-        local start_comment = ''
-        if v.start_comment then
-            start_comment = string.format(' cursor start: %s', v.start_comment)
-        end
         local sheet_spec = ''
         if v.section_name then
-            sheet_spec = string.format(
-                    ' -n %s',
-                    quickfort_parse.quote_if_has_spaces(v.section_name))
+            sheet_spec = (' -n %s'):format(quickfort_parse.quote_if_has_spaces(v.section_name))
         end
-        local main = ('%d) %s%s (%s)')
-                     :format(v.id, quickfort_parse.quote_if_has_spaces(v.path),
-                     sheet_spec, v.mode)
-        local text = ('%s%s'):format(main, start_comment)
+        local main = ('%d) %s%s (%s)'):format(
+            v.id, quickfort_parse.quote_if_has_spaces(v.path), sheet_spec, v.mode)
+
+        local comment = ''
         if v.comment then
-            text = text .. ('\n    %s'):format(v.comment)
+            comment = ('%s'):format(v.comment)
         end
-        local full_text = main
-        if #start_comment > 0 then
-            full_text = full_text .. '\n\n' .. start_comment
+        local start_comment = ''
+        if v.start_comment then
+            start_comment = ('%scursor on: %s'):format(#comment > 0 and '; ' or '', v.start_comment)
         end
-        if v.comment then
-            full_text = full_text .. '\n\n comment: ' .. v.comment
-        end
-        local truncated_text =
-                truncate(text, self.frame_body.width - 2, self.row_height)
+        local extra = #comment == 0 and #start_comment == 0 and 'No description' or ''
+        local desc = ('%s%s%s'):format(comment, start_comment, extra)
 
         -- search for the extra syntax shown in the list items in case someone
         -- is typing exactly what they see
-        table.insert(choices,
-                     {text=truncated_text,
-                      full_text=full_text,
-                      search_key=v.search_key .. main})
+        table.insert(choices, {
+            text=main,
+            desc=desc,
+            id=v.id,
+            library=v.library,
+            name=v.path,
+            search_key=v.search_key .. main,
+        })
     end
-    self.subviews.list:setChoices(choices)
-    self:updateLayout() -- allows the dialog to resize width to fit the content
-    self.subviews.list:setFilter(filter_text)
-    restore_selection(self.subviews.list)
+    local list = self.subviews.list
+    list:setFilter('')
+    list:setChoices(choices, list:getSelected())
+    list:setFilter(filter_text)
+    restore_selection(list)
     return true
 end
 
+function BlueprintDialog:delete_blueprint(idx, choice)
+    local list = self.subviews.list
+    if choice then
+        list.list:setSelected(idx)
+        save_selection(list)
+    else
+        _, choice = list:getSelected()
+    end
+    if not choice or choice.library then return end
+
+    local function do_delete(pause_confirmations)
+        dfhack.run_script('quickfort', 'delete', choice.name)
+        self:refresh()
+        self.pause_confirmations = self.pause_confirmations or pause_confirmations
+    end
+
+    if self.pause_confirmations then
+        do_delete()
+    else
+        dialogs.showYesNoPrompt('Delete blueprint',
+            'Are you sure you want to delete this blueprint?\n'..choice.name,
+            COLOR_YELLOW, do_delete, nil, curry(do_delete, true))
+    end
+end
+
 function BlueprintDialog:onInput(keys)
-    local _, obj = self.subviews.list:getSelected()
-    if keys.CUSTOM_CTRL_D and obj then
-        local details = BlueprintDetails{
-                text=obj.full_text:wrap(self.frame_body.width)}
-        details:show()
-        -- for testing
-        self._details = details
+    if keys.LEAVESCREEN or keys._MOUSE_R then
+        self.on_cancel()
+        self:dismiss()
+        return true
     elseif BlueprintDialog.super.onInput(self, keys) then
         local prev_filter_text = filter_text
         -- save the filter if it was updated so we always have the most recent
@@ -227,7 +272,6 @@ function BlueprintDialog:onInput(keys)
         end
         return true
     end
-    return true
 end
 
 --
@@ -534,8 +578,7 @@ function Quickfort:on_transform(val)
     self.dirty = true
 end
 
-function Quickfort:dialog_cb(text)
-    local id = get_id(text)
+function Quickfort:dialog_cb(id)
     local name, sec_name, mode = quickfort_list.get_blueprint_by_number(id)
     self.blueprint_name, self.section_name, self.mode = name, sec_name, mode
     self:updateLayout()
@@ -561,7 +604,7 @@ function Quickfort:show_dialog(initial)
     end
 
     local file_dialog = BlueprintDialog{
-        on_select=function(idx, obj) self:dialog_cb(obj.text) end,
+        on_select=self:callback('dialog_cb'),
         on_cancel=self:callback('dialog_cancel_cb')
     }
 

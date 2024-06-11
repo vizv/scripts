@@ -57,8 +57,6 @@ local function finalize_animal(unit, disposition)
         -- noop; units are created friendly by default
     elseif disposition == DISPOSITIONS.FORT then
         makeown.make_own(unit)
-        unit.flags1.tame = true
-        unit.training_level = df.animal_training_level.Domesticated
     end
 end
 
@@ -82,7 +80,6 @@ local function finalize_units(first_created_unit_id, disposition, syndrome)
         unit.profession = df.profession.STANDARD
         if syndrome then
             syndrome_util.infectWithSyndrome(unit, syndrome)
-            unit.flags1.zombie = true;
         end
         unit.name.has_name = false
         if is_sentient(unit) then
@@ -97,6 +94,17 @@ end
 function Sandbox:init()
     self.spawn_group = 1
     self.first_unit_id = df.global.unit_next_id
+
+    local disposition_options = {
+        {label='hostile', value=DISPOSITIONS.HOSTILE, pen=COLOR_LIGHTRED},
+        {label='hostile (undead)', value=DISPOSITIONS.HOSTILE_UNDEAD, pen=COLOR_RED},
+        {label='independent/wild', value=DISPOSITIONS.WILD, pen=COLOR_YELLOW},
+        {label='friendly', value=DISPOSITIONS.FRIENDLY, pen=COLOR_GREEN},
+    }
+
+    if dfhack.world.isFortressMode() then
+        table.insert(disposition_options, {label='citizens/pets', value=DISPOSITIONS.FORT, pen=COLOR_BLUE})
+    end
 
     self:addviews{
         widgets.ResizingPanel{
@@ -142,13 +150,7 @@ function Sandbox:init()
                     key_back='CUSTOM_SHIFT_A',
                     label='Group disposition',
                     label_below=true,
-                    options={
-                        {label='hostile', value=DISPOSITIONS.HOSTILE, pen=COLOR_LIGHTRED},
-                        {label='hostile (undead)', value=DISPOSITIONS.HOSTILE_UNDEAD, pen=COLOR_RED},
-                        {label='independent/wild', value=DISPOSITIONS.WILD, pen=COLOR_YELLOW},
-                        {label='friendly', value=DISPOSITIONS.FRIENDLY, pen=COLOR_GREEN},
-                        {label='citizens/pets', value=DISPOSITIONS.FORT, pen=COLOR_BLUE},
-                    },
+                    options=disposition_options,
                 },
             },
         },
@@ -224,12 +226,25 @@ end
 function Sandbox:find_zombie_syndrome()
     if self.zombie_syndrome then return self.zombie_syndrome end
     for _,syn in ipairs(df.global.world.raws.syndromes.all) do
+        local has_flags, has_flash = false, false
         for _,effect in ipairs(syn.ce) do
-            if df.creature_interaction_effect_add_simple_flagst:is_instance(effect) and
-                    effect.tags1.OPPOSED_TO_LIFE and effect['end'] == -1 then
-                self.zombie_syndrome = syn
-                return syn
+            if df.creature_interaction_effect_display_namest:is_instance(effect) then
+                -- we don't want named zombie syndromes; they're usually necro experiments
+                goto continue
             end
+            if df.creature_interaction_effect_add_simple_flagst:is_instance(effect) and
+                    effect.tags1.OPPOSED_TO_LIFE and
+                    effect['end'] == -1
+            then
+                has_flags = true
+            end
+            if df.creature_interaction_effect_flash_symbolst:is_instance(effect) then
+                has_flash = true
+            end
+        end
+        if has_flags and has_flash then
+            self.zombie_syndrome = syn
+            return syn
         end
         ::continue::
     end
@@ -342,7 +357,8 @@ local function init_arena()
     arena.race:resize(0)
     arena.caste:resize(0)
     arena.creature_cnt:resize(0)
-    arena.type = -1
+    arena.last_race = -1
+    arena.last_caste = -1
     arena_unit.race = 0
     arena_unit.caste = 0
     arena_unit.races_filtered:resize(0)
@@ -415,7 +431,7 @@ local function init_arena()
                     item_subtype=itemdef.subtype,
                     mattype=mattype,
                     matindex=matindex,
-                    unk_c=1}
+                    on=1}
                 if #list > list_size then
                     utils.assign(list[list_size], element)
                 else
