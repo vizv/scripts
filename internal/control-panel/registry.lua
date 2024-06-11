@@ -166,10 +166,9 @@ PREFERENCES_BY_IDX = {
     {
         name='NUMBER_FORMAT',
         label='Large number formatting',
-        desc='Whether to format numbers in DFHack tool UIs. Options: 0: No formatting, 1: English, 2: Use system locale.',
+        desc='Format numbers (e.g. with commas) in DFHack tool UIs. 0: No formatting, 1: English, 2: Use system locale, 3: Scientific.',
         default=0,
-        min=-1, -- undocumented value -1 is "Scientific notation"
-        max=2,
+        max=3,
         get_fn=dfhack.internal.getPreferredNumberFormat,
         set_fn=dfhack.internal.setPreferredNumberFormat,
     },
