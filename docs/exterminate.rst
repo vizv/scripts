@@ -17,7 +17,7 @@ Usage
     exterminate
     exterminate this [<options>]
     exterminate undead [<options>]
-    exterminate all [<options>]
+    exterminate all[:<caste>] [<options>]
     exterminate <race>[:<caste>] [<options>]
 
 Race and caste names are case insensitive.
@@ -35,8 +35,8 @@ Examples
     Kill all visible, hostile goblins on the map by boiling them in magma.
 ``exterminate all``
     Kill all non-friendly creatures.
-``exterminate all:FEMALE``
-    Kill all non-friendly female creatures.
+``exterminate all:MALE``
+    Kill all non-friendly male creatures.
 
 Options
 -------
