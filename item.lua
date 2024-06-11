@@ -1,4 +1,5 @@
 --@module = true
+
 -----------------------------------------------------------
 -- helper functions
 -----------------------------------------------------------
@@ -199,13 +200,14 @@ end
 
 --- @param action "melt"|"unmelt"|"forbid"|"unforbid"|"dump"|"undump"|"count"|"hide"|"unhide"
 --- @param conditions conditions
---- @param options { help : boolean, artifact : boolean, dryrun : boolean, bytype : boolean, owned : boolean }
+--- @param options { help : boolean, artifact : boolean, dryrun : boolean, bytype : boolean, owned : boolean, nowebs : boolean, verbose : boolean }
 --- @param return_items boolean|nil
 --- @return number, item[], table<number,number>
 function execute(action, conditions, options, return_items)
     local count = 0
     local items = {}
     local types = {}
+    local descriptions = {}
 
     for _, item in pairs(df.global.world.items.other.IN_PLAY) do
         -- never act on items used for constructions/building materials and carried by hostiles
@@ -217,6 +219,7 @@ function execute(action, conditions, options, return_items)
             (item.flags.artifact and not options.artifact) or
             item.flags.on_fire or
             item.flags.trader or
+            (item.flags.spider_web and options.nowebs) or
             (item.flags.owned and not options.owned)
         then
             goto skipitem
@@ -274,9 +277,23 @@ function execute(action, conditions, options, return_items)
             item.flags.hidden = false
         end
 
+        if options.verbose then
+            local desc = dfhack.items.getReadableDescription(item)
+            descriptions[desc] = (descriptions[desc] or 0) + 1
+        end
+
         if return_items then table.insert(items, item) end
 
         :: skipitem ::
+    end
+
+    local desc_list = {}
+    for desc in pairs(descriptions) do
+        table.insert(desc_list, desc)
+    end
+    table.sort(desc_list)
+    for _, desc in ipairs(desc_list) do
+        print(('%4d %s'):format(descriptions[desc], desc))
     end
 
     return count, items, types
@@ -284,9 +301,12 @@ end
 
 --- @param action "melt"|"unmelt"|"forbid"|"unforbid"|"dump"|"undump"|"count"|"hide"|"unhide"
 --- @param conditions conditions
---- @param options { help : boolean, artifact : boolean, dryrun : boolean, bytype : boolean, owned : boolean }
+--- @param options { help : boolean, artifact : boolean, dryrun : boolean, bytype : boolean, owned : boolean, verbose : boolean }
 function executeWithPrinting (action, conditions, options)
     local count, _ , types = execute(action, conditions, options)
+    if options.verbose and count > 0 then
+        print()
+    end
     if action == "count" then
         print(count, 'items matched the filter options')
     elseif options.dryrun then
@@ -323,7 +343,9 @@ local options = {
     artifact = false,
     dryrun = false,
     bytype = false,
-    owned = false
+    owned = false,
+    nowebs = false,
+    verbose = false,
 }
 
 --- @type (fun(item:item):boolean)[]
@@ -347,8 +369,10 @@ end
 
 local positionals = argparse.processArgsGetopt({ ... }, {
   { 'h', 'help', handler = function() options.help = true end },
+  { 'v', 'verbose', handler = function() options.verbose = true end },
   { 'a', 'include-artifacts', handler = function() options.artifact = true end },
   { nil, 'include-owned', handler = function() options.owned = true end },
+  { nil, 'ignore-webs', handler = function() options.nowebs = true end },
   { 'n', 'dry-run', handler = function() options.dryrun = true end },
   { nil, 'by-type', handler = function() options.bytype = true end },
   { 'i', 'inside', hasArg = true,
@@ -371,8 +395,6 @@ local positionals = argparse.processArgsGetopt({ ... }, {
     handler = function () condition_reachable(conditions, { negate = true }) end },
   { 't', 'type', hasArg = true,
     handler = function (type) condition_type(conditions,type) end },
-  { 'd', 'description', hasArg = true,
-    handler = function (desc) condition_description(conditions, desc) end },
   { 'm', 'material', hasArg = true,
     handler = function (material) condition_material(conditions, material) end },
   { 'c', 'mat-category', hasArg = true,
@@ -408,7 +430,13 @@ local positionals = argparse.processArgsGetopt({ ... }, {
 if options.help or positionals[1] == 'help' then
     print(dfhack.script_help())
     return
-elseif positionals[1] == 'forbid'   then executeWithPrinting('forbid', conditions, options)
+end
+
+for i=2,#positionals do
+    condition_description(conditions, positionals[i])
+end
+
+if     positionals[1] == 'forbid'   then executeWithPrinting('forbid', conditions, options)
 elseif positionals[1] == 'unforbid' then executeWithPrinting('unforbid', conditions, options)
 elseif positionals[1] == 'dump'     then executeWithPrinting('dump', conditions, options)
 elseif positionals[1] == 'undump'   then executeWithPrinting('undump', conditions, options)

@@ -50,6 +50,11 @@ function SpawnLiquid:init()
             on_activate = self:callback('decreaseLiquidLevel'),
             disabled = function() return self.level == 1 end
         },
+        widgets.Label{
+            frame = { l = 0, b = 1, w = 1},
+            text_pen=COLOR_LIGHTGREEN,
+            text=string.char(27),
+        },
         widgets.HotkeyLabel{
             frame = { l = 19, b = 1},
             label = 'Increase level',
@@ -57,6 +62,11 @@ function SpawnLiquid:init()
             key = 'KEYBOARD_CURSOR_RIGHT',
             on_activate = self:callback('increaseLiquidLevel'),
             disabled = function() return self.level == 7 end
+        },
+        widgets.Label{
+            frame = { l = 19, b = 1, w = 1},
+            text_pen=COLOR_LIGHTGREEN,
+            text=string.char(26),
         },
         widgets.CycleHotkeyLabel{
             frame = {l = 0, b = 2},

@@ -50,7 +50,7 @@ ConfigPanel.ATTRS{
 
 function ConfigPanel:init()
     local main_panel = widgets.Panel{
-        frame={t=0, b=7},
+        frame={t=0, b=9},
         autoarrange_subviews=true,
         autoarrange_gap=1,
         subviews={
@@ -81,11 +81,17 @@ function ConfigPanel:init()
 
     self:addviews{
         main_panel,
-        widgets.WrappedLabel{
-            view_id='desc',
-            frame={b=4, h=2},
-            auto_height=false,
-            text_to_wrap='', -- updated in on_select
+        widgets.Panel{
+            frame={b=4, h=4},
+            frame_style=gui.FRAME_INTERIOR,
+            subviews={
+                widgets.WrappedLabel{
+                    frame={l=0, h=2},
+                    view_id='desc',
+                    auto_height=false,
+                    text_to_wrap='', -- updated in on_select
+                },
+            },
         },
         footer,
     }
@@ -116,19 +122,6 @@ function ConfigPanel:on_select(_, choice)
         desc:updateLayout()
     end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 --
 -- Enabled subtab functions
@@ -292,15 +285,14 @@ local function autostart_onInput(self, keys)
     end
 end
 
-local function autostart_on_submit(self, data)
-    common.set_autostart(data, not choice.enabled)
+local function autostart_on_submit(choice)
+    common.set_autostart(choice.data, not choice.enabled)
     common.config:write()
 end
 
 local function autostart_restore_defaults(self)
     for _,data in ipairs(registry.COMMANDS_BY_IDX) do
         if not common.command_passes_filters(data, self.group) then goto continue end
-        print(data.command, data.default)
         common.set_autostart(data, data.default)
         ::continue::
     end
@@ -444,12 +436,12 @@ function CommandTab:refresh()
 end
 
 function CommandTab:on_submit()
-    _,choice = self.subviews.list:getSelected()
+    local _,choice = self.subviews.list:getSelected()
     if not choice then return end
     if subtab == Subtabs.enabled then
         enabled_on_submit(self, choice.data)
     else
-        autostart_on_submit(self, choice.data)
+        autostart_on_submit(choice)
     end
     self:refresh()
 end
@@ -826,7 +818,7 @@ function PreferencesTab:refresh()
         local text = make_preference_text(data.label, data.default, data.get_fn())
         table.insert(choices, {
             text=text,
-            search_key=text[#text],
+            search_key=data.label,
             data=data
         })
     end
@@ -884,7 +876,7 @@ end
 ControlPanel = defclass(ControlPanel, widgets.Window)
 ControlPanel.ATTRS {
     frame_title='DFHack Control Panel',
-    frame={w=74, h=44},
+    frame={w=74, h=45},
     resizable=true,
     resize_min={h=39},
     autoarrange_subviews=true,

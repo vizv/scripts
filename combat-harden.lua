@@ -79,7 +79,7 @@ function main(args)
             qerror('--citizens requires fortress mode')
         end
 
-        for _, unit in ipairs(dfhack.units.getCitizens(false)) do
+        for _, unit in ipairs(dfhack.units.getCitizens()) do
             table.insert(unitsList, unit)
         end
     end

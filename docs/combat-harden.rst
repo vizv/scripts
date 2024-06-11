@@ -28,8 +28,8 @@ Unit options
 ``--all``
     All active units will be affected.
 ``--citizens``
-    All citizens of your fort will be affected. Will do nothing in adventure
-    mode.
+    All citizens and residents of your fort will be affected. Will do nothing
+    in adventure mode.
 ``--unit <id>``
     The given unit will be affected.
 

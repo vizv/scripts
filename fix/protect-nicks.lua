@@ -17,7 +17,7 @@ end
 
 -- Reassign all the units nicknames with "dfhack.units.setNickname"
 local function save_nicks()
-    for _,unit in pairs(df.global.world.units.active) do
+    for _,unit in ipairs(df.global.world.units.active) do
         dfhack.units.setNickname(unit, unit.name.nickname)
     end
 end

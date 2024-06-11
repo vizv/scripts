@@ -1,5 +1,5 @@
---@ module = true
-
+local argparse = require('argparse')
+local dig = require('plugins.dig')
 local gui = require('gui')
 local widgets = require('gui.widgets')
 
@@ -7,37 +7,64 @@ local widgets = require('gui.widgets')
 -- Reveal
 --
 
-Reveal = defclass(Reveal, widgets.Window)
+Reveal = defclass(Reveal, widgets.ResizingPanel)
 Reveal.ATTRS {
     frame_title='Reveal',
-    frame={w=37, h=12, r=2, t=18},
+    frame={w=37, r=2, t=18},
+    frame_style=gui.WINDOW_FRAME,
+    frame_background=gui.CLEAR_PEN,
+    frame_inset=1,
+    draggable=true,
+    resizable=false,
     autoarrange_subviews=true,
     autoarrange_gap=1,
-    resizable=true,
-    hell=DEFAULT_NIL,
+    opts=DEFAULT_NIL,
 }
 
 function Reveal:init()
     self.graphics = dfhack.screen.inGraphicsMode()
-    self:set_frame()
+
+    local is_adv = dfhack.world.isAdventureMode()
+
+    if is_adv then
+        self.frame.t = 0
+    end
 
     self:addviews{
-        widgets.WrappedLabel{
-            text_to_wrap='The map is revealed. The game will be force paused until you close this window.',
+        widgets.ResizingPanel{
+            autoarrange_subviews=true,
+            autoarrange_gap=1,
+            visible=not self.opts.aquifers_only,
+            subviews={
+                widgets.WrappedLabel{
+                    text_to_wrap='The map is revealed.' .. (is_adv and '' or ' The game will be force paused until you close this window.'),
+                },
+                widgets.WrappedLabel{
+                    text_to_wrap='Areas with event triggers are kept hidden to avoid spoilers.',
+                    visible=not self.opts.hell,
+                },
+                widgets.WrappedLabel{
+                    text_to_wrap='Areas with hidden secrets have been revealed.' .. (is_adv and '' or ' The map must be hidden again before unpausing.'),
+                    text_pen=COLOR_RED,
+                    visible=self.opts.hell,
+                },
+                widgets.WrappedLabel{
+                    text_to_wrap='In graphics mode, solid tiles that are not adjacent to open space are not rendered. Switch to ASCII mode to see them.',
+                    text_pen=COLOR_BROWN,
+                    visible=dfhack.screen.inGraphicsMode and not is_adv,
+                },
+            },
         },
         widgets.WrappedLabel{
-            text_to_wrap='Areas with event triggers are kept hidden to avoid spoilers.',
-            visible=not self.hell,
+            text_to_wrap='Aquifers and damp tiles are revealed.',
+            visible=self.opts.aquifers_only,
         },
-        widgets.WrappedLabel{
-            text_to_wrap='Areas with event triggers have been revealed. The map must be hidden again before unpausing.',
-            text_pen=COLOR_RED,
-            visible=self.hell,
-        },
-        widgets.WrappedLabel{
-            text_to_wrap='In graphics mode, solid tiles that are not adjacent to open space are not rendered. Switch to ASCII mode to see them.',
-            text_pen=COLOR_BROWN,
-            visible=dfhack.screen.inGraphicsMode,
+        widgets.Divider{
+            frame={h=1},
+            frame_style=gui.FRAME_THIN,
+            frame_style_l=false,
+            frame_style_r=false,
+            visible=not self.opts.aquifers_only and not is_adv,
         },
         widgets.ToggleHotkeyLabel{
             view_id='unreveal',
@@ -47,28 +74,19 @@ function Reveal:init()
                 {label='Yes', value=true, pen=COLOR_GREEN},
                 {label='No', value=false, pen=COLOR_RED},
             },
-            enabled=not self.hell,
+            enabled=not self.opts.hell,
+            visible=not self.opts.aquifers_only and not is_adv,
         },
     }
-end
-
-function Reveal:set_frame()
-    self.frame.h = 12
-    if self.hell then
-        self.frame.h = self.frame.h + 1
-    end
-    if self.graphics then
-        self.frame.h = self.frame.h + 5
-    end
 end
 
 function Reveal:onRenderFrame(dc, rect)
     local graphics = dfhack.screen.inGraphicsMode()
     if graphics ~= self.graphics then
         self.graphics = graphics
-        self:set_frame()
         self:updateLayout()
     end
+    dig.paintScreenWarmDamp(true, true)
     Reveal.super.onRenderFrame(self, dc, rect)
 end
 
@@ -80,35 +98,44 @@ RevealScreen = defclass(RevealScreen, gui.ZScreen)
 RevealScreen.ATTRS {
     focus_path='reveal',
     pass_movement_keys=true,
-    force_pause=true,
-    hell=false,
+    opts=DEFAULT_NIL,
 }
 
 function RevealScreen:init()
-    local command = {'reveal'}
-    if self.hell then
-        table.insert(command, 'hell')
+    if not self.opts.aquifers_only then
+        self.force_pause=true
+        local command = {'reveal'}
+        if self.opts.hell then
+            table.insert(command, 'hell')
+        end
+        dfhack.run_command(command)
     end
-    dfhack.run_command(command)
 
-    self:addviews{Reveal{hell=self.hell}}
+    self:addviews{Reveal{opts=self.opts}}
 end
 
 function RevealScreen:onDismiss()
     view = nil
-    if self.subviews.unreveal:getOptionValue() then
+    if not self.opts.aquifers_only and self.subviews.unreveal:getOptionValue() then
         dfhack.run_command('unreveal')
     end
 end
 
-if dfhack_flags.module then
+if not dfhack.isMapLoaded() then
+    qerror('This script requires a map to be loaded')
+end
+
+local opts = {aquifers_only=false}
+local positionals = argparse.processArgsGetopt({...}, {
+    { 'h', 'help', handler = function() opts.help = true end },
+    { 'o', 'aquifers-only', handler = function() opts.aquifers_only = true end },
+})
+
+if opts.help or positionals[1] == 'help' then
+    print(dfhack.script_help())
     return
 end
 
-if not dfhack.isMapLoaded() then
-    qerror('This script requires a fortress map to be loaded')
-end
+opts.hell = positionals[1] == 'hell'
 
-local args = {...}
-
-view = view and view:raise() or RevealScreen{hell=args[1] == 'hell'}:show()
+view = view and view:raise() or RevealScreen{opts=opts}:show()

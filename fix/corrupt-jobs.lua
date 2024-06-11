@@ -6,7 +6,7 @@ local GLOBAL_KEY = 'corrupt-jobs'
 function remove_bad_jobs()
     local count = 0
 
-    for _, unit in ipairs(df.global.world.units.all) do
+    for _, unit in ipairs(df.global.world.units.active) do
         if unit.job.current_job and unit.job.current_job.id == -1 then
             unit.job.current_job = nil
             count = count + 1

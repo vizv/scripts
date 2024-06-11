@@ -2,7 +2,7 @@ cannibalism
 ===========
 
 .. dfhack-tool::
-    :summary: Allows a player character to consume sapient corpses.
+    :summary: Allows an adventurer to consume sapient corpses.
     :tags: unavailable
 
 This tool clears the flag from items that mark them as being from a sapient

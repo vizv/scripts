@@ -63,23 +63,17 @@ TrackStopOverlay.ATTRS{
   frame_background=gui.CLEAR_PEN,
 }
 
-function TrackStopOverlay:getFriction()
-  return dfhack.gui.getSelectedBuilding().friction
-end
-
 function TrackStopOverlay:setFriction(friction)
-  local building = dfhack.gui.getSelectedBuilding()
-
-  building.friction = FRICTION_MAP[friction]
+  dfhack.gui.getSelectedBuilding().track_stop_info.friction = FRICTION_MAP[friction]
 end
 
 function TrackStopOverlay:getDumpDirection()
-  local building = dfhack.gui.getSelectedBuilding()
-  local use_dump = building.use_dump
-  local dump_x_shift = building.dump_x_shift
-  local dump_y_shift = building.dump_y_shift
+  local track_stop_info = dfhack.gui.getSelectedBuilding().track_stop_info
+  local use_dump = track_stop_info.track_flags.use_dump
+  local dump_x_shift = track_stop_info.dump_x_shift
+  local dump_y_shift = track_stop_info.dump_y_shift
 
-  if use_dump == 0 then
+  if not use_dump then
     return NONE
   else
     if dump_x_shift == 0 and dump_y_shift == -1 then
@@ -95,35 +89,34 @@ function TrackStopOverlay:getDumpDirection()
 end
 
 function TrackStopOverlay:setDumpDirection(direction)
-  local building = dfhack.gui.getSelectedBuilding()
+  local track_stop_info = dfhack.gui.getSelectedBuilding().track_stop_info
 
   if direction == NONE then
-    building.use_dump = 0
-    building.dump_x_shift = 0
-    building.dump_y_shift = 0
+    track_stop_info.track_flags.use_dump = false
+    track_stop_info.dump_x_shift = 0
+    track_stop_info.dump_y_shift = 0
   elseif direction == NORTH then
-    building.use_dump = 1
-    building.dump_x_shift = 0
-    building.dump_y_shift = -1
+    track_stop_info.track_flags.use_dump = true
+    track_stop_info.dump_x_shift = 0
+    track_stop_info.dump_y_shift = -1
   elseif direction == EAST then
-    building.use_dump = 1
-    building.dump_x_shift = 1
-    building.dump_y_shift = 0
+    track_stop_info.track_flags.use_dump = true
+    track_stop_info.dump_x_shift = 1
+    track_stop_info.dump_y_shift = 0
   elseif direction == SOUTH then
-    building.use_dump = 1
-    building.dump_x_shift = 0
-    building.dump_y_shift = 1
+    track_stop_info.track_flags.use_dump = true
+    track_stop_info.dump_x_shift = 0
+    track_stop_info.dump_y_shift = 1
   elseif direction == WEST then
-    building.use_dump = 1
-    building.dump_x_shift = -1
-    building.dump_y_shift = 0
+    track_stop_info.track_flags.use_dump = true
+    track_stop_info.dump_x_shift = -1
+    track_stop_info.dump_y_shift = 0
   end
 end
 
 function TrackStopOverlay:render(dc)
-  local building = dfhack.gui.getSelectedBuilding()
-  local friction = building.friction
   local friction_cycle = self.subviews.friction
+  local friction = dfhack.gui.getSelectedBuilding().track_stop_info.friction
 
   friction_cycle:setOption(FRICTION_MAP_REVERSE[friction])
 

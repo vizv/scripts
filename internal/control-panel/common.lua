@@ -94,15 +94,12 @@ function command_passes_filters(data, target_group, filter_strs)
     end
     filter_strs = filter_strs or {}
     local first_word = get_first_word(data.help_command or data.command)
-    if dfhack.getHideArmokTools() and helpdb.is_entry(first_word)
-        and helpdb.get_entry_tags(first_word).armok
-    then
+    if dfhack.getMortalMode() and helpdb.has_tag(first_word, 'armok') then
         return false
     end
-    if not utils.search_text(data.command, filter_strs) then
-        return false
-    end
-    return true
+    return data.help_command and
+        utils.search_text(data.help_command, filter_strs) or
+        utils.search_text(data.command, filter_strs)
 end
 
 function get_description(data)
@@ -131,12 +128,21 @@ function apply_command(data, enabled_map, enabled)
         enabled = enabled or (enabled == nil and data.default)
         if not enabled then return end
     end
+    if enabled then
+        for _, conflict in ipairs(data.conflicts or {}) do
+            local conflict_data = registry.COMMANDS_BY_NAME[conflict]
+            if conflict_data and enabled_map[conflict] then
+                enabled_map[conflict] = false
+                apply_command(conflict_data, enabled_map, false)
+            end
+        end
+    end
     if data.mode == 'enable' or data.mode == 'system_enable' or data.mode == 'tweak' then
         if enabled_map[data.command] == nil then
             dfhack.printerr(('tool not enableable: "%s"'):format(data.command))
             return false
         elseif data.mode == 'tweak' then
-            dfhack.run_command{'tweak', data.command, enabled and '' or 'disable'}
+            dfhack.run_command{'tweak', data.command, 'quiet', enabled and '' or 'disable'}
         else
             dfhack.run_command{enabled and 'enable' or 'disable', data.command}
         end

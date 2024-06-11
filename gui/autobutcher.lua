@@ -144,20 +144,6 @@ local function sort_by_ordered_asc(a, b)
     return a.ordered < b.ordered
 end
 
-function nextAutowatchState()
-    if plugin.autowatch_isEnabled() then
-        return 'Stop '
-    end
-    return 'Start'
-end
-
-function nextAutobutcherState()
-    if plugin.isEnabled() then
-        return 'Stop '
-    end
-    return 'Start'
-end
-
 function WatchList:init()
     if plugin.isEnabled() then
         -- ensure slaughter counts and autowatch are up to date
@@ -165,10 +151,10 @@ function WatchList:init()
     end
 
     local window = widgets.Window{
-        frame_title = 'Autobutcher Watchlist',
-        frame = { w=97, h=30 },
-        resizable = true,
-        subviews = {
+        frame_title='Autobutcher',
+        frame={w=97, h=31},
+        resizable=true,
+        subviews={
             widgets.CycleHotkeyLabel{
                 view_id='sort',
                 frame={l=0, t=0, w=31},
@@ -204,7 +190,7 @@ function WatchList:init()
             },
             widgets.Panel{
                 view_id='list_panel',
-                frame={t=2, l=0, r=0, b=7},
+                frame={t=2, l=0, r=0, b=8},
                 frame_style=gui.FRAME_INTERIOR,
                 subviews={
                     widgets.CycleHotkeyLabel{
@@ -320,9 +306,17 @@ function WatchList:init()
                         frame={t=1, l=82},
                         text='ordered'
                     },
+                    widgets.Label{
+                        view_id='disabled_warning',
+                        visible=function() return not plugin.isEnabled() end,
+                        frame={t=3, l=8, h=1},
+                        text={"Enable autobutcher to change settings"},
+                        text_pen=COLOR_YELLOW
+                    },
                     widgets.List{
                         view_id='list',
                         frame={t=3, b=0},
+                        visible=plugin.isEnabled,
                         on_double_click = self:callback('onDoubleClick'),
                         on_double_click2 = self:callback('zeroOut'),
                     },
@@ -330,7 +324,7 @@ function WatchList:init()
             },
             widgets.Panel{
                 view_id='footer',
-                frame={l=0, r=0, b=0, h=6},
+                frame={l=0, r=0, b=0, h=7},
                 subviews={
                     widgets.Label{
                         frame={t=0, l=0},
@@ -357,7 +351,7 @@ function WatchList:init()
                     },
                     widgets.HotkeyLabel{
                         view_id='fa',
-                        frame={t=3, l=11},
+                        frame={t=3, l=17},
                         key='CUSTOM_SHIFT_F',
                         label='F adults',
                         auto_width=true,
@@ -365,7 +359,7 @@ function WatchList:init()
                     },
                     widgets.HotkeyLabel{
                         view_id='ma',
-                        frame={t=4, l=11},
+                        frame={t=4, l=17},
                         key='CUSTOM_SHIFT_M',
                         label='M adults',
                         auto_width=true,
@@ -373,7 +367,7 @@ function WatchList:init()
                     },
                     widgets.HotkeyLabel{
                         view_id='butcher',
-                        frame={t=3, l=24},
+                        frame={t=5, l=0},
                         key='CUSTOM_B',
                         label='Butcher race',
                         auto_width=true,
@@ -381,7 +375,7 @@ function WatchList:init()
                     },
                     widgets.HotkeyLabel{
                         view_id='unbutcher',
-                        frame={t=4, l=24},
+                        frame={t=5, l=17},
                         key='CUSTOM_SHIFT_B',
                         label='Unbutcher race',
                         auto_width=true,
@@ -389,46 +383,72 @@ function WatchList:init()
                     },
                     widgets.HotkeyLabel{
                         view_id='watch',
-                        frame={t=3, l=43},
+                        frame={t=3, l=36},
                         key='CUSTOM_W',
                         label='Toggle watch',
                         auto_width=true,
                         on_activate=self:callback('onToggleWatching'),
                     },
                     widgets.HotkeyLabel{
-                        frame={t=4, l=43},
+                        frame={t=4, l=36},
                         key='CUSTOM_X',
                         label='Delete row',
                         auto_width=true,
                         on_activate=self:callback('onDeleteEntry'),
                     },
                     widgets.HotkeyLabel{
-                        frame={t=3, l=60},
+                        frame={t=3, l=54},
                         key='CUSTOM_R',
                         label='Set row targets to 0',
                         auto_width=true,
                         on_activate=self:callback('zeroOut'),
                     },
                     widgets.HotkeyLabel{
-                        frame={t=4, l=60},
+                        frame={t=4, l=54},
                         key='CUSTOM_SHIFT_R',
                         label='Set row targets to N',
                         auto_width=true,
                         on_activate=self:callback('onSetRow'),
                     },
                     widgets.HotkeyLabel{
-                        frame={t=5, l=0},
-                        key='CUSTOM_SHIFT_A',
-                        label=function() return nextAutobutcherState() .. ' Autobutcher' end,
+                        view_id='butcher_all',
+                        frame={t=5, l=36},
+                        key='CUSTOM_E',
+                        label='Butcher all',
                         auto_width=true,
-                        on_activate=self:callback('onToggleAutobutcher'),
+                        on_activate=self:callback('onButcherAll'),
                     },
                     widgets.HotkeyLabel{
-                        frame={t=5, l=24},
-                        key='CUSTOM_SHIFT_W',
-                        label=function() return nextAutowatchState() .. ' Autowatch' end,
+                        view_id='unbutcher_all',
+                        frame={t=5, l=54},
+                        key='CUSTOM_SHIFT_E',
+                        label='Unbutcher all',
                         auto_width=true,
-                        on_activate=self:callback('onToggleAutowatch'),
+                        on_activate=self:callback('onUnbutcherAll'),
+                    },
+                    widgets.ToggleHotkeyLabel{
+                        view_id='enable_toggle',
+                        frame={t=6, l=0, w=26},
+                        label='Autobutcher is',
+                        key='CUSTOM_SHIFT_A',
+                        options={{value=true, label='Enabled', pen=COLOR_GREEN},
+                                 {value=false, label='Disabled', pen=COLOR_RED}},
+                        on_change=function(val)
+                            plugin.setEnabled(val)
+                            self:refresh()
+                        end,
+                    },
+                    widgets.ToggleHotkeyLabel{
+                        view_id='autowatch_toggle',
+                        frame={t=6, l=36, w=24},
+                        label='Autowatch is',
+                        key='CUSTOM_SHIFT_W',
+                        options={{value=true, label='Enabled', pen=COLOR_GREEN},
+                                 {value=false, label='Disabled', pen=COLOR_RED}},
+                        on_change=function(val)
+                            plugin.autowatch_setEnabled(val)
+                            self:refresh()
+                        end,
                     },
                 },
             },
@@ -437,6 +457,13 @@ function WatchList:init()
 
     self:addviews{window}
     self:refresh()
+    self.subviews.list:setSelected(#self.subviews.list:getChoices() > 2 and 3 or 2)
+end
+
+function WatchList:onRenderFrame(dc, rect)
+    self.subviews.enable_toggle:setOption(plugin.isEnabled())
+    self.subviews.autowatch_toggle:setOption(plugin.autowatch_isEnabled())
+    WatchList.super.onRenderFrame(self, dc, rect)
 end
 
 function stringify(number)
@@ -504,8 +531,9 @@ function WatchList:refresh(sort_widget, sort_fn)
 
     local choices = {}
 
-    -- first two rows are for "edit all races" and "edit new races"
     local settings = plugin.autobutcher_getSettings()
+
+    -- first two rows are for "edit all races" and "edit new races"
     table.insert(choices, {
         text=make_row_text('!! ALL RACES PLUS NEW', settings),
         race=1,
@@ -707,14 +735,27 @@ function WatchList:onButcherRace()
     self:refresh()
 end
 
-function WatchList:onToggleAutobutcher()
-    plugin.setEnabled(not plugin.isEnabled())
+function WatchList:onUnbutcherAll()
+    for _, data in ipairs(plugin.autobutcher_getWatchList()) do
+        plugin.autobutcher_unbutcherRace(data.id)
+    end
+
     self:refresh()
 end
 
-function WatchList:onToggleAutowatch()
-    plugin.autowatch_setEnabled(not plugin.autowatch_isEnabled())
-    self:refresh()
+function WatchList:onButcherAll()
+    dlg.showYesNoPrompt(
+        'Butcher all animals',
+        'Warning! This will mark ALL animals for butchering.'..NEWLINE..'Proceed with caution.',
+        COLOR_YELLOW,
+        function()
+            for _, data in ipairs(plugin.autobutcher_getWatchList()) do
+                plugin.autobutcher_butcherRace(data.id)
+            end
+
+            self:refresh()
+        end
+    )
 end
 
 function WatchList:onDismiss()

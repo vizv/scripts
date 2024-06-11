@@ -18,7 +18,7 @@ TradeAgreementOverlay.ATTRS{
 local diplomacy = df.global.game.main_interface.diplomacy
 local function diplomacy_toggle_cat()
     local priority_idx = diplomacy.taking_requests_tablist[diplomacy.taking_requests_selected_tab]
-    local priority = diplomacy.environment.meeting.sell_requests.priority[priority_idx]
+    local priority = diplomacy.environment.dipev.sell_requests.priority[priority_idx]
     if #priority == 0 then return end
     local target_val = priority[0] == 0 and 4 or 0
     for i in ipairs(priority) do

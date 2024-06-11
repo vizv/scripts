@@ -1,6 +1,3 @@
---Allow stressed dwarves to emigrate from the fortress
--- For 34.11 by IndigoFenix; update and cleanup by PeridexisErrant
--- old version:  http://dffd.bay12games.com/file.php?id=8404
 --@module = true
 --@enable = true
 
@@ -81,6 +78,11 @@ function desert(u,method,civ)
         end
     end
 
+    -- unburrow
+    for _, burrow in ipairs(df.global.plotinfo.burrows.list) do
+        dfhack.burrows.setAssignedUnit(burrow, u, false)
+    end
+
     -- erase the unit from the fortress entity
     for k,v in ipairs(fort_ent.histfig_ids) do
         if v == hf_id then
@@ -159,7 +161,6 @@ function canLeave(unit)
            not unit.flags1.chained and
            dfhack.units.getNoblePositions(unit) == nil and
            unit.military.squad_id == -1 and
-           dfhack.units.isSane(unit) and
            not dfhack.units.isBaby(unit) and
            not dfhack.units.isChild(unit)
 end

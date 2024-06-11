@@ -13,7 +13,7 @@ items. Outputs the number of items that matched the filters and were modified.
 Usage
 -----
 
-``item [ count | [un]forbid | [un]dump | [un]hide | [un]melt ] <filter options>``
+``item [count|[un]forbid|[un]dump|[un]hide|[un]melt] [<filter options>] [<search>]``
 
 The ``count`` action counts up the items that are matched by the given filter
 options. Otherwise, the named property is set (or unset) on all the items
@@ -22,8 +22,24 @@ property might differ from those reported by ``count``, because applying a
 property skips over all items that already have the property set (see
 ``--dry-run``)
 
+The (optional) search string will filter by the item description. It will be
+interpreted as a Lua pattern, so any special regular expression characters
+(like ``-``) will need to be escaped with ``%`` (e.g. ``%-``) to be interpreted
+as a literal string. See https://www.lua.org/manual/5.3/manual.html#6.4.1 for
+details. For example "cave spider silk" will match both "cave spider silk web"
+and "cave spider silk cloth". Use ``^pattern$`` to match the entire description.
+
 Examples
 --------
+
+``item count steel -v``
+    Scan your stocks for (unowned) items that contain the word "steel" and
+    print out the counts for each steel item found.
+
+``item count --verbose --by-type steel``
+    Scan your stocks for (unowned) items that contain the word "steel" and
+    print out the descriptions of the matched items and the counts, grouped by
+    item type.
 
 ``item forbid --unreachable``
     Forbid all items that cannot be reached by any of your citizens.
@@ -44,68 +60,64 @@ Examples
 Options
 -------
 
-``-n, --dry-run``
-    Get a count of the items that would be modified by an operation, which will be the
-    number returned by the ``count`` action minus the number of items with the desired
-    property already set.
+``-n``, ``--dry-run``
+    Get a count of the items that would be modified by an operation, which will
+    be the number returned by the ``count`` action minus the number of items
+    with the desired property already set.
 
 ``--by-type``
     Only applies to the ``count`` action. Outputs, in addition to the total
     count, a table of item counts grouped by item type.
 
-``-a, --include-artifacts``
+``-a``, ``--include-artifacts``
     Include artifacts in the item list. Regardless of this setting, artifacts
     are never dumped or melted.
 
 ``--include-owned``
     Include items owned by units (e.g., your dwarves or visitors)
 
-``-i, --inside <burrow>``
+``--ignore-webs``
+    Ignore undisturbed spider webs.
+
+``-i``, ``--inside <burrow>``
     Only include items inside the given burrow.
 
-``-o, --outside <burrow>``
+``-o``, ``--outside <burrow>``
     Only include items outside the given burrow.
 
-``-r, --reachable``
+``-r``, ``--reachable``
     Only include items reachable by one of your citizens.
 
-``-u, --unreachable``
+``-u``, ``--unreachable``
     Only include items not reachable by any of your citizens.
 
-``-t, --type <string>``
+``-t``, ``--type <string>``
     Filter by item type (e.g., BOULDER, CORPSE, ...). Also accepts lower case
     spelling (e.g. "corpse"). Use ``:lua @df.item_type`` to get the list of all
     item types.
 
-``-m, --material <string>``
+``-m``, ``--material <string>``
     Filter by material the item is made out of (e.g., "iron").
 
-``-c, --mat-category <string>``
+``-c``, ``--mat-category <string>``
     Filter by material category of the material item is made out of (e.g.,
     "metal"). Use ``:lua @df.dfhack_material_category`` to get a list of all
     material categories.
 
-``-d, --description <pattern>``
-    Filter by item description (singular form without stack sizes). The
-    ``pattern`` is a Lua pattern
-    (cf. https://www.lua.org/manual/5.3/manual.html#6.4.1), so "cave spider
-    silk" will match both "cave spider silk web" as well as "cave spider silk
-    cloth". Use ``^pattern$`` to match the entire description.
-
-``-w, --min-wear <integer>``
+``-w``, ``--min-wear <integer>``
     Only include items whose wear/damage level is at least ``integer``. Useful
     values are 0 (pristine) to 3 (XX).
 
-``-W, --max-wear <integer>``
+``-W``, ``--max-wear <integer>``
     Only include items whose wear/damage level is at most ``integer``. Useful
     values are 0 (pristine) to 3 (XX).
 
-``-q, --min-quality <integer>``
+``-q``, ``--min-quality <integer>``
     Only include items whose quality level is at least ``integer``. Useful
     values are 0 (ordinary) to 5 (masterwork). Use ``:lua @df.item_quality`` to
     get the mapping between numbers and adjectives.
 
-``-Q, --max-quality <integer>``
+``-Q``, ``--max-quality <integer>``
     Only include items whose quality level is at most ``integer``. Useful
     values are 0 (ordinary) to 5 (masterwork).
 
@@ -127,6 +139,9 @@ Options
 
 ``--visible``
     Same as ``--not-marked=hidden``
+
+``-v``, ``--verbose``
+    Print out a description of each matched item.
 
 API
 ---
@@ -173,7 +188,7 @@ the filter is described.
     Corresponds to ``--reachable``.
 
 * ``condition_description(tab, pattern, negate)``
-    Corresponds to ``--description <pattern>``.
+    Corresponds to the search string passed on the commandline.
 
 * ``condition_material(tab, match, negate)``
     Corresponds to ``--material <match>``.

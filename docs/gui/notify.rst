@@ -25,3 +25,5 @@ This script provides an overlay that shows the currently enabled notifications
 bring up a screen where you can do something about it or will zoom the map to
 the target. If there are multiple targets, each successive click on the
 notification (or press of the :kbd:`Enter` key) will zoom to the next target.
+You can also shift click (or press :kbd:`Shift`:kbd:`Enter`) to zoom to the
+previous target.

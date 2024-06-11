@@ -264,7 +264,7 @@ local function main(args)
 
     if args.all then
         local need_newline = false
-        for _, unit in ipairs(dfhack.units.getCitizens(false)) do
+        for _, unit in ipairs(dfhack.units.getCitizens(true)) do
             do_drop(process(unit, args, need_newline))
             need_newline = true
         end

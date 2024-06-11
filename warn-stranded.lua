@@ -62,7 +62,7 @@ function getStrandedGroups()
     local groupCount = 0
     local unitsByWalkGroup, ignoredUnitsByWalkGroup = {}, {}
 
-    for _, unit in ipairs(dfhack.units.getCitizens(false)) do
+    for _, unit in ipairs(dfhack.units.getCitizens(true)) do
         local unitPos = xyz2pos(dfhack.units.getPosition(unit))
         local walkGroup = getWalkGroup(unitPos)
 
@@ -107,8 +107,11 @@ function getStrandedGroups()
     table.sort(groupList, function(a, b) return #a['units'] < #b['units'] end)
 
     -- The largest group is not stranded by definition
-    local mainGroup = groupList[#groupList].walkGroup
-    table.remove(groupList, #groupList)
+    local mainGroup
+    if #groupList > 0 then
+        mainGroup = groupList[#groupList].walkGroup
+        table.remove(groupList, #groupList)
+    end
 
     return groupList, ignoredUnitsByWalkGroup, mainGroup
 end
@@ -377,7 +380,7 @@ local function getStrandedGroupsWithIgnored(groupList, ignoredUnitsByWalkGroup, 
 end
 
 local function findCitizen(unitId)
-    for _, citizen in ipairs(dfhack.units.getCitizens(true)) do
+    for _, citizen in ipairs(dfhack.units.getCitizens(true, true)) do
         if citizen.id == unitId then return citizen end
     end
 

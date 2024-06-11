@@ -160,7 +160,7 @@ function Masspit:setPit(_, choice)
     local choices = {}
 
     for _, unit_id in pairs(self.caged_units) do
-        local unit = utils.binsearch(df.global.world.units.all, unit_id, 'id')
+        local unit = df.unit.find(unit_id)
         local unit_name = unit.name.has_name and dfhack.TranslateName(unit.name) or dfhack.units.getRaceNameById(unit.race)
 
         -- Prevents duplicate units in assignments, which can cause crashes.

@@ -11,12 +11,14 @@ local utils = require('utils')
 local presets_file = json.open("dfhack-config/mod-manager.json")
 local GLOBAL_KEY = 'mod-manager'
 
-local function get_newregion_viewscreen()
+-- get_newregion_viewscreen and get_modlist_fields are declared as global functions
+-- so external tools can call them to get the DF mod list
+function get_newregion_viewscreen()
     local vs = dfhack.gui.getViewscreenByType(df.viewscreen_new_regionst, 0)
     return vs
 end
 
-local function get_modlist_fields(kind, viewscreen)
+function get_modlist_fields(kind, viewscreen)
     if kind == "available" then
         return {
             id = viewscreen.available_id,
@@ -157,7 +159,7 @@ local function overwrite_preset(idx)
     presets_file:write()
 end
 
-local function load_preset(idx)
+local function load_preset(idx, unset_default_on_failure)
     if idx > #presets_file.data then
         return
     end
@@ -167,14 +169,39 @@ local function load_preset(idx)
     local failures = swap_modlist(viewscreen, modlist)
 
     if #failures > 0 then
-        local failures_str = ""
-        for _, v in ipairs(failures) do
-            failures_str = failures_str .. v .. "\n"
+        local text = {}
+        if unset_default_on_failure then
+            presets_file.data[idx].default = false
+            presets_file:write()
+
+            table.insert(text, {
+                text='Failed to load some mods from your default preset.',
+                pen=COLOR_LIGHTRED,
+            })
+            table.insert(text, NEWLINE)
+            table.insert(text, {
+                text='Preset is being unmarked as the default for safety.',
+                pen=COLOR_LIGHTRED,
+            })
+        else
+            table.insert(text, {
+                text='Failed to load some mods from the preset.',
+                pen=COLOR_LIGHTRED,
+            })
         end
-        dialogs.showMessage("Warning",
-            "Failed to load some mods. Please re-create your default preset.",
-            COLOR_LIGHTRED)
-    end
+        table.insert(text, NEWLINE)
+        table.insert(text, NEWLINE)
+        table.insert(text, 'Please re-create your preset with mods you currently have installed.')
+        table.insert(text, NEWLINE)
+        table.insert(text, 'Here are the mods that failed to load:')
+        table.insert(text, NEWLINE)
+        table.insert(text, NEWLINE)
+        for _, v in ipairs(failures) do
+            table.insert(text, ('- %s'):format(v))
+            table.insert(text, NEWLINE)
+        end
+        dialogs.showMessage("Warning", text)
+end
 end
 
 local function find_preset_by_name(name)
@@ -379,7 +406,8 @@ ModmanageOverlay.ATTRS {
     frame = { w=16, h=3 },
     frame_style = gui.MEDIUM_FRAME,
     desc = "Adds a link to the mod selection screen for accessing the mod manager.",
-    default_pos = { x=5, y=-5 },
+    default_pos = { x=5, y=-6 },
+    version = 2,
     viewscreens = { "new_region/Mods" },
     default_enabled=true,
 }
@@ -402,7 +430,8 @@ NotificationOverlay = defclass(NotificationOverlay, overlay.OverlayWidget)
 NotificationOverlay.ATTRS {
     frame = { w=60, h=1 },
     desc = "Displays a message when a mod preset has been automatically applied.",
-    default_pos = { x=3, y=-2 },
+    default_pos = { x=3, y=-6 },
+    version = 2,
     viewscreens = { "new_region" },
     default_enabled=true,
 }
@@ -447,7 +476,7 @@ dfhack.onStateChange[GLOBAL_KEY] = function(sc)
             default_applied = true
             for i, v in ipairs(presets_file.data) do
                 if v.default then
-                    load_preset(i)
+                    load_preset(i, true)
 
                     notification_message = "*** Loaded mod list '" .. v.name .. "'!"
                     notification_overlay_end = dfhack.getTickCount() + 5000

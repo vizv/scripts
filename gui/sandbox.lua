@@ -23,6 +23,7 @@ Sandbox.ATTRS {
     frame={r=2, t=18, w=26, h=20},
     frame_inset={b=1},
     interface_masks=DEFAULT_NIL,
+    creator_unit=DEFAULT_NIL,
 }
 
 local function is_sentient(unit)
@@ -56,8 +57,6 @@ local function finalize_animal(unit, disposition)
         -- noop; units are created friendly by default
     elseif disposition == DISPOSITIONS.FORT then
         makeown.make_own(unit)
-        unit.flags1.tame = true
-        unit.training_level = df.animal_training_level.Domesticated
     end
 end
 
@@ -81,7 +80,6 @@ local function finalize_units(first_created_unit_id, disposition, syndrome)
         unit.profession = df.profession.STANDARD
         if syndrome then
             syndrome_util.infectWithSyndrome(unit, syndrome)
-            unit.flags1.zombie = true;
         end
         unit.name.has_name = false
         if is_sentient(unit) then
@@ -96,6 +94,17 @@ end
 function Sandbox:init()
     self.spawn_group = 1
     self.first_unit_id = df.global.unit_next_id
+
+    local disposition_options = {
+        {label='hostile', value=DISPOSITIONS.HOSTILE, pen=COLOR_LIGHTRED},
+        {label='hostile (undead)', value=DISPOSITIONS.HOSTILE_UNDEAD, pen=COLOR_RED},
+        {label='independent/wild', value=DISPOSITIONS.WILD, pen=COLOR_YELLOW},
+        {label='friendly', value=DISPOSITIONS.FRIENDLY, pen=COLOR_GREEN},
+    }
+
+    if dfhack.world.isFortressMode() then
+        table.insert(disposition_options, {label='citizens/pets', value=DISPOSITIONS.FORT, pen=COLOR_BLUE})
+    end
 
     self:addviews{
         widgets.ResizingPanel{
@@ -141,13 +150,7 @@ function Sandbox:init()
                     key_back='CUSTOM_SHIFT_A',
                     label='Group disposition',
                     label_below=true,
-                    options={
-                        {label='hostile', value=DISPOSITIONS.HOSTILE, pen=COLOR_LIGHTRED},
-                        {label='hostile (undead)', value=DISPOSITIONS.HOSTILE_UNDEAD, pen=COLOR_RED},
-                        {label='independent/wild', value=DISPOSITIONS.WILD, pen=COLOR_YELLOW},
-                        {label='friendly', value=DISPOSITIONS.FRIENDLY, pen=COLOR_GREEN},
-                        {label='citizens/pets', value=DISPOSITIONS.FORT, pen=COLOR_BLUE},
-                    },
+                    options=disposition_options,
                 },
             },
         },
@@ -170,7 +173,15 @@ function Sandbox:init()
                     frame={l=0},
                     key='CUSTOM_SHIFT_I',
                     label="Create item",
-                    on_activate=function() dfhack.run_script('gui/create-item') end
+                    on_activate=function()
+                        local cmd = {'gui/create-item'}
+                        if self.creator_unit then
+                            table.insert(cmd, '-u')
+                            table.insert(cmd, tostring(self.creator_unit.id))
+                        end
+                        printall(cmd)
+                        dfhack.run_script(table.unpack(cmd))
+                    end
                 },
             },
         },
@@ -215,12 +226,25 @@ end
 function Sandbox:find_zombie_syndrome()
     if self.zombie_syndrome then return self.zombie_syndrome end
     for _,syn in ipairs(df.global.world.raws.syndromes.all) do
+        local has_flags, has_flash = false, false
         for _,effect in ipairs(syn.ce) do
-            if df.creature_interaction_effect_add_simple_flagst:is_instance(effect) and
-                    effect.tags1.OPPOSED_TO_LIFE and effect['end'] == -1 then
-                self.zombie_syndrome = syn
-                return syn
+            if df.creature_interaction_effect_display_namest:is_instance(effect) then
+                -- we don't want named zombie syndromes; they're usually necro experiments
+                goto continue
             end
+            if df.creature_interaction_effect_add_simple_flagst:is_instance(effect) and
+                    effect.tags1.OPPOSED_TO_LIFE and
+                    effect['end'] == -1
+            then
+                has_flags = true
+            end
+            if df.creature_interaction_effect_flash_symbolst:is_instance(effect) then
+                has_flash = true
+            end
+        end
+        if has_flags and has_flash then
+            self.zombie_syndrome = syn
+            return syn
         end
         ::continue::
     end
@@ -333,7 +357,8 @@ local function init_arena()
     arena.race:resize(0)
     arena.caste:resize(0)
     arena.creature_cnt:resize(0)
-    arena.type = -1
+    arena.last_race = -1
+    arena.last_caste = -1
     arena_unit.race = 0
     arena_unit.caste = 0
     arena_unit.races_filtered:resize(0)
@@ -406,7 +431,7 @@ local function init_arena()
                     item_subtype=itemdef.subtype,
                     mattype=mattype,
                     matindex=matindex,
-                    unk_c=1}
+                    on=1}
                 if #list > list_size then
                     utils.assign(list[list_size], element)
                 else
@@ -464,21 +489,32 @@ function SandboxScreen:init()
         Sandbox{
             view_id='sandbox',
             interface_masks=mask_panel.subviews,
+            creator_unit=dfhack.world.getAdventurer(),
         },
     }
 
-    self.prev_gametype = df.global.gametype
-    df.global.gametype = df.game_type.DWARF_ARENA
+    self.prev_gamemode, self.prev_gametype = df.global.gamemode, df.global.gametype
+    df.global.gamemode, df.global.gametype = df.game_mode.DWARF, df.game_type.DWARF_ARENA
+    if self.prev_gamemode ~= df.game_mode.DWARF then
+        local dwarf = df.viewscreen_dwarfmodest:new()
+        dfhack.screen.show(dwarf)
+    end
 end
 
 function SandboxScreen:onDismiss()
-    df.global.gametype = self.prev_gametype
-    view = nil
     self.subviews.sandbox:finalize_group()
 end
 
-if not dfhack.isWorldLoaded() then
-    qerror('gui/sandbox must have a world loaded')
+function SandboxScreen:onDestroy()
+    view = nil
+    df.global.gamemode, df.global.gametype = self.prev_gamemode, self.prev_gametype
+    if self.prev_gamemode ~= df.game_mode.DWARF then
+        dfhack.run_script('devel/pop-screen')
+    end
+end
+
+if not dfhack.isMapLoaded() then
+    qerror('gui/sandbox must have a map loaded')
 end
 
 view = view and view:raise() or SandboxScreen{}:show()

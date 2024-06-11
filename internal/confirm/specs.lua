@@ -162,9 +162,9 @@ ConfirmSpec{
 }
 
 ConfirmSpec{
-    id='trade-sieze',
-    title='Sieze merchant goods',
-    message='Are you sure you want size marked merchant goods? This will make the merchant unwilling to trade further and will damage relations with the merchant\'s civilization.',
+    id='trade-seize',
+    title='Seize merchant goods',
+    message='Are you sure you want seize marked merchant goods? This will make the merchant unwilling to trade further and will damage relations with the merchant\'s civilization.',
     intercept_keys='_MOUSE_L',
     intercept_frame={l=0, r=73, b=4, w=11, h=3},
     context='dwarfmode/Trade',
@@ -198,7 +198,7 @@ ConfirmSpec{
     message='Are you sure you want to delete this route?',
     intercept_keys='_MOUSE_L',
     context='dwarfmode/Hauling',
-    predicate=function() return mi.current_hover == 180 end,
+    predicate=function() return mi.current_hover == df.main_hover_instruction.RouteRemove end,
     pausable=true,
 }
 
@@ -208,7 +208,7 @@ ConfirmSpec{
     message='Are you sure you want to delete this stop?',
     intercept_keys='_MOUSE_L',
     context='dwarfmode/Hauling',
-    predicate=function() return mi.current_hover == 185 end,
+    predicate=function() return mi.current_hover == df.main_hover_instruction.StopRemove end,
     pausable=true,
 }
 
@@ -219,7 +219,7 @@ ConfirmSpec{
     intercept_keys='_MOUSE_L',
     context='dwarfmode/ViewSheets/BUILDING/TradeDepot',
     predicate=function()
-        return mi.current_hover == 301 and has_caravans()
+        return mi.current_hover == df.main_hover_instruction.BuildingRemove and has_caravans()
     end,
 }
 
@@ -229,7 +229,7 @@ ConfirmSpec{
     message='Are you sure you want to disband this squad?',
     intercept_keys='_MOUSE_L',
     context='dwarfmode/Squads',
-    predicate=function() return mi.current_hover == 343 end,
+    predicate=function() return mi.current_hover == df.main_hover_instruction.SquadDisband end,
     pausable=true,
 }
 
@@ -344,7 +344,6 @@ ConfirmSpec{
         local _, sh = dfhack.screen.getWindowSize()
         local num_sections = (sh - 20) // 3
         local selected_section = mouse_offset.y // 3
-        print('num_sections, selected_section', num_sections, selected_section)
         -- if this isn't a button section, exit early
         if selected_section % 2 ~= 0 then return false end
         -- if this hotkey isn't set, then all actions are ok
@@ -424,7 +423,7 @@ ConfirmSpec{
     message='Are you sure you want to remove this manager order?',
     intercept_keys='_MOUSE_L',
     context='dwarfmode/Info/WORK_ORDERS/Default',
-    predicate=function() return mi.current_hover == 222 end,
+    predicate=function() return mi.current_hover == df.main_hover_instruction.ManagerOrderRemove end,
     pausable=true,
 }
 
@@ -446,7 +445,8 @@ ConfirmSpec{
     intercept_keys='_MOUSE_L',
     context='dwarfmode/Burrow',
     predicate=function()
-        return mi.current_hover == 171 or mi.current_hover == 168
+        return mi.current_hover == df.main_hover_instruction.BurrowRemove or
+            mi.current_hover == df.main_hover_instruction.BurrowRemovePaint
     end,
     pausable=true,
 }
@@ -457,7 +457,7 @@ ConfirmSpec{
     message='Are you sure you want to remove this stockpile?',
     intercept_keys='_MOUSE_L',
     context='dwarfmode/Stockpile',
-    predicate=function() return mi.current_hover == 118 end,
+    predicate=function() return mi.current_hover == df.main_hover_instruction.StockpileRemove end,
     pausable=true,
 }
 

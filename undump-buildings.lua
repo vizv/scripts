@@ -4,7 +4,9 @@ function undump_buildings()
         -- Zones and stockpiles don't have the contained_items field.
         if not df.building_actual:is_instance(building) then goto continue end
         for _, contained in ipairs(building.contained_items) do
-            if contained.use_mode == 2 and contained.item.flags.dump then
+            if contained.use_mode == df.building_item_role_type.PERM and
+                contained.item.flags.dump
+            then
                 undumped = undumped + 1
                 contained.item.flags.dump = false
             end

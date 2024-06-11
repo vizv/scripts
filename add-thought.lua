@@ -23,10 +23,10 @@ function addEmotionToUnit(unit,thought,emotion,severity,strength,subthought)
         end
     end
     emotions:insert('#', {
-      new=df.unit_personality.T_emotions,
+      new=df.personality_moodst,
       type=emotion,
-      unk2=1,
-      strength=tonumber(strength),
+      strength=1,
+      relative_strength=tonumber(strength),
       thought=properThought,
       subthought=properSubthought,
       severity=severity,

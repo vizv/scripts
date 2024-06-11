@@ -3,6 +3,7 @@
 local gui = require('gui')
 local notifications = reqscript('internal/notify/notifications')
 local overlay = require('plugins.overlay')
+local utils = require('utils')
 local widgets = require('gui.widgets')
 
 --
@@ -21,6 +22,8 @@ NotifyOverlay.ATTRS{
 }
 
 function NotifyOverlay:init()
+    self.state = {}
+
     self:addviews{
         widgets.Panel{
             view_id='panel',
@@ -34,13 +37,18 @@ function NotifyOverlay:init()
                     -- have wasd mapped to the arrow keys
                     scroll_keys={},
                     on_submit=function(_, choice)
-                        choice.state = choice.data.on_click(choice.state)
+                        local prev_state = self.state[choice.data.name]
+                        self.state[choice.data.name] = choice.data.on_click(prev_state, false)
+                    end,
+                    on_submit2=function(_, choice)
+                        local prev_state = self.state[choice.data.name]
+                        self.state[choice.data.name] = choice.data.on_click(prev_state, true)
                     end,
                 },
             },
         },
         widgets.ConfigureButton{
-            frame={t=0, r=2},
+            frame={t=0, r=1},
             on_click=function() dfhack.run_script('gui/notify') end,
         }
     }
@@ -82,6 +90,25 @@ function NotifyOverlay:overlay_onupdate()
     end
     list:setChoices(choices, idx)
     self.visible = #choices > 0
+end
+
+local CONFLICTING_TOOLTIPS = utils.invert{
+    df.main_hover_instruction.InfoUnits,
+    df.main_hover_instruction.InfoJobs,
+    df.main_hover_instruction.InfoPlaces,
+    df.main_hover_instruction.InfoLabors,
+    df.main_hover_instruction.InfoWorkOrders,
+    df.main_hover_instruction.InfoNobles,
+    df.main_hover_instruction.InfoObjects,
+    df.main_hover_instruction.InfoJustice,
+}
+
+local mi = df.global.game.main_interface
+
+function NotifyOverlay:render(dc)
+    if not CONFLICTING_TOOLTIPS[mi.current_hover] then
+        NotifyOverlay.super.render(self, dc)
+    end
 end
 
 OVERLAY_WIDGETS = {
@@ -171,6 +198,7 @@ end
 function Notify:toggle(_, choice)
     if not choice then return end
     notifications.config.data[choice.name].enabled = not choice.enabled
+    notifications.config:write()
     self:refresh()
 end
 
@@ -181,6 +209,7 @@ function Notify:toggle_all()
     for name in pairs(notifications.NOTIFICATIONS_BY_NAME) do
         notifications.config.data[name].enabled = target_state
     end
+    notifications.config:write()
     self:refresh()
 end
 

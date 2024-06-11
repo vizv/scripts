@@ -76,27 +76,12 @@ function DimsPanel:init()
         widgets.WrappedLabel{
             text_to_wrap=self:callback('get_action_text')
         },
-        widgets.Label{
-            text={{gap=1, text=self:callback('get_area_text')}},
-            text_pen=COLOR_GRAY,
-        },
     }
 end
 
 function DimsPanel:get_action_text()
     local str = self.get_mark_fn() and 'second' or 'first'
     return ('Select the %s corner with the mouse.'):format(str)
-end
-
-function DimsPanel:get_area_text()
-    local mark = self.get_mark_fn()
-    if not mark then return '' end
-    local other = dfhack.gui.getMousePos()
-            or {x=mark.x, y=mark.y, z=df.global.window_z}
-    local width, height, depth = get_dims(mark, other)
-    local tiles = width * height * depth
-    local plural = tiles > 1 and 's' or ''
-    return ('%dx%dx%d (%d tile%s)'):format(width, height, depth, tiles, plural)
 end
 
 local function is_something_selected()
@@ -116,7 +101,7 @@ end
 MassRemove = defclass(MassRemove, widgets.Window)
 MassRemove.ATTRS{
     frame_title='Mass Remove',
-    frame={w=47, h=19, r=2, t=18},
+    frame={w=47, h=18, r=2, t=18},
     resizable=true,
     resize_min={h=9},
     autoarrange_subviews=true,
@@ -392,7 +377,13 @@ MassRemoveScreen.ATTRS {
 }
 
 function MassRemoveScreen:init()
-    self:addviews{MassRemove{}}
+    local window = MassRemove{}
+    self:addviews{
+        window,
+        widgets.DimensionsTooltip{
+            get_anchor_pos_fn=function() return window.mark end,
+        },
+    }
 end
 
 function MassRemoveScreen:onDismiss()

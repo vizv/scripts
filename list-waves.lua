@@ -78,7 +78,7 @@ local function getWave(dwf)
     end
 end
 
-for _,v in ipairs(dfhack.units.getCitizens(false)) do
+for _,v in ipairs(dfhack.units.getCitizens(true, true)) do
     getWave(v)
 end
 

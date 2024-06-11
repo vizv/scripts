@@ -1,6 +1,3 @@
--- Attempts to fully heal the selected unit
---author Kurik Amudnil, Urist DaVinci
---edited by expwnent and AtomicChicken
 --@ module = true
 
 local utils = require('utils')
@@ -35,12 +32,6 @@ function isCitizen(unit)
     end
 end
 
-function isFortCivMember(unit)
-    if unit.civ_id == df.global.plotinfo.civ_id then
-        return true
-    end
-end
-
 function addResurrectionEvent(histFigID)
     local event = df.history_event_hist_figure_revivedst:new()
     event.histfig = histFigID
@@ -51,7 +42,7 @@ function addResurrectionEvent(histFigID)
     df.global.hist_event_next_id = df.global.hist_event_next_id + 1
 end
 
-function heal(unit,resurrect,keep_corpse)
+function heal(unit, resurrect, keep_corpse)
     if not unit then
         return
     end
@@ -76,7 +67,7 @@ function heal(unit,resurrect,keep_corpse)
                 addResurrectionEvent(hf.id)
             end
 
-            if dfhack.world.isFortressMode() and isFortCivMember(unit) then
+            if dfhack.world.isFortressMode() and dfhack.units.isOwnCiv(unit) then
                 unit.flags2.resident = false -- appears to be set to true for dead citizens in a reclaimed fortress, which causes them to be marked as hostile when resurrected
 
                 local deadCitizens = df.global.plotinfo.main.dead_citizens
@@ -119,7 +110,6 @@ function heal(unit,resurrect,keep_corpse)
     --print("Resetting status flags...")
     unit.flags2.has_breaks = false
     unit.flags2.gutted = false
-    unit.flags2.circulatory_spray = false
     unit.flags2.vision_good = true
     unit.flags2.vision_damaged = false
     unit.flags2.vision_missing = false
@@ -194,17 +184,17 @@ function heal(unit,resurrect,keep_corpse)
 
     unit.status2.body_part_temperature:resize(0) -- attempting to rewrite temperature was causing body parts to melt for some reason; forcing repopulation in this manner appears to be safer
 
-    for i = 0,#unit.enemy.body_part_8a8-1,1 do
-        unit.enemy.body_part_8a8[i] = 1 -- not sure what this does, but values appear to change following injuries
+    for i = 0,#unit.enemy.body_part_useable-1,1 do
+        unit.enemy.body_part_useable[i] = 1 -- not sure what this does, but values appear to change following injuries
     end
-    for i = 0,#unit.enemy.body_part_8d8-1,1 do
-        unit.enemy.body_part_8d8[i] = 0 -- same as above
+    for i = 0,#unit.enemy.invorder_bp_start-1,1 do
+        unit.enemy.invorder_bp_start[i] = 0 -- same as above
     end
-    for i = 0,#unit.enemy.body_part_878-1,1 do
-        unit.enemy.body_part_878[i] = 3 -- as above
+    for i = 0,#unit.enemy.motor_nervenet-1,1 do
+        unit.enemy.motor_nervenet[i] = 3 -- as above
     end
-    for i = 0,#unit.enemy.body_part_888-1,1 do
-        unit.enemy.body_part_888[i] = 3 -- as above
+    for i = 0,#unit.enemy.sensory_nervenet-1,1 do
+        unit.enemy.sensory_nervenet[i] = 3 -- as above
     end
 
     local histFig = df.historical_figure.find(unit.hist_figure_id)
@@ -227,7 +217,7 @@ function heal(unit,resurrect,keep_corpse)
         health.dressing_cntdn = 0
         health.suture_cntdn = 0
         health.crutch_cntdn = 0
-        health.unk_18_cntdn = 0
+        health.try_for_cast_cntdn = 0
     end
 
     local job = unit.job.current_job
@@ -260,14 +250,15 @@ if args.all then
         heal(unit,args.r,args.keep_corpse)
     end
 elseif args.all_citizens then
+    -- can't use dfhack.units.getCitizens since we want dead ones too
     for _,unit in ipairs(df.global.world.units.active) do
-        if isCitizen(unit) then
+        if dfhack.units.isCitizen(unit) or dfhack.units.isResident(unit) then
             heal(unit,args.r,args.keep_corpse)
         end
     end
 elseif args.all_civ then
     for _,unit in ipairs(df.global.world.units.active) do
-        if isFortCivMember(unit) then
+        if dfhack.units.isOwnCiv(unit) then
             heal(unit,args.r,args.keep_corpse)
         end
     end

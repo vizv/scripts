@@ -8,7 +8,7 @@ if not args[1] or args[1] == 'help' or args[1] == '-h' or args[1] == '--help' th
     print(dfhack.script_help())
     return
 elseif args[1] == 'all' or args[1] == '-all' then
-    for _, item in ipairs(df.global.world.items.all) do
+    for _, item in ipairs(df.global.world.items.other.IN_PLAY) do
         if item:getWear() > 0 then --hint:df.item_actual
             item:setWear(0)
             count = count + 1

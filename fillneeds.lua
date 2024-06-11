@@ -14,7 +14,7 @@ function satisfyNeeds(unit)
 end
 
 if args.all then
-    for _, unit in ipairs(dfhack.units.getCitizens(true)) do
+    for _, unit in ipairs(dfhack.units.getCitizens()) do
         satisfyNeeds(unit)
     end
 else

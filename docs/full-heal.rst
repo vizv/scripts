@@ -22,7 +22,7 @@ Usage
 ``full-heal --all [-r] [--keep_corpse]``
     Heal all units on the map, optionally resurrecting them if dead.
 ``full-heal --all_citizens [-r] [--keep_corpse]``
-    Heal all fortress citizens on the map. Does not include pets.
+    Heal all fortress citizens and residents on the map. Does not include pets.
 ``full-heal --all_civ [-r] [--keep_corpse]``
     Heal all units belonging to your parent civilization, including pets and
     visitors.

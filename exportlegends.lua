@@ -256,9 +256,9 @@ local function export_more_legends_xml()
                         end
                         if df.abstract_building_templest:is_instance(buildingV) then
                             file:write("\t\t\t\t<deity_type>"..buildingV.deity_type.."</deity_type>\n")
-                            if buildingV.deity_type == df.temple_deity_type.Deity then
+                            if buildingV.deity_type == df.religious_practice_type.WORSHIP_HFID then
                                 file:write("\t\t\t\t<deity>"..buildingV.deity_data.Deity.."</deity>\n")
-                            elseif buildingV.deity_type == df.temple_deity_type.Religion then
+                            elseif buildingV.deity_type == df.religious_practice_type.RELIGION_ENID then
                                 file:write("\t\t\t\t<religion>"..buildingV.deity_data.Religion.."</religion>\n")
                             end
                         end

@@ -1,35 +1,6 @@
 -- Size Check
 --author mifki
 --luacheck:skip-entirely
---
---[====[
-
-devel/sc
-========
-Size Check: scans structures for invalid vectors, misaligned structures,
-and unidentified enum values.
-
-.. note::
-
-    This script can take a very long time to complete, and DF may be
-    unresponsive while it is running. You can use `kill-lua` to interrupt
-    this script.
-
-Examples:
-
-* scan world::
-
-    devel/sc
-
-* scan all globals::
-
-    devel/sc -all
-
-* scan result of expression::
-
-    devel/sc [expr]
-
-]====]
 
 local utils = require('utils')
 
@@ -37,7 +8,6 @@ local guess_pointers = false
 local check_vectors = true
 local check_pointers = true
 local check_enums = true
-
 
 -- not really a queue, I know
 local queue
@@ -119,7 +89,7 @@ local count = -1
 local function check_container(obj, path)
     count = count + 1
     if dfhack.is_interactive() and count % 500 == 0 then
-        local i = ((count / 500) % 4) + 1
+        local i = ((count // 500) % 4) + 1
         dfhack.print(prog:sub(i, i) .. '\r')
         dfhack.console.flush()
     end

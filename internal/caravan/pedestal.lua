@@ -126,7 +126,7 @@ end
 local function get_pending_value(display_bld)
     local value = get_assigned_value(display_bld)
     for _, contained_item in ipairs(display_bld.contained_items) do
-        if contained_item.use_mode ~= 0 or
+        if contained_item.use_mode ~= df.building_item_role_type.TEMP or
             not contained_item.item.flags.in_building
         then
             goto continue
@@ -416,13 +416,11 @@ local function is_displayable_item(item)
         item.flags.spider_web or
         item.flags.construction or
         item.flags.encased or
-        item.flags.unk12 or
         item.flags.murder or
         item.flags.trader or
         item.flags.owned or
         item.flags.garbage_collect or
-        item.flags.on_fire or
-        item.flags.in_chest
+        item.flags.on_fire
     then
         return false
     end
@@ -444,7 +442,7 @@ local function is_displayable_item(item)
         local bld = dfhack.items.getHolderBuilding(item)
         if not bld then return false end
         for _, contained_item in ipairs(bld.contained_items) do
-            if contained_item.use_mode == 0 then return true end
+            if contained_item.use_mode == df.building_item_role_type.TEMP then return true end
             -- building construction materials
             if item == contained_item.item then return false end
         end
@@ -479,7 +477,7 @@ local function make_container_search_key(item, desc)
     local words = {}
     common.add_words(words, desc)
     for _, contained_item in ipairs(dfhack.items.getContainedItems(item)) do
-        common.add_words(words, common.get_item_description(contained_item))
+        common.add_words(words, dfhack.items.getReadableDescription(contained_item))
     end
     return table.concat(words, ' ')
 end
@@ -495,7 +493,7 @@ function AssignItems:cache_choices(inside_containers, display_bld)
     if self.choices_cache[inside_containers] then return self.choices_cache[inside_containers] end
 
     local choices = {}
-    for _, item in ipairs(df.global.world.items.all) do
+    for _, item in ipairs(df.global.world.items.other.IN_PLAY) do
         if not is_displayable_item(item) then goto continue end
         if inside_containers and is_container(item) and contains_non_liquid_powder(item) then
             goto continue
@@ -503,7 +501,7 @@ function AssignItems:cache_choices(inside_containers, display_bld)
             goto continue
         end
         local value = common.get_perceived_value(item)
-        local desc = common.get_item_description(item)
+        local desc = dfhack.items.getReadableDescription(item)
         local status = get_status(item, self.bld)
         local reachable = dfhack.maps.canWalkBetween(xyz2pos(dfhack.items.getPosition(item)),
                 xyz2pos(display_bld.centerx, display_bld.centery, display_bld.z))
