@@ -110,40 +110,35 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
                 table.insert(annotations, NEWLINE)
             end
             local level_color = COLOR_GRAY
-            local level_chara = "\x1e"
+            local level_chara = "Lv"
 
-            if skill.rating == 0 then
-                table.insert(annotations, "   ")
-            else
-                level_color = COLOR_WHITE
-                if skill.rating == df.skill_rating.Legendary then
-                    level_color = COLOR_CYAN
-                    level_chara = "\x0f"
-                end
-
-                if skill.rating > df.skill_rating.Legendary then
-                    level_color = COLOR_LIGHTCYAN
-                    level_chara = "\x0f"
-                end
-
-                if skill.demotion_counter > 0 then
-                    level_color = COLOR_YELLOW
-                end
-
-                if skill.rating - skill.demotion_counter < 0 then
-                    level_color = COLOR_BROWN
-                    level_chara = "" -- level is going to be negative, so - takes its place
-                end
-
-                table.insert(annotations, { text=tostring(
-                        level_chara .. skill.rating - skill.demotion_counter
-                    ),
-                    width = 3,
-                    pen = level_color }
-                )
+            level_color = COLOR_WHITE
+            if skill.rating == df.skill_rating.Legendary then
+                level_color = COLOR_CYAN
             end
 
-            table.insert(annotations, "    ")
+            if skill.rating > df.skill_rating.Legendary then
+                level_color = COLOR_LIGHTCYAN
+            end
+
+            if skill.demotion_counter > 0 then
+                level_color = COLOR_YELLOW
+            end
+
+            if skill.rating - skill.demotion_counter < 0 then
+                level_color = COLOR_BROWN
+            end
+
+            if skill.rating - skill.demotion_counter >= 100 then
+                level_chara = "L"
+            end
+
+            table.insert(annotations, { text=tostring(
+                    level_chara .. skill.rating - skill.demotion_counter
+                ),
+                width = 7,
+                pen = level_color }
+            )
 
             table.insert(annotations, { text=string.format(
                     "%4d/%4d",
