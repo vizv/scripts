@@ -12,15 +12,26 @@ Empties the contents of the selected bin onto the floor.
 
 ]====]
 
-local bin = dfhack.gui.getSelectedItem(true) or qerror("No item selected")
-local items = dfhack.items.getContainedItems(bin)
+local function emptyContainer(container)
+    local items = dfhack.items.getContainedItems(container)
 
-if #items > 0 then
-    print('Emptying ' .. dfhack.items.getDescription(bin, 0))
-    for _, item in pairs(items) do
-        print('  ' .. dfhack.items.getDescription(item, 0))
-        dfhack.items.moveToGround(item, xyz2pos(dfhack.items.getPosition(bin)))
+    if #items > 0 then
+        print('Emptying ' .. dfhack.items.getDescription(container, 0))
+        for _, item in pairs(items) do
+            print('  ' .. dfhack.items.getDescription(item, 0))
+            dfhack.items.moveToGround(item, xyz2pos(dfhack.items.getPosition(container)))
+        end
+    end
+end
+
+
+local stockpile = dfhack.gui.getSelectedStockpile(true)
+if stockpile then
+    local contents = dfhack.buildings.getStockpileContents(stockpile)
+    for _, container in ipairs(contents) do
+        emptyContainer(container)
     end
 else
-    print('No contained items')
+    local bin = dfhack.gui.getSelectedItem(true) or qerror("No item selected")
+    emptyContainer(bin)
 end
