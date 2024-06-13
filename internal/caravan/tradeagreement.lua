@@ -12,7 +12,7 @@ TradeAgreementOverlay.ATTRS{
     default_pos={x=45, y=-6},
     default_enabled=true,
     viewscreens='dwarfmode/Diplomacy/Requests',
-    frame={w=40, h=4},
+    frame={w=25, h=4},
     frame_style=gui.MEDIUM_FRAME,
     frame_background=gui.CLEAR_PEN,
 }
@@ -92,7 +92,7 @@ function TradeAgreementOverlay:init()
     self:addviews{
         widgets.HotkeyLabel{
             frame={t=1, l=0},
-            label='Select materials by value',
+            label='Select by value',
             key='CUSTOM_CTRL_M',
             on_activate=self:callback('select_by_value'),
             enabled=get_select_by_value_tab,
