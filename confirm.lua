@@ -4,6 +4,7 @@ local dialogs = require('gui.dialogs')
 local gui = require('gui')
 local overlay = require('plugins.overlay')
 local specs = reqscript('internal/confirm/specs')
+local utils = require('utils')
 local widgets = require("gui.widgets")
 
 ------------------------
@@ -129,7 +130,7 @@ function ConfirmOverlay:onInput(keys)
                 gui.simulateInput(scr, keys)
                 self.simulating = false
             end
-            dialogs.showYesNoPrompt(conf.title, conf.message:wrap(45), COLOR_YELLOW,
+            dialogs.showYesNoPrompt(conf.title, utils.getval(conf.message):wrap(45), COLOR_YELLOW,
                 propagate_fn, nil, curry(propagate_fn, true), curry(dfhack.run_script, 'gui/confirm', tostring(conf.id)))
             return true
         end
