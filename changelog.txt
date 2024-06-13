@@ -65,6 +65,7 @@ Template for new versions:
 - `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
 - `lever`: enable use of ``reqscript`` to access lever pulling functions.
 - `exterminate`: add ``all`` target for convenient scorched earth tactics
+- `caravan`: add shortcut to the trade request screen for selecting item types by value
 
 ## Removed
 - `max-wave`: merged into `pop-control`
