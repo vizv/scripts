@@ -59,7 +59,7 @@ end
 
 function DrownCheckOverlay:onRenderFrame(dc, rect)
     DrownCheckOverlay.super.onRenderFrame(self, dc, rect)
-    self.subviews.panel.visible = self.get_drowning() > 0 or self.get_blood() < self.get_max_blood()
+    self.subviews.panel.visible = get_breath() < get_max_breath() or get_blood() < get_max_blood()
     if not self.subviews.panel.visible then return end
 
     local label_text = {}
@@ -68,7 +68,7 @@ function DrownCheckOverlay:onRenderFrame(dc, rect)
         self.blink = not self.blink
     end
 
-    if self.get_drowning() > 0 then
+    if get_breath() < get_max_breath() then
         local suffocation_pen = COLOR_CYAN
         if self.blink then
             suffocation_pen = COLOR_LIGHTCYAN
