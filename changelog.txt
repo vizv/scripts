@@ -49,6 +49,7 @@ Template for new versions:
 - `makeown`: set target animals to tame and domesticated
 - `gui/sandbox`: created citizens can now be useful military squad members
 - `gui/sandbox`: created undead now have a purple shade (after save and reload)
+- `caravan`: fix errors in trade dialog if all fort items are traded away while the trade dialog is showing fort items and the `confirm` trade confirmation is shown
 - `control-panel`: restore non-default values of per-save enabled/disabled settings for repeat-based commands
 
 ## Misc Improvements
