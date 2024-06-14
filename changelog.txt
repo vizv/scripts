@@ -70,6 +70,7 @@ Template for new versions:
 - `exterminate`: add ``all`` target for convenient scorched earth tactics
 - `caravan`: add shortcut to the trade request screen for selecting item types by value
 - `gui/notify`: notification panel extended to apply to adventure mode
+- `gui/control-panel`: highlight prefrences that have been changed from the defaults
 
 ## Removed
 - `max-wave`: merged into `pop-control`
