@@ -829,6 +829,7 @@ local building_db_raw = {
        no_extents_if_solid=true,
        is_valid_tile_fn=is_valid_tile_dirt,
        is_valid_extent_fn=is_extent_nonempty,
+       ignore_extent_errors=true,
        props_fn=do_farm_props},
     o={label='Paved Road',
        type=df.building_type.RoadPaved, has_extents=true,
