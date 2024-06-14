@@ -152,7 +152,6 @@ local options, args = {
     method = killMethod.INSTANT,
     only_visible = false,
     include_friendly = false,
-    maximum = -1,
 }, {...}
 
 local positionals = argparse.processArgsGetopt(args, {
@@ -160,7 +159,6 @@ local positionals = argparse.processArgsGetopt(args, {
     {'m', 'method', handler = function(arg) options.method = killMethod[arg:upper()] end, hasArg = true},
     {'o', 'only-visible', handler = function() options.only_visible = true end},
     {'f', 'include-friendly', handler = function() options.include_friendly = true end},
-    {'x', 'maximum', handler = function(arg) options.maximum = tonumber(arg) end, hasArg = true},
 })
 
 if not dfhack.isMapLoaded() then
@@ -215,9 +213,7 @@ elseif positionals[1]:split(':')[1] == "all" then
     local selected_caste = positionals[1]:split(':')[2]
 
     for _, unit in ipairs(df.global.world.units.active) do
-        if options.maximum > 0 and count >= options.maximum then
-            break
-        end
+
         if not checkUnit(unit) then
             goto skipunit
         end
@@ -251,7 +247,7 @@ else
         elseif map_races[selected_race_under] then
             selected_race = selected_race_under
         else
-            qerror("No creatures of this race on the map (" .. selected_race .. ").")
+            qerror("No creatures of this race on the map.")
         end
     end
 
@@ -269,9 +265,6 @@ else
     target = selected_race
 
     for _, unit in pairs(df.global.world.units.active) do
-        if options.maximum > 0 and count >= options.maximum then
-            break
-        end
         if not checkUnit(unit) then
             goto skipunit
         end
