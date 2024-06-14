@@ -78,19 +78,9 @@ local function drownUnit(unit, liquid_type)
     createLiquid()
 end
 
-local function destroyContainedItems(container)
-    local contained_items = dfhack.items.getContainedItems(container)
-    for index = #contained_items-1, 0, -1 do
-        local item = contained_items[index]
-        destroyContainedItems(item)
-        dfhack.items.remove(item)
-    end
-end
-
 local function destroyInventory(unit)
     for index = #unit.inventory-1, 0, -1 do
         local item = unit.inventory[index].item
-        destroyContainedItems(item)
         dfhack.items.remove(item)
     end
 end
