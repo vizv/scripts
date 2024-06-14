@@ -17,7 +17,8 @@ Usage::
 
 --========================
 -- Author: ArrowThunder on bay12 & reddit
--- Version: 1.1
+-- Fixed for v51 by Crystalwarrior
+-- Version: 1.2
 --=======================
 
 -- get the list of all the active units currently loaded
@@ -28,10 +29,10 @@ local num_fixed = 0 -- this is the number of army controllers fixed, not units
     -- I've found that often, multiple sleepers share a bugged army controller
 for k, unit in pairs(active_units) do
     if unit then
-        local army_controller = df.army_controller.find(unit.enemy.army_controller_id)
-        if army_controller and army_controller.type == 4 then -- sleeping code is possible
-            if army_controller.unk_64.t4.unk_2.not_sleeping == false then
-                army_controller.unk_64.t4.unk_2.not_sleeping = true -- fix bug
+        local army_controller = unit.enemy.army_controller
+        if army_controller and army_controller.goal == df.army_controller_goal_type.CAMP then -- sleeping code is possible
+            if not army_controller.data.goal_camp.camp_flag.ALARM_INTRUDER then
+                army_controller.data.goal_camp.camp_flag.ALARM_INTRUDER = true -- fix bug
                 num_fixed = num_fixed + 1
             end
         end
