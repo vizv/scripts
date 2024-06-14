@@ -27,7 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
-- `adv-rumors`: (reinstated) add additional searchable keywords for conversation topics
+- `advtools`: collection of useful commands and overlays for adventure mode
 - `pop-control`: (reinstated) limit the maximum size of migrant waves
 - `bodyswap`: (reinstated) take control of another unit in adventure mode
 - `gui/sitemap`: list and zoom to nearby people, locations, and artifacts
@@ -75,6 +75,7 @@ Template for new versions:
 - `max-wave`: merged into `pop-control`
 - `devel/find-offsets`, `devel/find-twbt`, `devel/prepare-save`: remove development scripts that are no longer useful
 - `fix/item-occupancy`, `fix/tile-occupancy`: merged into `fix/occupancy`
+- `adv-rumors`: merged into `advtools`
 
 # 50.13-r2
 
