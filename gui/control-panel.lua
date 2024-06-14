@@ -832,7 +832,7 @@ local function make_preference_text(label, default, value)
         label,
         NEWLINE,
         {gap=4, text=('(default: %s, '):format(default)},
-        {text=('current: %s)'):format(value), pen=default ~= value and COLOR_YELLOW or nil},
+        {text=('current: %s'):format(value), pen=default ~= value and COLOR_YELLOW or nil},
         ')',
     }
 end
