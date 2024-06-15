@@ -73,6 +73,7 @@ Template for new versions:
 - `caravan`: add shortcut to the trade request screen for selecting item types by value
 - `gui/notify`: notification panel extended to apply to adventure mode
 - `gui/control-panel`: highlight prefrences that have been changed from the defaults
+- `gui/quickfort`: buildings can now be constructed in a "high priority" state, giving them first dibs on `buildingplan` materials and setting their construction jobs to the highest priority
 
 ## Removed
 - `max-wave`: merged into `pop-control`
