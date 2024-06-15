@@ -17,23 +17,6 @@ ignore_words = utils.invert{
 local adventure = df.global.game.main_interface.adventure
 
 -- CORE FUNCTIONS
--- Helper function to create new dialog choices, returns the created choice
-local function new_choice(choice_type, title, keywords)
-    local choice = df.adventure_conversation_choice_infost:new()
-    choice.cc = df.talk_choice:new()
-    choice.cc.type = choice_type
-    local text = df.new("string")
-    text.value = title
-    choice.print_string.text:insert("#", text)
-
-    if keywords ~= nil then
-        for i, key in ipairs(keywords) do
-            addKeyword(choice, key)
-        end
-    end
-    return choice
-end
-
 -- Gets the keywords already present on the dialog choice
 local function getKeywords(choice)
     local keywords = {}
@@ -85,7 +68,31 @@ local function generateKeywordsForChoice(choice)
     addKeywords(choice, new_keywords)
 end
 
+-- Helper function to create new dialog choices, returns the created choice
+local function new_choice(choice_type, title, keywords)
+    local choice = df.adventure_conversation_choice_infost:new()
+    choice.cc = df.talk_choice:new()
+    choice.cc.type = choice_type
+    local text = df.new("string")
+    text.value = title
+    choice.print_string.text:insert("#", text)
+
+    if keywords ~= nil then
+        addKeywords(choice, keywords)
+    end
+    return choice
+end
+
 local function addHistFigWhereaboutsChoice(profile)
+    for i, c in pairs(adventure.conversation.conv_choice_info) do
+        if c.cc.type == df.talk_choice_type.AskWhereabouts and
+          c.cc.invocation_target_hfid ~= -1 and
+          c.cc.invocation_target_hfid == profile.histfig_id then
+            -- Don't add repeat entries
+            return
+        end
+    end
+
     local histfig = df.historical_figure.find(profile.histfig_id)
     local name = ""
     local creature = df.creature_raw.find(histfig.race)
@@ -93,17 +100,25 @@ local function addHistFigWhereaboutsChoice(profile)
         local caste = creature.caste[histfig.caste]
         name = caste.caste_name[0]
     end
-    local title = "Ask for the whereabouts of the " .. name .. " " .. dfhack.TranslateName(histfig.name)
+    local title = "Ask for the whereabouts of the " .. name .. " " .. dfhack.TranslateName(histfig.name, true)
     if profile._type == df.relationship_profile_hf_historicalst then
         title = title .. " (Heard of)"
     end
-    local choice = new_choice(df.talk_choice_type.AskWhereabouts, title)
+    local choice = new_choice(df.talk_choice_type.AskWhereabouts, title, dfhack.TranslateName(histfig.name):split())
      -- insert before the last choice, which is usually "back"
     adventure.conversation.conv_choice_info:insert(#adventure.conversation.conv_choice_info-1, choice)
     choice.cc.invocation_target_hfid = histfig.id
 end
 
 local function addIdentityWhereaboutsChoice(identity)
+    for i, c in pairs(adventure.conversation.conv_choice_info) do
+        if c.cc.type == df.talk_choice_type.AskWhereabouts and
+           c.cc.invocation_target_hfid ~= -1 and
+           c.cc.invocation_target_hfid == identity.impersonated_hf then
+            -- Don't add repeat entries
+            return
+        end
+    end
     local identity_name = identity.name
     local name = ""
     local creature = df.creature_raw.find(identity.race)
@@ -119,10 +134,10 @@ local function addIdentityWhereaboutsChoice(identity)
             name = caste.caste_name[0]
         end
     end
-    local title = "Ask for the whereabouts of the " .. name .. " " .. dfhack.TranslateName(identity_name)
+    local title = "Ask for the whereabouts of the " .. name .. " " .. dfhack.TranslateName(identity_name, true)
     local choice = new_choice(df.talk_choice_type.AskWhereabouts, title)
     -- insert before the last choice, which is usually "back"
-    adventure.conversation.conv_choice_info:insert(#adventure.conversation.conv_choice_info-1, choice)
+    adventure.conversation.conv_choice_info:insert(#adventure.conversation.conv_choice_info-1, choice, dfhack.TranslateName(identity_name):split())
     choice.cc.invocation_target_hfid = identity.impersonated_hf
 end
 
@@ -130,6 +145,9 @@ end
 local function rumorUpdate()
     local conversation_state = adventure.conversation.conv_act.event[0].state
     -- add new conversation options depending on state
+
+    -- If we're asking about directions, add ability to ask about all our relationships - visual, historical and identities.
+    -- In vanilla, we're only allowed to ask for directions to people we learned in anything that's added to df.global.adventure.rumor
     if conversation_state == df.conversation_state_type.AskDirections then
         local adventurer_figure = df.historical_figure.find(dfhack.world.getAdventurer().hist_figure_id)
         local relationships = adventurer_figure.info.relationships
@@ -154,7 +172,7 @@ local function rumorUpdate()
         end
     end
 
-    -- generate extra keywords
+    -- generate extra keywords for all options
     for i, choice in ipairs(adventure.conversation.conv_choice_info) do
         generateKeywordsForChoice(choice)
     end
