@@ -1215,6 +1215,10 @@ local function custom_building(_, keys)
         db_entry.props.name = props.name
         props.name = nil
     end
+    if props.do_now then
+        db_entry.do_now = true
+        props.do_now = nil
+    end
     if db_entry.props_fn then db_entry:props_fn(props) end
     for k,v in pairs(props) do
         dfhack.printerr(('unhandled property: "%s"="%s"'):format(k, v))
@@ -1253,7 +1257,7 @@ local function create_building(b, cache, dry_run)
         pos=b.pos, width=b.width, height=b.height, direction=db_entry.direction,
         fields=fields}
     if not bld then
-        -- this is an error instead of a qerror since our validity checking
+        -- this is an error instead of just a message since our validity checking
         -- is supposed to prevent this from ever happening
         error(string.format('unable to place %s: %s', db_entry.label, err))
     end
@@ -1297,6 +1301,12 @@ local function create_building(b, cache, dry_run)
                 db_entry.custom or -1) then
         log('registering %s with buildingplan', db_entry.label)
         buildingplan.addPlannedBuilding(bld)
+        if db_entry.do_now then
+            buildingplan.makeTopPriority(bld)
+        end
+    end
+    if db_entry.do_now and #bld.jobs > 0 then
+        bld.jobs[0].flags.do_now = true
     end
 end
 
