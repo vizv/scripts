@@ -3,6 +3,8 @@
 local gui = require('gui')
 local widgets = require('gui.widgets')
 
+reqscript('internal/unit-info-viewer/skills_progress')
+
 --------------------------------------------------
 ---------------------- Time ----------------------
 --------------------------------------------------

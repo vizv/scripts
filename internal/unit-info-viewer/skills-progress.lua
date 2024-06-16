@@ -1,24 +1,10 @@
 --@ module=true
 
 local utils = require("utils")
-local gui = require('gui')
 local widgets = require('gui.widgets')
 local overlay = require('plugins.overlay')
 
-local to_pen = dfhack.pen.parse
-
 local view_sheets = df.global.game.main_interface.view_sheets
-
-local active_tab = {
-    'Labor',
-    'Combat',
-    'Social',
-    'Other Skills',
-}
-
-local function get_active_tab()
-    return active_tab[view_sheets.unit_skill_active_tab]
-end
 
 local function get_skill(id)
     return utils.binsearch(
