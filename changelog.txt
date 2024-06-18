@@ -53,6 +53,7 @@ Template for new versions:
 - `control-panel`: restore non-default values of per-save enabled/disabled settings for repeat-based commands
 - `confirm`: fix confirmation prompt for overwriting a hotkey zoom location
 - `quickfort`: allow farm plots to be built on muddy stone
+- `suspend`: remove broken ``--onlyblocking`` option; restore functionality to suspend all construction jobs
 
 ## Misc Improvements
 - `gui/launcher`: "space space to toggle pause" behavior is skipped if the game was paused when `gui/launcher` came up to prevent accidental unpausing
