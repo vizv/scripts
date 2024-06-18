@@ -554,3 +554,7 @@ if dfhack_flags.module then
 end
 
 view = view and view:raise() or UnitInfoScreen{}:show()
+
+OVERLAY_WIDGETS = {
+    skillprogress=skills_progress.SkillProgressOverlay,
+}

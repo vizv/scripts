@@ -7,8 +7,12 @@ local overlay = require('plugins.overlay')
 local view_sheets = df.global.game.main_interface.view_sheets
 
 local function get_skill(id)
+    local unit = df.unit.find(view_sheets.viewing_unid[view_sheets.active_id])
+    if not unit then return nil end
+    local soul = unit.status.current_soul
+    if not soul then return nil end
     return utils.binsearch(
-        df.unit.find(view_sheets.viewing_unid[0]).status.current_soul.skills,
+        soul.skills,
         view_sheets.unit_skill[id],
         "id"
     )
@@ -90,6 +94,10 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
     local annotations = {}
     for idx = view_sheets.scroll_position_unit_skill, max_elem do
         local skill = get_skill(idx)
+        if not skill then 
+            table.insert(annotations, "\n\n\n\n")
+            goto continue
+        end
         local rating = df.skill_rating.attrs[math.max(0, math.min(skill.rating, 19))]
         if self.display_experience then
             if not self.progress_bar then
@@ -169,6 +177,8 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
         -- End!
         table.insert(annotations, NEWLINE)
         table.insert(annotations, NEWLINE)
+
+        ::continue::
     end
     self.subviews.annotations:setText(annotations)
     self.subviews.annotations:updateLayout()
@@ -176,6 +186,3 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
     SkillProgressOverlay.super.onRenderFrame(self, dc, rect)
 end
 
-OVERLAY_WIDGETS = {
-    skillprogress=SkillProgressOverlay,
-}
