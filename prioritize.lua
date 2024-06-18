@@ -650,7 +650,7 @@ end
 
 local function is_visible()
     local job = dfhack.gui.getSelectedJob(true)
-    return job and
+    return job and not job.flags.suspend and
         (job.job_type == df.job_type.DestroyBuilding or
          job.job_type == df.job_type.ConstructBuilding)
 end

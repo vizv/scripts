@@ -27,7 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
-- `adv-rumors`: (reinstated) add additional searchable keywords for conversation topics
+- `advtools`: collection of useful commands and overlays for adventure mode
 - `pop-control`: (reinstated) limit the maximum size of migrant waves
 - `bodyswap`: (reinstated) take control of another unit in adventure mode
 - `gui/sitemap`: list and zoom to nearby people, locations, and artifacts
@@ -52,6 +52,7 @@ Template for new versions:
 - `caravan`: fix errors in trade dialog if all fort items are traded away while the trade dialog is showing fort items and the `confirm` trade confirmation is shown
 - `control-panel`: restore non-default values of per-save enabled/disabled settings for repeat-based commands
 - `confirm`: fix confirmation prompt for overwriting a hotkey zoom location
+- `quickfort`: allow farm plots to be built on muddy stone
 
 ## Misc Improvements
 - `gui/launcher`: "space space to toggle pause" behavior is skipped if the game was paused when `gui/launcher` came up to prevent accidental unpausing
@@ -64,16 +65,22 @@ Template for new versions:
 - `gui/unit-info-viewer`: add precise unit size in cc (cubic centimeters) for comparison against the wiki values. you can set your preferred number format for large numbers like this in the preferences of `control-panel` or `gui/control-panel`
 - `gui/quickfort`: delete blueprints from the blueprint load dialog
 - `quickfort`: new ``delete`` command for deleting player-owned blueprints (library and mod-added blueprints cannot be deleted)
+- `quickfort`: support enabling `logistics` features for autoforbid and autoclaim on stockpiles
+- `gui/quickfort`: allow farm plots, dirt roads, and paved roads to be designated around partial obstructions without callling it an error, matching vanilla behavior
 - `gui/launcher`: refresh default tag filter when mortal mode is toggled in `gui/control-panel` so changes to which tools autocomplete take effect immediately
 - `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
 - `lever`: enable use of ``reqscript`` to access lever pulling functions.
 - `exterminate`: add ``all`` target for convenient scorched earth tactics
 - `caravan`: add shortcut to the trade request screen for selecting item types by value
+- `gui/notify`: notification panel extended to apply to adventure mode
+- `gui/control-panel`: highlight prefrences that have been changed from the defaults
+- `gui/quickfort`: buildings can now be constructed in a "high priority" state, giving them first dibs on `buildingplan` materials and setting their construction jobs to the highest priority
 
 ## Removed
 - `max-wave`: merged into `pop-control`
 - `devel/find-offsets`, `devel/find-twbt`, `devel/prepare-save`: remove development scripts that are no longer useful
 - `fix/item-occupancy`, `fix/tile-occupancy`: merged into `fix/occupancy`
+- `adv-rumors`: merged into `advtools`
 
 # 50.13-r2
 
