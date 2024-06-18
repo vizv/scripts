@@ -16,7 +16,7 @@ end
 
 SkillProgressOverlay=defclass(SkillProgressOverlay, overlay.OverlayWidget)
 SkillProgressOverlay.ATTRS {
-    desc="Display progress bars for learning skills!",
+    desc="Display progress bars for learning skills on unit viewsheets.",
     default_pos={x=-43,y=20},
     default_enabled=true,
     viewscreens= {
@@ -40,12 +40,12 @@ function SkillProgressOverlay:init()
     self:addviews{
         widgets.Label{
             view_id='annotations',
-            frame={t=0, l=self.frame.w-16, w=16},
+            frame={t=0, r=0, w=16},
             text='',
             text_pen=COLOR_GRAY,
         },
         widgets.ToggleHotkeyLabel{
-            frame={t=self.frame.h-1,l=2, w=25},
+            frame={b=1, l=2, w=25},
             label='Progress Bar',
             key='CUSTOM_CTRL_B',
             options={
@@ -53,10 +53,10 @@ function SkillProgressOverlay:init()
                 {label='Yes', value=true, pen=COLOR_YELLOW},
             },
             view_id='toggle_progress',
-            on_change=function(option) self.progress_bar = option end,
+            on_change=function(val) self.progress_bar = val end,
         },
         widgets.ToggleHotkeyLabel{
-            frame={t=self.frame.h-1,l=28, w=25},
+            frame={b=1, l=28, w=25},
             label='Experience  ',
             key='CUSTOM_CTRL_E',
             options={
@@ -64,7 +64,7 @@ function SkillProgressOverlay:init()
                 {label='Yes', value=true, pen=COLOR_YELLOW},
             },
             view_id='toggle_experience',
-            on_change=function(option) self.display_experience = option end,
+            on_change=function(val) self.display_experience = val end,
         },
     }
 end
