@@ -7,7 +7,7 @@ local textures = require('gui.textures')
 local utils = require('utils')
 local widgets = require('gui.widgets')
 
-local UI_AREA = {r=2, t=18, w=38, h=33}
+local UI_AREA = {r=2, t=18, w=38, h=31}
 local POPUP_UI_AREA = {r=41, t=18, w=30, h=22}
 
 local CONFIG_BUTTON = {
@@ -50,11 +50,11 @@ local MORE_OPTIONS = {
     ["skyview"]      = { label= "Skyview", values= DEFAULT_OPTIONS },
     ["aquifer"]      = { label= "Aquifer", values= {
         { value= -1, char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
-        { value=  1, char1= 173, char2= 173, offset= 109, pen = COLOR_LIGHTBLUE },
+        { value=  1, char1= 247, char2= " ", offset= 109, pen = COLOR_LIGHTBLUE },
         { value=  2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE },
         { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
     } },
-    ["surroundings"] = { label= "Surroundings", values= {
+    ["surroundings"] = { label= "Autocorrect", values= {
         { value=  1, char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
         { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
     } },
@@ -1233,10 +1233,9 @@ function TileConfig:init()
             end,
             text_pen=getTextPen
         },
-        widgets.Divider { frame={t=12}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
             view_id="variant_cycle",
-            frame={l=1, t=14},
+            frame={l=1, t=12},
             key_back='CUSTOM_SHIFT_L',
             key='CUSTOM_L',
             label='Variant:',
@@ -1250,7 +1249,7 @@ function TileConfig:init()
             end,
             text_pen=getTextPen
         },
-        widgets.Divider { frame={t=16}, frame_style_l=false, frame_style_r=false, },
+        widgets.Divider { frame={t=14}, frame_style_l=false, frame_style_r=false, },
     }
 
     -- Advanced config buttons
@@ -1269,7 +1268,7 @@ function TileConfig:init()
         },
         -- Special
         widgets.Label {
-            frame={l=config_btn_l, t=12},
+            frame={l=config_btn_l, t=10},
             text=CONFIG_BUTTON,
             on_click=function() self:openSpecialPopup() end,
         },
@@ -1359,7 +1358,7 @@ function TileConfig:setStoneEnabled(bool)
 end
 
 function TileConfig:setVisibility(visibility)
-    self.frame = visibility and { h=17 } or { h=0 }
+    self.frame = visibility and { h=15 } or { h=0 }
     self.visible = visibility
 end
 
@@ -1547,7 +1546,7 @@ function TiletypeWindow:init()
                 widgets.HotkeyLabel {
                     frame={l=1},
                     key='STRING_A059',
-                    label='More Options',
+                    label='More options',
                     on_activate=function()
                         self.options_popup.visible = not self.options_popup.visible
                     end
@@ -1742,19 +1741,19 @@ end
 
 --#endregion
 
-function main(...)
-    local args = {...}
+function main(args)
+    local opts = {}
     local positionals = argparse.processArgsGetopt(args, {
-        { 'f', 'unrestricted', handler = function() args.unrestricted = true end },
+        { 'f', 'unrestricted', handler = function() opts.unrestricted = true end },
     })
 
     if not dfhack.isMapLoaded() then
-        qerror("This script requires a fortress map to be loaded")
+        qerror("This script requires a map to be loaded")
     end
 
-    view = view and view:raise() or TiletypeScreen{ unrestricted = args.unrestricted }:show()
+    view = view and view:raise() or TiletypeScreen{ unrestricted = opts.unrestricted }:show()
 end
 
 if not dfhack_flags.module then
-    main(...)
+    main({...})
 end
