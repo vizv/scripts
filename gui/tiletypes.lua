@@ -7,7 +7,7 @@ local textures = require('gui.textures')
 local utils = require('utils')
 local widgets = require('gui.widgets')
 
-local UI_AREA = {r=2, t=18, w=38, h=35}
+local UI_AREA = {r=2, t=18, w=38, h=33}
 local POPUP_UI_AREA = {r=41, t=18, w=30, h=22}
 
 local CONFIG_BUTTON = {
@@ -1144,7 +1144,6 @@ TileConfig.ATTRS {
     on_change_shape=DEFAULT_NIL,
     on_change_mat=DEFAULT_NIL,
     on_change_stone=DEFAULT_NIL,
-    on_change_vein_type=DEFAULT_NIL,
     on_change_special=DEFAULT_NIL,
     on_change_variant=DEFAULT_NIL,
 }
@@ -1217,20 +1216,10 @@ function TileConfig:init()
             enabled=function() return self.stone_enabled end,
             on_activate=function() self:openStonePopup() end
         },
-        CycleLabel {
-            view_id="vein_type_label",
-            frame={l=3, t=8},
-            key='CUSTOM_I',
-            base_label={ text= "Vein Type:", pen=function() return self.stone_enabled and UI_COLORS.HIGHLIGHTED or UI_COLORS.DESELECTED end },
-            enabled=function() return self.stone_enabled end,
-            initial_option=-1,
-            options=self.data_lists.vein_type_list,
-            on_change=self.on_change_vein_type,
-        },
-        widgets.Divider { frame={t=10}, frame_style_l=false, frame_style_r=false, },
+        widgets.Divider { frame={t=8}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
             view_id="special_cycle",
-            frame={l=1, r=config_btn_width, t=12},
+            frame={l=1, r=config_btn_width, t=10},
             key_back='CUSTOM_SHIFT_K',
             key='CUSTOM_K',
             label='Special:',
@@ -1244,10 +1233,10 @@ function TileConfig:init()
             end,
             text_pen=getTextPen
         },
-        widgets.Divider { frame={t=14}, frame_style_l=false, frame_style_r=false, },
+        widgets.Divider { frame={t=12}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
             view_id="variant_cycle",
-            frame={l=1, t=16},
+            frame={l=1, t=14},
             key_back='CUSTOM_SHIFT_L',
             key='CUSTOM_L',
             label='Variant:',
@@ -1261,7 +1250,7 @@ function TileConfig:init()
             end,
             text_pen=getTextPen
         },
-        widgets.Divider { frame={t=18}, frame_style_l=false, frame_style_r=false, },
+        widgets.Divider { frame={t=16}, frame_style_l=false, frame_style_r=false, },
     }
 
     -- Advanced config buttons
@@ -1365,14 +1354,12 @@ end
 function TileConfig:setStoneEnabled(bool)
     self.stone_enabled = bool
     if not bool then
-        self.subviews.vein_type_label:setOption(self.subviews.vein_type_label.initial_option)
         self:changeStone(nil)
     end
-    self.subviews.vein_type_label:updateOptionLabel()
 end
 
 function TileConfig:setVisibility(visibility)
-    self.frame = visibility and { h=19 } or { h=0 }
+    self.frame = visibility and { h=17 } or { h=0 }
     self.visible = visibility
 end
 
@@ -1550,9 +1537,6 @@ function TiletypeWindow:init()
                     on_change_stone=function(value)
                         self.cur_stone = value
                     end,
-                    on_change_vein_type=function(value)
-                        self.cur_vein_type = value
-                    end,
                     on_change_special=function(value)
                         self.cur_special = value
                     end,
@@ -1625,7 +1609,6 @@ function TiletypeWindow:confirm()
                 aquifer        = option_values.aquifer,
                 surroundings   = option_values.surroundings,
                 stone_material = self.cur_stone,
-                vein_type      = self.cur_vein_type,
             }
             box:iterate(function(pos)
                 if settings.validator(pos) then
@@ -1743,12 +1726,6 @@ function TiletypeScreen:generateDataLists()
             end
             data_lists.stone_dict[i] = { label= mat.id, value= i, pen= itemColor(mat.id) }
         end
-    end
-
-    _, data_lists.vein_type_list = getEnumLists(df.inclusion_type, { all = true})
-    table.insert(data_lists.vein_type_list, 1, { label= "NONE", value= -1, pen= itemColor("NONE") }) -- Equivalent to CLUSTER
-    for _, value in pairs(data_lists.vein_type_list) do
-        value.label = {{ text= value.label, pen= value.pen }}
     end
 
     return data_lists
