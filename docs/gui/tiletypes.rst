@@ -47,9 +47,9 @@ Mode
 :Paint:   Overwrite whatever tile is currently on the map.
 :Replace: Only affect tiles that are not open air.
 :Fill:    Only affect tiles that *are* open air.
-:Remove:  Replace tiles with empty flooring if the ``Autocorrect`` option is
-          enabled (see below) or with empty air if ``Autocorrect`` is not
-          enabled.
+:Remove:  Restores tiles to a form they would have if they were just dug out (if
+          the ``Autocorrect`` option is enabled -- see below) or with empty air
+          (if ``Autocorrect`` is not enabled).
 
 Shape
 ~~~~~
