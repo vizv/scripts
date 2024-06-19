@@ -237,12 +237,6 @@ address('adjective',df.itemdef_armorst,'name_preplural')
 address('tool_flags',df.itemdef_toolst,'flags')
 address('tool_adjective',df.itemdef_toolst,'adjective')
 
--- header('item_filter_offsets')
--- address('item_subtype',df.item_filter_spec,'item_subtype')
--- address('mat_class',df.item_filter_spec,'material_class')
--- address('mat_type',df.item_filter_spec,'mattype')
--- address('mat_index',df.item_filter_spec,'matindex')
-
 header('weapon_subtype_offsets')
 address('single_size',df.itemdef_weaponst,'two_handed')
 address('multi_size',df.itemdef_weaponst,'minimum_size')
@@ -441,8 +435,12 @@ address('gloves_vector',df.squad_position,'equipment','uniform','gloves')
 address('shoes_vector',df.squad_position,'equipment','uniform','shoes')
 address('shield_vector',df.squad_position,'equipment','uniform','shield')
 address('weapon_vector',df.squad_position,'equipment','uniform','weapon')
--- address('uniform_item_filter',df.squad_uniform_spec,'item_filter')
--- address('uniform_indiv_choice',df.squad_uniform_spec,'indiv_choice')
+address('uniform_spec_item_type',df.squad_uniform_spec,'item_type')
+address('uniform_spec_item_subtype',df.squad_uniform_spec,'item_subtype')
+address('uniform_spec_mat_class',df.squad_uniform_spec,'material_class')
+address('uniform_spec_mat_type',df.squad_uniform_spec,'mattype')
+address('uniform_spec_mat_index',df.squad_uniform_spec,'matindex')
+address('uniform_indiv_choice',df.squad_uniform_spec,'indiv_choice')
 address('equipment_update',df.squad,'ammo','update')
 
 header('activity_offsets')
@@ -454,8 +452,8 @@ address('sq_skill',df.activity_event_skill_demonstrationst,'skill')
 address('sq_train_rounds',df.activity_event_skill_demonstrationst,'train_rounds')
 address('pray_deity',df.activity_event_prayerst,'histfig_id')
 address('pray_sphere',df.activity_event_prayerst,'topic')
--- address('knowledge_category',df.activity_event_ponder_topicst,'knowledge','flag_type')
--- address('knowledge_flag',df.activity_event_ponder_topicst,'knowledge','flag_data')
+address('knowledge_category',df.activity_event_ponder_topicst,'topic','research','flag_type')
+address('knowledge_flag',df.activity_event_ponder_topicst,'topic','research','flag_data')
 address('perf_type',df.activity_event_performancest,'type')
 address('perf_participants',df.activity_event_performancest,'participant_actions')
 address('perf_histfig',df.activity_event_performancest.T_participant_actions,'histfig_id')
@@ -505,7 +503,6 @@ end
 
 write_flags('valid_flags_2', {})
 write_flags('invalid_flags_1', {
-    { 'a skeleton', { df.unit_flags1.skeleton } },
     { 'a merchant', { df.unit_flags1.merchant } },
     { 'outpost liaison, diplomat, or artifact requesting visitor', { df.unit_flags1.diplomat } },
     { 'an invader or hostile', { df.unit_flags1.active_invader } },
