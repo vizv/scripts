@@ -44,20 +44,22 @@ local DEFAULT_OPTIONS = {
 }
 
 local MORE_OPTIONS = {
-    ["hidden"]       = { label= "Hidden", values= DEFAULT_OPTIONS },
-    ["light"]        = { label= "Light", values= DEFAULT_OPTIONS },
-    ["subterranean"] = { label= "Subterranean", values= DEFAULT_OPTIONS },
-    ["skyview"]      = { label= "Skyview", values= DEFAULT_OPTIONS },
-    ["aquifer"]      = { label= "Aquifer", values= {
-        { value= -1, char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
-        { value=  1, char1= 247, char2= " ", offset= 109, pen = COLOR_LIGHTBLUE },
-        { value=  2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE },
-        { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
-    } },
-    ["autocorrect"]  = { label= "Autocorrect", values= {
-        { value=  1, char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
-        { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
-    } },
+    { key= "hidden",       label= "Hidden", values= DEFAULT_OPTIONS },
+    { key= "light",        label= "Light", values= DEFAULT_OPTIONS },
+    { key= "subterranean", label= "Subterranean", values= DEFAULT_OPTIONS },
+    { key= "skyview",      label= "Skyview", values= DEFAULT_OPTIONS },
+    { key= "aquifer",      label= "Aquifer", values= {
+            { value= -1, char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
+            { value=  1, char1= 247, char2= " ", offset= 109, pen = COLOR_LIGHTBLUE },
+            { value=  2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE },
+            { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
+        }
+    },
+    { key= "autocorrect",  label= "Autocorrect", values= {
+            { value=  1, char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
+            { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
+        }
+    },
 }
 
 local MODE_LIST = {
@@ -122,6 +124,34 @@ CYCLE_VALUES = {
         [df.tiletype_special.SMOOTH] = true,
         other = df.tiletype_special.WORN_1
     },
+}
+
+HIDDEN_VALUES = {
+    shape = {
+        [df.tiletype_shape.BRANCH] = true,
+        [df.tiletype_shape.TRUNK_BRANCH] = true,
+        [df.tiletype_shape.TWIG] = true,
+        [df.tiletype_shape.SAPLING] = true,
+        [df.tiletype_shape.SHRUB] = true,
+        [df.tiletype_shape.ENDLESS_PIT] = true
+    },
+    material = {
+        [df.tiletype_material.FEATURE] = true,
+        [df.tiletype_material.MINERAL] = true,
+        [df.tiletype_material.CONSTRUCTION] = true,
+        [df.tiletype_material.PLANT] = true,
+        [df.tiletype_material.TREE] = true,
+        [df.tiletype_material.MUSHROOM] = true,
+        [df.tiletype_material.ROOT] = true,
+        [df.tiletype_material.CAMPFIRE] = true,
+        [df.tiletype_material.DRIFTWOOD] = true,
+        [df.tiletype_material.UNDERWORLD_GATE] = true,
+        [df.tiletype_material.HFS] = true
+    },
+    special = {
+        [df.tiletype_special.DEAD] = true,
+        [df.tiletype_special.SMOOTH_DEAD] = true
+    }
 }
 
 ---@class TileType
@@ -1089,8 +1119,8 @@ function OptionsPopup:init()
 
     self.values = {}
     local height_offset = 0
-    for key,option in pairs(MORE_OPTIONS) do
-        self.values[key] = option.values[1].value
+    for _,option in pairs(MORE_OPTIONS) do
+        self.values[option.key] = option.values[1].value
         local options = {}
 
         local addOption = function(value, pen, char1, char2, offset)
@@ -1124,7 +1154,7 @@ function OptionsPopup:init()
                 frame={l=1,t=height_offset},
                 initial_option=option.values[1].value,
                 options=options,
-                on_change=function(value) self.values[key] = value end
+                on_change=function(value) self.values[option.key] = value end
             }
         )
         height_offset = height_offset + 3
@@ -1375,7 +1405,7 @@ function TileConfig:updateValidity()
             local tile_attrs = df.tiletype.attrs[name]
             if (shape_value == df.tiletype_shape.NONE or tile_attrs.shape == shape_value)
                 and (mat_value == df.tiletype_material.NONE or tile_attrs.material == mat_value)
-                and (special_value == df.tiletype_special.NONE or tile_attrs.special == special_value or tile_attrs.special == df.tiletype_special.NONE)
+                and (special_value == df.tiletype_special.NONE or tile_attrs.special == special_value)
                 and (variant_value == df.tiletype_variant.NONE or tile_attrs.variant == variant_value or tile_attrs.variant == df.tiletype_variant.NONE)
             then
                 self.valid_combination = true
@@ -1593,8 +1623,7 @@ function TiletypeWindow:confirm()
                     setTile(pos, emptyTiletype)
                 end
             end)
-        else
-
+        elseif self.subviews.tile_config.valid_combination then
             ---@type TileType
             local tiletype = {
                 shape          = self.cur_shape,
@@ -1676,13 +1705,16 @@ function TiletypeScreen:generateDataLists()
         return name == "NONE" and UI_COLORS.VALUE_NONE or UI_COLORS.VALUE
     end
 
-    local function getEnumLists(enum, short_dict)
+    local function getEnumLists(enum, short_dict, hidden_dict)
         list = {}
         short_list = {}
 
         for i=enum._first_item, enum._last_item do
             local name = enum[i]
             if name then
+                if hidden_dict and hidden_dict[i] then
+                    goto continue
+                end
                 local item = { label= name, value= i, pen= itemColor(name) }
                 table.insert(list, { text=name, value=item })
                 if short_dict then
@@ -1693,15 +1725,16 @@ function TiletypeScreen:generateDataLists()
                     end
                 end
             end
+            ::continue::
         end
 
         return list, short_list
     end
 
     local data_lists = {}
-    data_lists.shape_list, data_lists.short_shape_list = getEnumLists(df.tiletype_shape, CYCLE_VALUES.shape)
-    data_lists.mat_list, data_lists.short_mat_list = getEnumLists(df.tiletype_material, CYCLE_VALUES.material)
-    data_lists.special_list, data_lists.short_special_list = getEnumLists(df.tiletype_special, CYCLE_VALUES.special)
+    data_lists.shape_list, data_lists.short_shape_list = getEnumLists(df.tiletype_shape, CYCLE_VALUES.shape, not self.unrestricted and HIDDEN_VALUES.shape)
+    data_lists.mat_list, data_lists.short_mat_list = getEnumLists(df.tiletype_material, CYCLE_VALUES.material, not self.unrestricted and HIDDEN_VALUES.material)
+    data_lists.special_list, data_lists.short_special_list = getEnumLists(df.tiletype_special, CYCLE_VALUES.special, not self.unrestricted and HIDDEN_VALUES.special)
     _, data_lists.variant_list = getEnumLists(df.tiletype_variant, { all = true})
 
     data_lists.stone_list = { { text = "none", value = -1 } }
