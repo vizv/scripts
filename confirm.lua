@@ -45,8 +45,8 @@ ConfirmOverlay.ATTRS{
     desc='Detects dangerous actions and prompts with confirmation dialogs.',
     default_pos={x=1,y=1},
     default_enabled=true,
-    overlay_only=true,  -- not player-repositionable
-    hotspot=true,       -- need to unpause when we're not in target contexts
+    full_interface=true,  -- not player-repositionable
+    hotspot=true,       -- need to reset pause when we're not in target contexts
     overlay_onupdate_max_freq_seconds=300,
     viewscreens=get_contexts(),
 }

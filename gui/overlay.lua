@@ -105,7 +105,7 @@ end
 -- OverlayConfig --
 -------------------
 
-OverlayConfig = defclass(OverlayConfig, gui.Screen)
+OverlayConfig = defclass(OverlayConfig, gui.Screen) -- not a ZScreen since we want to freeze the underlying UI
 
 function OverlayConfig:init()
     -- prevent hotspot widgets from reacting
@@ -156,8 +156,8 @@ function OverlayConfig:init()
         widgets.WrappedLabel{
             frame={b=0, l=0},
             scroll_keys={},
-            text_to_wrap='When repositioning a widget, touch an edge of the'..
-                ' screen to anchor the widget to that edge.',
+            text_to_wrap='When repositioning a widget, touch a boundary edge'..
+                ' to anchor the widget to that edge.',
         },
     }
     self:addviews{main_panel}
@@ -184,7 +184,11 @@ function OverlayConfig:refresh_list(filter)
     for _,name in ipairs(state.index) do
         local db_entry = state.db[name]
         local widget = db_entry.widget
-        if widget.overlay_only then goto continue end
+        if widget.fullscreen or widget.full_interface or
+            widget.frame.w == 0 or widget.frame.h == 0
+        then
+            goto continue
+        end
         if (not widget.hotspot or #widget.viewscreens > 0) and filter ~= 'all' then
             for _,vs in ipairs(overlay.normalize_list(widget.viewscreens)) do
                 if dfhack.gui.matchFocusString(overlay.simplify_viewscreen_name(vs), scr) then
@@ -194,12 +198,12 @@ function OverlayConfig:refresh_list(filter)
             goto continue
         end
         ::matched::
-        local panel = nil
-        panel = DraggablePanel{
-                frame=make_highlight_frame(widget.frame),
-                frame_style=SHADOW_FRAME,
-                on_click=make_on_click_fn(#choices+1),
-                name=name}
+        local panel = DraggablePanel{
+            frame=make_highlight_frame(widget.frame),
+            frame_style=SHADOW_FRAME,
+            on_click=make_on_click_fn(#choices+1),
+            name=name,
+        }
         panel.on_drag_end = function(success)
             if (success) then
                 local frame = panel.frame
@@ -222,7 +226,7 @@ function OverlayConfig:refresh_list(filter)
             end})
         table.insert(choices,
                 {text=tokens, enabled=cfg.enabled, name=name, panel=panel,
-                 search_key=name})
+                 widget=widget, search_key=name})
         ::continue::
     end
     local old_filter = list:getFilter()
@@ -259,7 +263,7 @@ function OverlayConfig:reposition(_, obj)
 end
 
 function OverlayConfig:reset()
-    local idx,obj = self.subviews.list:getSelected()
+    local _,obj = self.subviews.list:getSelected()
     if not obj or not obj.panel then return end
     overlay.overlay_command({'position', obj.panel.name, 'default'}, true)
     self:refresh_list(self.subviews.filter:getOptionValue())
@@ -271,9 +275,7 @@ end
 
 function OverlayConfig:postUpdateLayout()
     for _,choice in ipairs(self.subviews.list:getChoices()) do
-        if choice.panel then
-            choice.panel:updateLayout(self.frame_parent_rect)
-        end
+        choice.panel:updateLayout(choice.widget.frame_parent_rect)
     end
 end
 
