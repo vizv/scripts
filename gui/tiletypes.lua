@@ -54,7 +54,7 @@ local MORE_OPTIONS = {
         { value=  2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE },
         { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
     } },
-    ["surroundings"] = { label= "Autocorrect", values= {
+    ["autocorrect"]  = { label= "Autocorrect", values= {
         { value=  1, char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
         { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
     } },
@@ -135,7 +135,7 @@ CYCLE_VALUES = {
 ---@field subterranean? integer
 ---@field skyview? integer
 ---@field aquifer? integer
----@field surroundings? integer
+---@field autocorrect? integer
 ---@field stone_material? integer
 ---@field vein_type? df.inclusion_type
 
@@ -160,7 +160,7 @@ function setTile(pos, target)
         subterranean   = toValidOptionValue(target.subterranean),
         skyview        = toValidOptionValue(target.skyview),
         aquifer        = toValidOptionValue(target.aquifer),
-        surroundings   = target.surroundings == nil and 0 or target.surroundings,
+        autocorrect    = target.autocorrect == nil and 0 or target.autocorrect,
     }
     tiletype.stone_material = tiletype.material == df.tiletype_material.STONE and target.stone_material or -1
     tiletype.vein_type      = tiletype.material ~= df.tiletype_material.STONE and -1 or toValidEnumValue(target.vein_type,  df.inclusion_type,  df.inclusion_type.CLUSTER)
@@ -1586,7 +1586,7 @@ function TiletypeWindow:confirm()
                 subterranean   = option_values.subterranean,
                 skyview        = option_values.skyview,
                 aquifer        = option_values.aquifer,
-                surroundings   = option_values.surroundings,
+                autocorrect    = option_values.autocorrect,
             }
             box:iterate(function(pos)
                 if settings.validator(pos) then
@@ -1606,7 +1606,7 @@ function TiletypeWindow:confirm()
                 subterranean   = option_values.subterranean,
                 skyview        = option_values.skyview,
                 aquifer        = option_values.aquifer,
-                surroundings   = option_values.surroundings,
+                autocorrect    = option_values.autocorrect,
                 stone_material = self.cur_stone,
             }
             box:iterate(function(pos)
