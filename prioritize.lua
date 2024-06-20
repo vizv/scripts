@@ -24,7 +24,7 @@ local DEFAULT_JOB_TYPES = {
     'SeekInfant', 'SetBone', 'Surgery', 'Suture',
     -- ensure prisoners and animals are tended to quickly
     -- (Animal/prisoner storage already covered by 'StoreItemInStockpile' above)
-    'SlaughterAnimal', 'PenLargeAnimal', 'ChainAnimal', 'LoadCageTrap',
+    'SlaughterAnimal', 'ButcherAnimal', 'PenLargeAnimal', 'ChainAnimal', 'LoadCageTrap',
     -- ensure noble tasks never get starved
     'InterrogateSubject', 'ManageWorkOrders', 'ReportCrime', 'TradeAtDepot',
     -- get tasks done quickly that might block the player from getting on to
