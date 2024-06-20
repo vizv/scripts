@@ -640,10 +640,6 @@ if dfhack.internal.IN_TEST then
     }
 end
 
-if dfhack_flags.module then
-    return
-end
-
 --------------------------------
 -- EnRouteOverlay
 --
@@ -719,6 +715,10 @@ function EnRouteOverlay:render(dc)
 end
 
 OVERLAY_WIDGETS = {enroute=EnRouteOverlay}
+
+if dfhack_flags.module then
+    return
+end
 
 if df.global.gamemode ~= df.game_mode.DWARF or not dfhack.isMapLoaded() then
     dfhack.printerr('prioritize needs a loaded fortress map to work')
