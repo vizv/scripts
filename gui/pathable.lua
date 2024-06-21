@@ -1,61 +1,55 @@
--- View whether tiles on the map can be pathed to
+-- View whether tiles on the map can be pathed to.
 --@module=true
 
 local gui = require('gui')
 local plugin = require('plugins.pathable')
 local widgets = require('gui.widgets')
 
-Pathable = defclass(Pathable, gui.ZScreen)
-Pathable.ATTRS{
-    focus_path='pathable',
-    pass_movement_keys=true,
+-- ------------------------------
+-- Pathable
+
+Pathable = defclass(Pathable, widgets.Window)
+Pathable.ATTRS {
+    frame_title='Pathability Viewer',
+    frame={t=18, r=2, w=30, h=9},
 }
 
 function Pathable:init()
-    local window = widgets.Window{
-        view_id='main',
-        frame={t=20, r=3, w=32, h=11},
-        frame_title='Pathability Viewer',
-        drag_anchors={title=true, frame=true, body=true},
-    }
-
-    window:addviews{
-        widgets.ToggleHotkeyLabel{
-            view_id='lock',
-            frame={t=0, l=0},
-            key='CUSTOM_CTRL_T',
-            label='Lock target',
-            initial_option=false,
-        },
+    self:addviews{
         widgets.ToggleHotkeyLabel{
             view_id='draw',
-            frame={t=1, l=0},
+            frame={t=0, l=0},
             key='CUSTOM_CTRL_D',
-            label='Draw',
+            label='Draw:',
+            label_width=12,
             initial_option=true,
+        },
+        widgets.ToggleHotkeyLabel{
+            view_id='lock',
+            frame={t=1, l=0},
+            key='CUSTOM_CTRL_T',
+            label='Lock target:',
+            initial_option=false,
         },
         widgets.ToggleHotkeyLabel{
             view_id='show',
             frame={t=2, l=0},
             key='CUSTOM_CTRL_U',
-            label='Show hidden',
+            label='Show hidden:',
             initial_option=false,
         },
-        widgets.EditField{
-            view_id='group',
+        widgets.Label{
             frame={t=4, l=0},
-            label_text='Pathability group: ',
-            active=false,
+            text='Pathability group:',
         },
-        widgets.HotkeyLabel{
-            frame={t=6, l=0},
-            key='LEAVESCREEN',
-            label='Close',
-            on_activate=self:callback('dismiss'),
+        widgets.Label{
+            view_id='group',
+            frame={t=4, l=19, h=1},
+            text='',
+            text_pen=COLOR_LIGHTCYAN,
+            auto_height=false,
         },
     }
-
-    self:addviews{window}
 end
 
 function Pathable:onRenderBody()
@@ -68,21 +62,32 @@ function Pathable:onRenderBody()
 
     if not target then
         group:setText('')
-        return
     elseif not show and not dfhack.maps.isTileVisible(target) then
         group:setText('Hidden')
-        return
-    end
+    else
+        local walk_group = dfhack.maps.getWalkableGroup(target)
+        group:setText(walk_group == 0 and 'None' or tostring(walk_group))
 
-    local walk_group = dfhack.maps.getWalkableGroup(target)
-    group:setText(walk_group == 0 and 'None' or tostring(walk_group))
-
-    if self.subviews.draw:getOptionValue() then
-        plugin.paintScreenPathable(target, show)
+        if self.subviews.draw:getOptionValue() then
+            plugin.paintScreenPathable(target, show)
+        end
     end
 end
 
-function Pathable:onDismiss()
+-- ------------------------------
+-- PathableScreen
+
+PathableScreen = defclass(PathableScreen, gui.ZScreen)
+PathableScreen.ATTRS {
+    focus_path='pathable',
+    pass_movement_keys=true,
+}
+
+function PathableScreen:init()
+    self:addviews{Pathable{}}
+end
+
+function PathableScreen:onDismiss()
     view = nil
 end
 
@@ -94,4 +99,4 @@ if not dfhack.isMapLoaded() then
     qerror('gui/pathable requires a map to be loaded')
 end
 
-view = view and view:raise() or Pathable{}:show()
+view = view and view:raise() or PathableScreen{}:show()
