@@ -73,9 +73,9 @@ end
 AdvRumorsOverlay = defclass(AdvRumorsOverlay, overlay.OverlayWidget)
 AdvRumorsOverlay.ATTRS{
     desc='Adds keywords to conversation entries.',
-    overlay_only=true,
     default_enabled=true,
     viewscreens='dungeonmode/Conversation',
+    frame={w=0, h=0},
 }
 
 function AdvRumorsOverlay:render()
