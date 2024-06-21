@@ -95,20 +95,20 @@ property will be left untouched. A green check (or plus symbol in ASCII mode)
 indicates that the property will be set (enabled). Red Xs indicate that the
 property will be cleared (disabled).
 
+:Hidden:       Sets whether the tile is revealed or unrevealed. If you are
+               filling up space with solid rock, for example, you might want to
+               enable this to make the now non-exposed tiles hidden.
 :Light:        Sets whether the tile is exposed to light. Dark tiles increase
                cave adaption in dwarves that cross the tile. Light tiles that
                are not also outside (see Skyview below) will neither increase
                nor decrease cave adaption in dwarves that cross the tile.
+:Subterranean: Sets whether the tile is considered underground. This affects
+               what crops you can plant in farm plots on this tile.
 :Skyview:      Sets whether the tile is considered "outside". Weather affects
                things that are outside (e.g. by producing a grumpy thought
                about being caught in the rain). Outside tiles may also cause
                nausea in dwarves that are cave adapted, and will reduce the
                cave adaption level in dwarves that cross the tile.
-:Hidden:       Sets whether the tile is revealed or unrevealed. If you are
-               filling up space with solid rock, for example, you might want to
-               enable this to make the now non-exposed tiles hidden.
-:Subterranean: Sets whether the tile is considered underground. This affects
-               what crops you can plant in farm plots on this tile.
 :Aquifer:      Sets whether the tile is an aquifer. Two drops (in graphics
                mode) or one light blue ≈ (in ascii mode) indicates a light
                aquifer. Three drops (or ≈≈ in ascii mode) indicates a heavy
