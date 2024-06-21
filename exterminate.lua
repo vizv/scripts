@@ -25,11 +25,21 @@ local function isUnitFriendly(unit)
     if dfhack.units.isDanger(unit) then
         return false
     end
+    local isInAdvGroup = false
+    local isAdvPet = false
+    local adv = dfhack.world.getAdventurer()
+    if adv then
+        isInAdvGroup = unit.relationship_ids.GroupLeader == dfhack.world.getAdventurer().id
+        isAdvPet = unit.relationship_ids.PetOwner == dfhack.world.getAdventurer().id
+    end
     return dfhack.units.isOwnCiv(unit) or
         dfhack.units.isOwnGroup(unit) or
         dfhack.units.isVisiting(unit) or
         dfhack.units.isTame(unit) or
-        dfhack.units.isDomesticated(unit)
+        dfhack.units.isDomesticated(unit) or
+        unit == adv or
+        isInAdvGroup or
+        isAdvPet
 end
 
 killMethod = {
@@ -39,6 +49,7 @@ killMethod = {
     DROWN = 3,
     VAPORIZE = 4,
     DISINTEGRATE = 5,
+    KNOCKOUT = 6,
 }
 
 -- removes the unit from existence, leaving no corpse if the unit hasn't died
@@ -57,6 +68,12 @@ end
 --  Marks a unit for slaughter at the butcher's shop.
 local function butcherUnit(unit)
     unit.flags2.slaughter = true
+end
+
+--  Knocks a unit out for 30k ticks or the target value
+local function knockoutUnit(unit, target_value)
+    target_value = target_value or 30000
+    unit.counters.unconscious = target_value
 end
 
 local function drownUnit(unit, liquid_type)
@@ -95,10 +112,10 @@ function killUnit(unit, method)
     elseif method == killMethod.VAPORIZE then
         vaporizeUnit(unit)
     elseif method == killMethod.DISINTEGRATE then
-        -- Teleport them to world height. Out of sight, out of mind.
-        dfhack.units.teleport(unit, xyz2pos(unit.pos.x, unit.pos.y, df.global.world.map.z_count-1))
         vaporizeUnit(unit)
         destroyInventory(unit)
+    elseif method == killMethod.KNOCKOUT then
+        knockoutUnit(unit)
     else
         destroyUnit(unit)
     end
