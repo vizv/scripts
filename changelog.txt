@@ -73,6 +73,8 @@ Template for new versions:
 - `gui/launcher`: refresh default tag filter when mortal mode is toggled in `gui/control-panel` so changes to which tools autocomplete take effect immediately
 - `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
 - `exterminate`: add ``all`` target for convenient scorched earth tactics
+- `exterminate`: add ``--limit`` option to limit number of exterminated creatures
+- `exterminate`: add ``knockout`` and ``traumatize`` method for a non-lethal incapacitation
 - `caravan`: add shortcut to the trade request screen for selecting item types by value (e.g. so you can quickly select expensive gems or cheap leather)
 - `gui/notify`: notification panel extended to apply to adventure mode
 - `gui/control-panel`: highlight prefrences that have been changed from the defaults
