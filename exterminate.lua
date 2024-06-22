@@ -25,21 +25,21 @@ local function isUnitFriendly(unit)
     if dfhack.units.isDanger(unit) then
         return false
     end
-    local isInAdvGroup = false
-    local isAdvPet = false
     local adv = dfhack.world.getAdventurer()
     if adv then
-        isInAdvGroup = unit.relationship_ids.GroupLeader == dfhack.world.getAdventurer().id
-        isAdvPet = unit.relationship_ids.PetOwner == dfhack.world.getAdventurer().id
+        if adv == unit or
+            unit.relationship_ids.GroupLeader == adv.id or
+            unit.relationship_ids.PetOwner == adv.id
+        then
+            return true
+        end
     end
+
     return dfhack.units.isOwnCiv(unit) or
         dfhack.units.isOwnGroup(unit) or
         dfhack.units.isVisiting(unit) or
         dfhack.units.isTame(unit) or
-        dfhack.units.isDomesticated(unit) or
-        unit == adv or
-        isInAdvGroup or
-        isAdvPet
+        dfhack.units.isDomesticated(unit)
 end
 
 killMethod = {
@@ -50,6 +50,7 @@ killMethod = {
     VAPORIZE = 4,
     DISINTEGRATE = 5,
     KNOCKOUT = 6,
+    TRAUMATIZE = 7,
 }
 
 -- removes the unit from existence, leaving no corpse if the unit hasn't died
@@ -75,6 +76,12 @@ local function knockoutUnit(unit, target_value)
     target_value = target_value or 30000
     unit.counters.unconscious = target_value
 end
+
+--  Traumatizes the unit, forcing them to stare off into space. Cuts down on pathfinding
+local function traumatizeUnit(unit)
+    unit.mood = df.mood_type.Traumatized
+end
+
 
 local function drownUnit(unit, liquid_type)
     previousPositions = previousPositions or {}
@@ -116,6 +123,8 @@ function killUnit(unit, method)
         destroyInventory(unit)
     elseif method == killMethod.KNOCKOUT then
         knockoutUnit(unit)
+    elseif method == killMethod.TRAUMATIZE then
+        traumatizeUnit(unit)
     else
         destroyUnit(unit)
     end
@@ -161,7 +170,7 @@ local options, args = {
     method = killMethod.INSTANT,
     only_visible = false,
     include_friendly = false,
-    maximum = -1,
+    limit = -1,
 }, {...}
 
 local positionals = argparse.processArgsGetopt(args, {
@@ -169,7 +178,7 @@ local positionals = argparse.processArgsGetopt(args, {
     {'m', 'method', handler = function(arg) options.method = killMethod[arg:upper()] end, hasArg = true},
     {'o', 'only-visible', handler = function() options.only_visible = true end},
     {'f', 'include-friendly', handler = function() options.include_friendly = true end},
-    {'x', 'maximum', handler = function(arg) options.maximum = tonumber(arg) end, hasArg = true},
+    {'l', 'limit', handler = function(arg) options.limit = argparse.positiveInt(arg, 'limit') end, hasArg = true},
 })
 
 if not dfhack.isMapLoaded() then
@@ -224,7 +233,7 @@ elseif positionals[1]:split(':')[1] == "all" then
     local selected_caste = positionals[1]:split(':')[2]
 
     for _, unit in ipairs(df.global.world.units.active) do
-        if options.maximum > 0 and count >= options.maximum then
+        if options.limit > 0 and count >= options.limit then
             break
         end
         if not checkUnit(unit) then
@@ -278,7 +287,7 @@ else
     target = selected_race
 
     for _, unit in pairs(df.global.world.units.active) do
-        if options.maximum > 0 and count >= options.maximum then
+        if options.limit > 0 and count >= options.limit then
             break
         end
         if not checkUnit(unit) then

@@ -48,7 +48,7 @@ Options
     on the map.
 ``-f``, ``--include-friendly``
     Specifies the tool should also kill units friendly to the player.
-``-x``, ``--max <num>``
+``-l``, ``--limit <num>``
     Set the maximum number of units to exterminate.
 
 Methods
@@ -66,7 +66,8 @@ Methods
 :magma: Boil the unit in magma (not recommended for magma-safe creatures).
 :butcher: Will mark the units for butchering instead of killing them. This is
     more useful for pets than armed enemies.
-:knockout: Will put units into an unconscious state for 30k ticks.
+:knockout: Will put units into an unconscious state for 30k ticks (about a month).
+:traumatize: Traumatizes all units, forcing them to stare off into space (catatonic state).
 
 Technical details
 -----------------
