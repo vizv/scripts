@@ -10,10 +10,10 @@ local widgets = require('gui.widgets')
 local overlay = require('plugins.overlay')
 local utils = require('utils')
 
-local NORTH = 'North ^'
-local EAST = 'East >'
-local SOUTH = 'South v'
-local WEST = 'West <'
+local NORTH = 'North '..string.char(24)
+local EAST = 'East '..string.char(26)
+local SOUTH = 'South '..string.char(25)
+local WEST = 'West '..string.char(27)
 
 local LOW = 'Low'
 local MEDIUM = 'Medium'

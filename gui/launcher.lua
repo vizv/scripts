@@ -910,6 +910,24 @@ function LauncherUI:init()
                         new_frame[k] = 0
                     end
                 end
+                local w, h = dfhack.screen.getWindowSize()
+                local min = MainPanel.ATTRS.resize_min
+                if new_frame.t and h - new_frame.t - (new_frame.b or 0) < min.h then
+                    new_frame.t = h - min.h
+                    new_frame.b = 0
+                end
+                if new_frame.b and h - new_frame.b - (new_frame.t or 0) < min.h then
+                    new_frame.b = h - min.h
+                    new_frame.t = 0
+                end
+                if new_frame.l and w - new_frame.l - (new_frame.r or 0) < min.w then
+                    new_frame.l = w - min.w
+                    new_frame.r = 0
+                end
+                if new_frame.r and w - new_frame.r - (new_frame.l or 0) < min.w then
+                    new_frame.r = w - min.w
+                    new_frame.l = 0
+                end
             end
         end
         main_panel.frame = new_frame
