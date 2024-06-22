@@ -22,7 +22,7 @@ end
 -- Adds a keyword to the dialog choice
 local function addKeyword(choice, keyword)
     local keyword_ptr = df.new('string')
-    keyword_ptr.value = keyword
+    keyword_ptr.value = dfhack.toSearchNormalized(keyword)
     choice.key_word:insert('#', keyword_ptr)
 end
 
@@ -190,5 +190,3 @@ function AdvRumorsOverlay:render()
     last_first_entry = adventure.conversation.conv_choice_info[0]
     rumorUpdate()
 end
-
-OVERLAY_WIDGETS = {conversation=AdvRumorsOverlay}
