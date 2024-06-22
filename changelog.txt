@@ -67,7 +67,7 @@ Template for new versions:
 - `gui/launcher`: refresh default tag filter when mortal mode is toggled in `gui/control-panel` so changes to which tools autocomplete take effect immediately
 - `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
 - `lever`: enable use of ``reqscript`` to access lever pulling functions.
-- `exterminate`: add ``all`` target for convenient scorched earth tactics
+- `exterminate`: add ``all`` target for convenient scorched earth tactics, as well as ``--max <value>`` to set maximum units to exterminate. Additionally, add ``--knockout`` method for a non-lethal "extermination".
 - `caravan`: add shortcut to the trade request screen for selecting item types by value
 
 ## Removed
