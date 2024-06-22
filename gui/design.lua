@@ -62,7 +62,7 @@ DimensionsOverlay.ATTRS{
     desc='Adds a tooltip that shows the selected dimensions when drawing boxes.',
     default_pos={x=1,y=1},
     default_enabled=true,
-    overlay_only=true, -- not player-repositionable
+    fullscreen=true, -- not player-repositionable
     viewscreens={
         'dwarfmode/Designate',
         'dwarfmode/Burrow/Paint',
