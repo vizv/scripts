@@ -45,8 +45,8 @@ ConfirmOverlay.ATTRS{
     desc='Detects dangerous actions and prompts with confirmation dialogs.',
     default_pos={x=1,y=1},
     default_enabled=true,
-    overlay_only=true,  -- not player-repositionable
-    hotspot=true,       -- need to unpause when we're not in target contexts
+    full_interface=true,  -- not player-repositionable
+    hotspot=true,       -- need to reset pause when we're not in target contexts
     overlay_onupdate_max_freq_seconds=300,
     viewscreens=get_contexts(),
 }
@@ -66,7 +66,8 @@ function ConfirmOverlay:init()
 end
 
 function ConfirmOverlay:preUpdateLayout()
-    self.frame.w, self.frame.h = dfhack.screen.getWindowSize()
+    local interface_rect = gui.get_interface_rect()
+    self.frame.w, self.frame.h = interface_rect.width, interface_rect.height
     -- reset frames if any of them have been pushed out of position
     for id, conf in pairs(specs.REGISTRY) do
         if conf.intercept_frame then
