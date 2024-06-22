@@ -66,6 +66,7 @@ Template for new versions:
 - `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
 - `lever`: enable use of ``reqscript`` to access lever pulling functions.
 - `exterminate`: add ``all`` target for convenient scorched earth tactics
+- `empty-bin`: now able to empty all containers in a stockpile, and empty all containers in a tile under the mouse
 
 ## Removed
 - `max-wave`: merged into `pop-control`

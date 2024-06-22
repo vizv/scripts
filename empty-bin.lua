@@ -24,14 +24,28 @@ local function emptyContainer(container)
     end
 end
 
+local function emptyPos(pos)
+    if not pos then return end
+    local block = dfhack.maps.getTileBlock(pos)
+    for _,item_id in ipairs(block.items) do
+        local item = df.item.find(item_id)
+        emptyContainer(item)
+    end
+end
+
 
 local stockpile = dfhack.gui.getSelectedStockpile(true)
+local mouse_pos = dfhack.gui.getMousePos()
+local selected = dfhack.gui.getSelectedItem(true)
 if stockpile then
     local contents = dfhack.buildings.getStockpileContents(stockpile)
     for _, container in ipairs(contents) do
         emptyContainer(container)
     end
+elseif selected then
+    emptyContainer(selected)
+elseif mouse_pos then
+    emptyPos(mouse_pos)
 else
-    local bin = dfhack.gui.getSelectedItem(true) or qerror("No item selected")
-    emptyContainer(bin)
+    qerror("No item selected")
 end

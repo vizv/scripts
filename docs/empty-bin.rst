@@ -12,6 +12,9 @@ individual items that might otherwise be hard to get to.
 Note that if there are liquides in the container, they will empty onto the floor
 and become unusable.
 
+You may also select a stockpile to empty all containers within it, or you can run this
+script when your mouse is over a tile - that will empty all containers present on that tile.
+
 Usage
 -----
 
