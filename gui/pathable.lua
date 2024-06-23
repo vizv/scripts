@@ -23,7 +23,7 @@ function FollowMousePage:init()
         widgets.ToggleHotkeyLabel{
             view_id='lock',
             frame={t=1, l=0},
-            key='CUSTOM_CTRL_T',
+            key='CUSTOM_CTRL_M',
             label='Lock target:',
             initial_option=false,
         },
