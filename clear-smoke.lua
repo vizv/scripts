@@ -1,28 +1,37 @@
-local flows_to_delete = {}
+--@module = true
 
-function clearSmoke(flows)
-    local success
-    for i = #flows - 1, 0, -1 do
-        local flow = flows[i]
-        if flow.type == df.flow_type.Smoke then
-            flows:erase(i)
-            flows_to_delete[flow] = true
-            success = true
+function removeFlow(flow) --have DF remove the flow
+    if not flow then
+        return
+    end
+    flow.flags.DEAD = true
+
+    local block = dfhack.maps.getTileBlock(flow.pos)
+    if block then
+        block.flow_pool.flags.active = true
+    else
+        df.global.world.orphaned_flow_pool.flags.active = true
+    end
+end
+
+function removeFlows(flow_type) --remove all if flow_type is nil
+    local count = 0
+    for _,flow in ipairs(df.global.flows) do
+        if not flow.flags.DEAD and (flow_type == nil or flow.type == flow_type) then
+            removeFlow(flow)
+            count = count + 1
         end
     end
-    return success
+
+    return count
 end
 
-clearSmoke(df.global.flows)
-
-for _,block in pairs(df.global.world.map.map_blocks) do
-    if clearSmoke(block.flows) then
-        dfhack.maps.enableBlockUpdates(block, true)
+function clearSmoke()
+    if dfhack.isWorldLoaded() then
+        print(('%d smoke flows removed.'):format(removeFlows(df.flow_type.Smoke)))
+    else
+        qerror('World not loaded!')
     end
 end
 
-for flow,_ in pairs(flows_to_delete) do
-    if flow then
-        flow:delete()
-    end
-end
+clearSmoke()
