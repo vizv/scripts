@@ -34,4 +34,6 @@ function clearSmoke()
     end
 end
 
-clearSmoke()
+if not dfhack_flags.module then
+    clearSmoke()
+end
