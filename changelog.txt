@@ -56,6 +56,7 @@ Template for new versions:
 - `quickfort`: allow farm plots to be built on muddy stone
 - `suspend`: remove broken ``--onlyblocking`` option; restore functionality to ``suspend all``
 - `gui/create-item`: allow creation of adamantine thread, wool, and yarn
+- `clear-smoke`: fix memory leak caused by the smoke flow not being deleted from memory
 
 ## Misc Improvements
 - `gui/launcher`: "space space to toggle pause" behavior is skipped if the game was paused when `gui/launcher` came up to prevent accidental unpausing
@@ -73,7 +74,9 @@ Template for new versions:
 - `gui/launcher`: refresh default tag filter when mortal mode is toggled in `gui/control-panel` so changes to which tools autocomplete take effect immediately
 - `gui/civ-alert`: you can now register multiple burrows as civilian alert safe spaces
 - `exterminate`: add ``all`` target for convenient scorched earth tactics
-- `empty-bin`: now able to empty all containers in a stockpile, empty all containers open in viewsheet item list or all contents of a selected building
+- `empty-bin`: select a stockpile, tile, or building to empty all containers in the stockpile, tile, or building
+- `exterminate`: add ``--limit`` option to limit number of exterminated creatures
+- `exterminate`: add ``knockout`` and ``traumatize`` method for a non-lethal incapacitation
 - `caravan`: add shortcut to the trade request screen for selecting item types by value (e.g. so you can quickly select expensive gems or cheap leather)
 - `gui/notify`: notification panel extended to apply to adventure mode
 - `gui/control-panel`: highlight prefrences that have been changed from the defaults
