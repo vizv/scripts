@@ -81,6 +81,7 @@ Template for new versions:
 - `gui/control-panel`: highlight prefrences that have been changed from the defaults
 - `gui/quickfort`: buildings can now be constructed in a "high priority" state, giving them first dibs on `buildingplan` materials and setting their construction jobs to the highest priority
 - `prioritize`: add ``ButcherAnimal`` to the default prioritization list (``SlaughterAnimal`` was already there, but ``ButcherAnimal`` -- which is different -- was missing)
+- `gui/unit-syndromes`: make werecreature syndromes easier to search for
 
 ## Removed
 - `max-wave`: merged into `pop-control`
