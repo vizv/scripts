@@ -3,15 +3,6 @@
 -- https://gist.github.com/stonetoad/11129025
 -- http://dwarffortresswiki.org/index.php/DF2014_Talk:Bin
 
---[====[
-
-empty-bin
-=========
-
-Empties the contents of the selected bin onto the floor.
-
-]====]
-
 local function moveItem(item, to_pos)
     print('  ' .. dfhack.items.getDescription(item, 0))
     dfhack.items.moveToGround(item, to_pos)
@@ -48,6 +39,7 @@ if stockpile then
         emptyContainer(container)
     end
 elseif selectedItem then
+    moveItem(selectedItem, xyz2pos(dfhack.items.getPosition(selectedItem)))
     emptyContainer(selectedItem)
 elseif selectedBuilding then
     if not df.building_actual:is_instance(selectedBuilding) then
