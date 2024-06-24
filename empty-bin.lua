@@ -19,15 +19,6 @@ local function emptyContainer(container)
     end
 end
 
-local function emptyPos(pos)
-    if not pos then return end
-    local block = dfhack.maps.getTileBlock(pos)
-    for _,item_id in ipairs(block.items) do
-        local item = df.item.find(item_id)
-        emptyContainer(item)
-    end
-end
-
 local viewsheets = df.global.game.main_interface.view_sheets
 
 local stockpile = dfhack.gui.getSelectedStockpile(true)
