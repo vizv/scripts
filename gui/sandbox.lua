@@ -214,7 +214,20 @@ function Sandbox:onInput(keys)
         return true
     end
     if keys._MOUSE_L then
-        if self:getMouseFramePos() then return true end
+        -- don't click "through" the gui/sandbox ui
+        if self:getMouseFramePos() then
+            return true
+        end
+        -- don't allow clicking on the "assume control" button of a unit
+        local scr = dfhack.gui.getDFViewscreen(true)
+        if dfhack.gui.matchFocusString('dwarfmode/ViewSheets/UNIT/Overview', scr) then
+            local interface_rect = gui.ViewRect{rect=gui.get_interface_rect()}
+            local button_rect = interface_rect:viewport(60, 50, 20, 3)
+            local mouse_x, mouse_y = dfhack.screen.getMousePos()
+            if mouse_x and button_rect:inClipGlobalXY(mouse_x, mouse_y) then
+                return true
+            end
+        end
         for _,mask_panel in ipairs(self.interface_masks) do
             if mask_panel:getMousePos() then return true end
         end
