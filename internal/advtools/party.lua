@@ -1,5 +1,10 @@
+--@ module=true
+
 local dialogs = require 'gui.dialogs'
 local utils = require 'utils'
+
+local makeown = reqscript('makeown')
+
 local viewscreen = dfhack.gui.getDFViewscreen(true)
 if viewscreen._type ~= df.viewscreen_dungeonmodest then
     qerror("This script can only be used during adventure mode!")
@@ -18,6 +23,15 @@ local function addToCoreParty(nemesis)
     end
     -- Adds them to unretire list
     nemesis.flags.ADVENTURER = true
+    
+    -- Make sure they're no longer nameless
+    local unit = df.unit.find(nemesis.figure.unit_id)
+    makeown.name_unit(unit)
+    if not nemesis.figure.name.has_name then
+        local old_name = nemesis.figure.name
+        nemesis.figure.name = unit.name:new()
+        old_name:delete()
+    end
 end
 
 local function showExtraPartyPrompt()
