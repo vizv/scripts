@@ -956,7 +956,6 @@ function enableUnitLabors(unit, default, skilled)
       labors.HANDLE_VEHICLES = true
       labors.HAUL_TRADE = true
       labors.PULL_LEVER = true
-      labors.REMOVE_CONSTRUCTION = true
       labors.HAUL_WATER = true
       labors.BUILD_ROAD = true
       labors.BUILD_CONSTRUCTION = true

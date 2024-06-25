@@ -4,7 +4,10 @@
 
 local argparse = require('argparse')
 local eventful = require('plugins.eventful')
+local gui = require('gui')
+local overlay = require('plugins.overlay')
 local utils = require('utils')
+local widgets = require('gui.widgets')
 
 local GLOBAL_KEY = 'prioritize' -- used for state change hooks and persistence
 
@@ -21,7 +24,7 @@ local DEFAULT_JOB_TYPES = {
     'SeekInfant', 'SetBone', 'Surgery', 'Suture',
     -- ensure prisoners and animals are tended to quickly
     -- (Animal/prisoner storage already covered by 'StoreItemInStockpile' above)
-    'SlaughterAnimal', 'PenLargeAnimal', 'ChainAnimal', 'LoadCageTrap',
+    'SlaughterAnimal', 'ButcherAnimal', 'PenLargeAnimal', 'ChainAnimal', 'LoadCageTrap',
     -- ensure noble tasks never get starved
     'InterrogateSubject', 'ManageWorkOrders', 'ReportCrime', 'TradeAtDepot',
     -- get tasks done quickly that might block the player from getting on to
@@ -42,13 +45,8 @@ function get_watched_job_matchers() return g_watched_job_matchers end
 eventful.enableEvent(eventful.eventType.UNLOAD, 1)
 eventful.enableEvent(eventful.eventType.JOB_INITIATED, 5)
 
-local function has_elements(collection)
-    for _,_ in pairs(collection) do return true end
-    return false
-end
-
 function isEnabled()
-    return has_elements(get_watched_job_matchers())
+    return next(get_watched_job_matchers())
 end
 
 local function persist_state()
@@ -126,7 +124,7 @@ end
 
 local function update_handlers()
     local watched_job_matchers = get_watched_job_matchers()
-    if has_elements(watched_job_matchers) then
+    if next(watched_job_matchers) then
         eventful.onUnload.prioritize = clear_watched_job_matchers
         eventful.onJobInitiated.prioritize = on_new_job
     else
@@ -367,7 +365,7 @@ local function remove_watch_special(job_type, job_matcher,
             end
         end
     end
-    if not has_elements(wspecial_matchers) then
+    if not next(wspecial_matchers) then
         watched_job_matchers[job_type] = nil
     end
 end
@@ -437,7 +435,7 @@ end
 
 local function print_current_jobs(job_matchers, opts)
     local job_counts_by_type = {}
-    local filtered = has_elements(job_matchers)
+    local filtered = next(job_matchers)
     for_all_live_postings(
         function(posting)
             local job = posting.job
@@ -499,7 +497,7 @@ local function print_registry()
             table.insert(t, v.code)
         end
     end
-    if not has_elements(t) then
+    if not next(t) then
         t = {'Load a game to see reactions'}
     end
     print_registry_section('Reaction names (for CustomReaction jobs)', t)
@@ -604,7 +602,7 @@ local function parse_commandline(args)
     end
     opts.job_matchers = job_matchers
 
-    if action == status and has_elements(job_matchers) then
+    if action == status and next(job_matchers) then
         action = boost
     end
     opts.action = action
@@ -642,6 +640,82 @@ if dfhack.internal.IN_TEST then
     }
 end
 
+--------------------------------
+-- EnRouteOverlay
+--
+
+local function is_visible()
+    local job = dfhack.gui.getSelectedJob(true)
+    return job and not job.flags.suspend and
+        (job.job_type == df.job_type.DestroyBuilding or
+         job.job_type == df.job_type.ConstructBuilding)
+end
+
+EnRouteOverlay = defclass(EnRouteOverlay, overlay.OverlayWidget)
+EnRouteOverlay.ATTRS{
+    desc='Adds a panel to unbuilt buildings indicating whether a dwarf is on their way to build.',
+    default_pos={x=-40, y=26},
+    default_enabled=true,
+    viewscreens='dwarfmode/ViewSheets/BUILDING',
+    frame={w=57, h=5},
+    frame_style=gui.FRAME_MEDIUM,
+    frame_background=gui.CLEAR_PEN,
+    visible=is_visible,
+}
+
+function EnRouteOverlay:init()
+    self:addviews{
+        widgets.Label{
+            frame={t=0, l=0},
+            text={
+                'Job taken by:',
+                {gap=1, text=self:callback('get_builder_name'), pen=self:callback('get_builder_name_pen')}
+            },
+            on_click=self:callback('zoom_to_builder'),
+        },
+        widgets.ToggleHotkeyLabel{
+            view_id='do_now',
+            frame={t=2, l=0},
+            label='Make top priority:',
+            key='CUSTOM_CTRL_T',
+            on_change=function(val)
+                local job = dfhack.gui.getSelectedJob(true)
+                if not job then return end
+                job.flags.do_now = val
+            end,
+        },
+    }
+end
+
+function EnRouteOverlay:get_builder_name()
+    if not self.builder then return 'N/A' end
+    return dfhack.units.getReadableName(self.builder)
+end
+
+function EnRouteOverlay:get_builder_name_pen()
+    if not self.builder then return COLOR_DARKGRAY end
+    return COLOR_GREEN
+end
+
+function EnRouteOverlay:zoom_to_builder()
+    local job = dfhack.gui.getSelectedJob(true)
+    if not job then return end
+    local builder = dfhack.job.getWorker(job)
+    if builder then
+        dfhack.gui.revealInDwarfmodeMap(xyz2pos(dfhack.units.getPosition(builder)), true, true)
+    end
+end
+
+function EnRouteOverlay:render(dc)
+    local job = dfhack.gui.getSelectedJob(true)
+    self.builder = dfhack.job.getWorker(job)
+    self.subviews.do_now:setOption(job.flags.do_now)
+    EnRouteOverlay.super.render(self, dc)
+    self.builder = nil
+end
+
+OVERLAY_WIDGETS = {enroute=EnRouteOverlay}
+
 if dfhack_flags.module then
     return
 end
@@ -650,6 +724,10 @@ if df.global.gamemode ~= df.game_mode.DWARF or not dfhack.isMapLoaded() then
     dfhack.printerr('prioritize needs a loaded fortress map to work')
     return
 end
+
+--------------------------------
+-- main
+--
 
 local args = {...}
 

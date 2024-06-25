@@ -7,8 +7,8 @@ local textures = require('gui.textures')
 local utils = require('utils')
 local widgets = require('gui.widgets')
 
-local UI_AREA = {r=2, t=18, w=38, h=35}
-local POPUP_UI_AREA = {r=41, t=18, w=30, h=19}
+local UI_AREA = {r=2, t=18, w=38, h=31}
+local POPUP_UI_AREA = {r=41, t=18, w=30, h=22}
 
 local CONFIG_BUTTON = {
     { tile= dfhack.pen.parse{fg=COLOR_CYAN, tile=curry(textures.tp_control_panel, 7) or nil, ch=string.byte('[')} },
@@ -37,21 +37,29 @@ local UI_COLORS = {
 local TILESET = dfhack.textures.loadTileset('hack/data/art/tiletypes.png', 8, 12, true)
 local TILESET_STRIDE = 16
 
-local OPTION_SETTINGS = {
-    [-1] = { char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
-    [ 0] = { char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
-    [ 1] = { char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
+local DEFAULT_OPTIONS = {
+    { value= -1, char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
+    { value=  1, char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
+    { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
 }
 
 local MORE_OPTIONS = {
-    ["hidden"]       = { label= "Hidden" },
-    ["light"]        = { label= "Light" },
-    ["subterranean"] = { label= "Subterranean" },
-    ["skyview"]      = { label= "Skyview" },
-    ["aquifer"]      = { label= "Aquifer", overrides= {
-        { value= 1, char1= 173, char2= 173, offset= 109, pen = COLOR_LIGHTBLUE },
-        { value= 2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE }
-    } },
+    { key= "hidden",       label= "Hidden", values= DEFAULT_OPTIONS },
+    { key= "light",        label= "Light", values= DEFAULT_OPTIONS },
+    { key= "subterranean", label= "Subterranean", values= DEFAULT_OPTIONS },
+    { key= "skyview",      label= "Skyview", values= DEFAULT_OPTIONS },
+    { key= "aquifer",      label= "Aquifer", values= {
+            { value= -1, char1= " ", char2= " ", offset=  97, pen = COLOR_GRAY },
+            { value=  1, char1= 247, char2= " ", offset= 109, pen = COLOR_LIGHTBLUE },
+            { value=  2, char1= 247, char2= 247, offset= 157, pen = COLOR_BLUE },
+            { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
+        }
+    },
+    { key= "autocorrect",  label= "Autocorrect", values= {
+            { value=  1, char1= "+", char2= "+", offset= 101, pen = COLOR_LIGHTGREEN },
+            { value=  0, char1= "X", char2= "X", offset= 105, pen = COLOR_RED },
+        }
+    },
 }
 
 local MODE_LIST = {
@@ -118,6 +126,34 @@ CYCLE_VALUES = {
     },
 }
 
+HIDDEN_VALUES = {
+    shape = {
+        [df.tiletype_shape.BRANCH] = true,
+        [df.tiletype_shape.TRUNK_BRANCH] = true,
+        [df.tiletype_shape.TWIG] = true,
+        [df.tiletype_shape.SAPLING] = true,
+        [df.tiletype_shape.SHRUB] = true,
+        [df.tiletype_shape.ENDLESS_PIT] = true
+    },
+    material = {
+        [df.tiletype_material.FEATURE] = true,
+        [df.tiletype_material.MINERAL] = true,
+        [df.tiletype_material.CONSTRUCTION] = true,
+        [df.tiletype_material.PLANT] = true,
+        [df.tiletype_material.TREE] = true,
+        [df.tiletype_material.MUSHROOM] = true,
+        [df.tiletype_material.ROOT] = true,
+        [df.tiletype_material.CAMPFIRE] = true,
+        [df.tiletype_material.DRIFTWOOD] = true,
+        [df.tiletype_material.UNDERWORLD_GATE] = true,
+        [df.tiletype_material.HFS] = true
+    },
+    special = {
+        [df.tiletype_special.DEAD] = true,
+        [df.tiletype_special.SMOOTH_DEAD] = true
+    }
+}
+
 ---@class TileType
 ---@field shape? df.tiletype_shape
 ---@field material? df.tiletype_material
@@ -129,6 +165,7 @@ CYCLE_VALUES = {
 ---@field subterranean? integer
 ---@field skyview? integer
 ---@field aquifer? integer
+---@field autocorrect? integer
 ---@field stone_material? integer
 ---@field vein_type? df.inclusion_type
 
@@ -153,6 +190,7 @@ function setTile(pos, target)
         subterranean   = toValidOptionValue(target.subterranean),
         skyview        = toValidOptionValue(target.skyview),
         aquifer        = toValidOptionValue(target.aquifer),
+        autocorrect    = target.autocorrect == nil and 0 or target.autocorrect,
     }
     tiletype.stone_material = tiletype.material == df.tiletype_material.STONE and target.stone_material or -1
     tiletype.vein_type      = tiletype.material ~= df.tiletype_material.STONE and -1 or toValidEnumValue(target.vein_type,  df.inclusion_type,  df.inclusion_type.CLUSTER)
@@ -406,23 +444,20 @@ end
 -- Box data class
 
 ---@class Box.attrs
----@field valid boolean
----@field min df.coord
----@field max df.coord
 
 ---@class Box.attrs.partial: Box.attrs
 
 ---@class Box: Box.attrs
 ---@field ATTRS Box.attrs|fun(attributes: Box.attrs.partial)
+---@field valid boolean
+---@field min df.coord
+---@field max df.coord
 ---@overload fun(init_table: Box.attrs.partial): self
 Box = defclass(Box)
-Box.ATTRS {
-    valid = true, -- For output
-    min = DEFAULT_NIL,
-    max = DEFAULT_NIL
-}
+Box.ATTRS {}
 
 function Box:init(points)
+    self.valid = true
     self.min = nil
     self.max = nil
     for _,value in pairs(points) do
@@ -595,6 +630,10 @@ end
 --================================--
 -- Allows for selecting a box
 
+---@class BoxTileMap
+---@field getPenKey fun(nesw: { n: boolean, e: boolean, s: boolean, w: boolean }): any
+---@field createPens? fun(): { key: dfhack.pen }
+---@field pens? { key: dfhack.pen }
 local TILE_MAP = {
     getPenKey= function(nesw)
         local out = 0
@@ -604,42 +643,46 @@ local TILE_MAP = {
         return out
     end
 }
-TILE_MAP.pens= {
-    [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  2), fg=COLOR_GREEN, ch='X'}, -- INSIDE
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  1), fg=COLOR_GREEN, ch='X'}, -- NW
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  1), fg=COLOR_GREEN, ch='X'}, -- NORTH
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  1), fg=COLOR_GREEN, ch='X'}, -- NE
-    [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  2), fg=COLOR_GREEN, ch='X'}, -- WEST
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  2), fg=COLOR_GREEN, ch='X'}, -- EAST
-    [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  3), fg=COLOR_GREEN, ch='X'}, -- SW
-    [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  3), fg=COLOR_GREEN, ch='X'}, -- SOUTH
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  3), fg=COLOR_GREEN, ch='X'}, -- SE
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  2), fg=COLOR_GREEN, ch='X'}, -- N_NUB
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 5,  1), fg=COLOR_GREEN, ch='X'}, -- E_NUB
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  1), fg=COLOR_GREEN, ch='X'}, -- W_NUB
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  2), fg=COLOR_GREEN, ch='X'}, -- S_NUB
-    [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  3), fg=COLOR_GREEN, ch='X'}, -- VERT_NS
-    [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  1), fg=COLOR_GREEN, ch='X'}, -- VERT_EW
-    [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  3), fg=COLOR_GREEN, ch='X'}, -- POINT
-}
+TILE_MAP.createPens= function()
+    return {
+        [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  2), fg=COLOR_GREEN, ch='X'}, -- INSIDE
+        [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  1), fg=COLOR_GREEN, ch='X'}, -- NW
+        [TILE_MAP.getPenKey{ n=true,  e=false, s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  1), fg=COLOR_GREEN, ch='X'}, -- NORTH
+        [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  1), fg=COLOR_GREEN, ch='X'}, -- NE
+        [TILE_MAP.getPenKey{ n=false, e=false, s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  2), fg=COLOR_GREEN, ch='X'}, -- WEST
+        [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  2), fg=COLOR_GREEN, ch='X'}, -- EAST
+        [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 0,  3), fg=COLOR_GREEN, ch='X'}, -- SW
+        [TILE_MAP.getPenKey{ n=false, e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 1,  3), fg=COLOR_GREEN, ch='X'}, -- SOUTH
+        [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 2,  3), fg=COLOR_GREEN, ch='X'}, -- SE
+        [TILE_MAP.getPenKey{ n=true,  e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  2), fg=COLOR_GREEN, ch='X'}, -- N_NUB
+        [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 5,  1), fg=COLOR_GREEN, ch='X'}, -- E_NUB
+        [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  1), fg=COLOR_GREEN, ch='X'}, -- W_NUB
+        [TILE_MAP.getPenKey{ n=false, e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  2), fg=COLOR_GREEN, ch='X'}, -- S_NUB
+        [TILE_MAP.getPenKey{ n=false, e=true,  s=false, w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 3,  3), fg=COLOR_GREEN, ch='X'}, -- VERT_NS
+        [TILE_MAP.getPenKey{ n=true,  e=false, s=true,  w=false }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  1), fg=COLOR_GREEN, ch='X'}, -- VERT_EW
+        [TILE_MAP.getPenKey{ n=true,  e=true,  s=true,  w=true  }] = dfhack.pen.parse{tile=dfhack.screen.findGraphicsTile("CURSORS", 4,  3), fg=COLOR_GREEN, ch='X'}, -- POINT
+    }
+end
 
 ---@class BoxSelection.attrs: widgets.Window.attrs
----@field box? Box
+---@field tooltip_enabled? boolean,
 ---@field screen? gui.Screen
----@field tile_map? { pens: { key: dfhack.pen }, getPenKey: fun(nesw: { n: boolean, e: boolean, s: boolean, w: boolean }): any }
+---@field tile_map? BoxTileMap
 ---@field avoid_view? gui.View|fun():gui.View
 ---@field on_confirm? fun(box: Box)
----@field first_point? df.coord
----@field last_point? df.coord
 ---@field flat boolean
 ---@field ascii_fill boolean
 
 ---@class BoxSelection.attrs.partial: BoxSelection.attrs
 
 ---@class BoxSelection: widgets.Window, BoxSelection.attrs
+---@field box? Box
+---@field first_point? df.coord
+---@field last_point? df.coord
 BoxSelection = defclass(BoxSelection, widgets.Window)
 BoxSelection.ATTRS {
-    screen=DEFAULT_NIL, -- Allows the DimensionsTooltip to be shown
+    tooltip_enabled=true,
+    screen=DEFAULT_NIL,
     tile_map=TILE_MAP,
     avoid_view=DEFAULT_NIL,
     on_confirm=DEFAULT_NIL,
@@ -653,27 +696,36 @@ function BoxSelection:init()
     self.first_point=nil
     self.last_point=nil
 
+    if self.tile_map then
+        if self.tile_map.createPens then
+            self.tile_map.pens = self.tile_map.createPens()
+        end
+    else
+        error("No tile map provided")
+    end
+
     -- Set the cursor to the center of the screen
-    local dims = dfhack.gui.getDwarfmodeViewDims()
     guidm.setCursorPos(guidm.Viewport.get():getCenter())
 
     -- Show cursor
-    df.global.game.main_interface.main_designation_selected = df.main_designation_type.TOGGLE_ENGRAVING -- Alternative: df.main_designation_type.REMOVE_CONSTRUCTION
+    df.global.game.main_interface.main_designation_selected = df.main_designation_type.TOGGLE_ENGRAVING
 
-    if self.screen then
-        self.dimensions_tooltip = widgets.DimensionsTooltip{
-            get_anchor_pos_fn=function()
-                if self.first_point and self.flat then
-                    return xyz2pos(self.first_point.x, self.first_point.y, df.global.window_z)
-                end
-                return self.first_point
-            end,
-        }
-        self.screen:addviews{
-            self.dimensions_tooltip
-        }
-    else
-        error("No screen provided to BoxSelection, unable to display DimensionsTooltip")
+    if self.tooltip_enabled then
+        if self.screen then
+            self.dimensions_tooltip = widgets.DimensionsTooltip{
+                get_anchor_pos_fn=function()
+                    if self.first_point and self.flat then
+                        return xyz2pos(self.first_point.x, self.first_point.y, df.global.window_z)
+                    end
+                    return self.first_point
+                end,
+            }
+            self.screen:addviews{
+                self.dimensions_tooltip
+            }
+        else
+            error("No screen provided to BoxSelection, unable to display DimensionsTooltip")
+        end
     end
 end
 
@@ -772,7 +824,7 @@ function BoxSelection:onRenderFrame(dc, rect)
         and self.lastMousePos.x == df.global.gps.mouse_x and self.lastMousePos.y == df.global.gps.mouse_y
     self.lastMousePos = xy2pos(df.global.gps.mouse_x, df.global.gps.mouse_y)
 
-    if self.screen and self.dimensions_tooltip then
+    if self.tooltip_enabled and self.screen and self.dimensions_tooltip then
         self.dimensions_tooltip.visible = not self.useCursor
     end
 
@@ -962,7 +1014,7 @@ function SelectDialogWindow:onInput(keys)
     if SelectDialogWindow.super.onInput(self, keys) then
         return true
     end
-    if keys.LEAVESCREEN then
+    if keys.LEAVESCREEN or keys._MOUSE_R then
         self.parent_view:dismiss()
         if self.on_cancel then
             self.on_cancel()
@@ -1067,51 +1119,12 @@ function OptionsPopup:init()
 
     self.values = {}
     local height_offset = 0
-    for key,option in pairs(MORE_OPTIONS) do
-        self.values[key] = -1
-        local options = {
-            {
-                value=-1,
-                label= makeInlineButtonLabelText{
-                    left_specs={
-                        chars={option.label},
-                        pens=OPTION_SETTINGS[-1].pen,
-                        pens_hover=UI_COLORS.HIGHLIGHTED,
-                    },
-                    right_specs={
-                        chars=makeUIChars(OPTION_SETTINGS[-1].char1, OPTION_SETTINGS[-1].char2),
-                        pens=makeUIPen(UI_COLORS.DESELECTED, OPTION_SETTINGS[-1].pen),
-                        pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, OPTION_SETTINGS[-1].pen),
-                        tileset=TILESET,
-                        tileset_offset=OPTION_SETTINGS[-1].offset,
-                        tileset_stride=TILESET_STRIDE,
-                    },
-                    width=width
-                },
-            },
-            {
-                value=0,
-                label= makeInlineButtonLabelText{
-                    left_specs={
-                        chars={option.label},
-                        pens=OPTION_SETTINGS[0].pen,
-                        pens_hover=UI_COLORS.HIGHLIGHTED,
-                    },
-                    right_specs={
-                        chars=makeUIChars(OPTION_SETTINGS[0].char1, OPTION_SETTINGS[0].char2),
-                        pens=makeUIPen(UI_COLORS.DESELECTED, OPTION_SETTINGS[0].pen),
-                        pens_hover=makeUIPen(UI_COLORS.HIGHLIGHTED_BORDER, OPTION_SETTINGS[0].pen),
-                        tileset=TILESET,
-                        tileset_offset=OPTION_SETTINGS[0].offset,
-                        tileset_stride=TILESET_STRIDE,
-                    },
-                    width=width
-                },
-            },
-        }
+    for _,option in pairs(MORE_OPTIONS) do
+        self.values[option.key] = option.values[1].value
+        local options = {}
 
         local addOption = function(value, pen, char1, char2, offset)
-            table.insert(options, #options, {
+            table.insert(options, {
                 value=value,
                 label= makeInlineButtonLabelText{
                     left_specs={
@@ -1132,20 +1145,16 @@ function OptionsPopup:init()
             })
         end
 
-        if option.overrides then
-            for _, value in pairs(option.overrides) do
-                addOption(value.value, value.pen, value.char1, value.char2, value.offset)
-            end
-        else
-            addOption(1, OPTION_SETTINGS[1].pen, OPTION_SETTINGS[1].char1, OPTION_SETTINGS[1].char2, OPTION_SETTINGS[1].offset)
+        for _, value in pairs(option.values) do
+            addOption(value.value, value.pen, value.char1, value.char2, value.offset)
         end
 
         table.insert(optionViews,
             CycleLabel {
                 frame={l=1,t=height_offset},
-                initial_option=-1,
+                initial_option=option.values[1].value,
                 options=options,
-                on_change=function(value) self.values[key] = value end
+                on_change=function(value) self.values[option.key] = value end
             }
         )
         height_offset = height_offset + 3
@@ -1165,7 +1174,6 @@ TileConfig.ATTRS {
     on_change_shape=DEFAULT_NIL,
     on_change_mat=DEFAULT_NIL,
     on_change_stone=DEFAULT_NIL,
-    on_change_vein_type=DEFAULT_NIL,
     on_change_special=DEFAULT_NIL,
     on_change_variant=DEFAULT_NIL,
 }
@@ -1238,20 +1246,10 @@ function TileConfig:init()
             enabled=function() return self.stone_enabled end,
             on_activate=function() self:openStonePopup() end
         },
-        CycleLabel {
-            view_id="vein_type_label",
-            frame={l=3, t=8},
-            key='CUSTOM_I',
-            base_label={ text= "Vein Type:", pen=function() return self.stone_enabled and UI_COLORS.HIGHLIGHTED or UI_COLORS.DESELECTED end },
-            enabled=function() return self.stone_enabled end,
-            initial_option=-1,
-            options=self.data_lists.vein_type_list,
-            on_change=self.on_change_vein_type,
-        },
-        widgets.Divider { frame={t=10}, frame_style_l=false, frame_style_r=false, },
+        widgets.Divider { frame={t=8}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
             view_id="special_cycle",
-            frame={l=1, r=config_btn_width, t=12},
+            frame={l=1, r=config_btn_width, t=10},
             key_back='CUSTOM_SHIFT_K',
             key='CUSTOM_K',
             label='Special:',
@@ -1265,10 +1263,9 @@ function TileConfig:init()
             end,
             text_pen=getTextPen
         },
-        widgets.Divider { frame={t=14}, frame_style_l=false, frame_style_r=false, },
         widgets.CycleHotkeyLabel {
             view_id="variant_cycle",
-            frame={l=1, t=16},
+            frame={l=1, t=12},
             key_back='CUSTOM_SHIFT_L',
             key='CUSTOM_L',
             label='Variant:',
@@ -1282,7 +1279,7 @@ function TileConfig:init()
             end,
             text_pen=getTextPen
         },
-        widgets.Divider { frame={t=18}, frame_style_l=false, frame_style_r=false, },
+        widgets.Divider { frame={t=14}, frame_style_l=false, frame_style_r=false, },
     }
 
     -- Advanced config buttons
@@ -1301,7 +1298,7 @@ function TileConfig:init()
         },
         -- Special
         widgets.Label {
-            frame={l=config_btn_l, t=12},
+            frame={l=config_btn_l, t=10},
             text=CONFIG_BUTTON,
             on_click=function() self:openSpecialPopup() end,
         },
@@ -1386,14 +1383,12 @@ end
 function TileConfig:setStoneEnabled(bool)
     self.stone_enabled = bool
     if not bool then
-        self.subviews.vein_type_label:setOption(self.subviews.vein_type_label.initial_option)
         self:changeStone(nil)
     end
-    self.subviews.vein_type_label:updateOptionLabel()
 end
 
 function TileConfig:setVisibility(visibility)
-    self.frame = visibility and { h=19 } or { h=0 }
+    self.frame = visibility and { h=15 } or { h=0 }
     self.visible = visibility
 end
 
@@ -1410,7 +1405,7 @@ function TileConfig:updateValidity()
             local tile_attrs = df.tiletype.attrs[name]
             if (shape_value == df.tiletype_shape.NONE or tile_attrs.shape == shape_value)
                 and (mat_value == df.tiletype_material.NONE or tile_attrs.material == mat_value)
-                and (special_value == df.tiletype_special.NONE or tile_attrs.special == special_value or tile_attrs.special == df.tiletype_special.NONE)
+                and (special_value == df.tiletype_special.NONE or tile_attrs.special == special_value)
                 and (variant_value == df.tiletype_variant.NONE or tile_attrs.variant == variant_value or tile_attrs.variant == df.tiletype_variant.NONE)
             then
                 self.valid_combination = true
@@ -1571,9 +1566,6 @@ function TiletypeWindow:init()
                     on_change_stone=function(value)
                         self.cur_stone = value
                     end,
-                    on_change_vein_type=function(value)
-                        self.cur_vein_type = value
-                    end,
                     on_change_special=function(value)
                         self.cur_special = value
                     end,
@@ -1584,7 +1576,7 @@ function TiletypeWindow:init()
                 widgets.HotkeyLabel {
                     frame={l=1},
                     key='STRING_A059',
-                    label='More Options',
+                    label='More options',
                     on_activate=function()
                         self.options_popup.visible = not self.options_popup.visible
                     end
@@ -1611,22 +1603,27 @@ function TiletypeWindow:confirm()
 
     if box then
         local settings = MODE_SETTINGS[self.cur_mode]
+        local option_values = self.options_popup.values
 
         if self.cur_mode == "remove" then
             ---@type TileType
             local emptyTiletype = {
-                shape = df.tiletype_shape.EMPTY,
-                material = df.tiletype_material.AIR,
-                special = df.tiletype_special.NORMAL,
+                shape          = df.tiletype_shape.EMPTY,
+                material       = df.tiletype_material.AIR,
+                special        = df.tiletype_special.NORMAL,
+                hidden         = option_values.hidden,
+                light          = option_values.light,
+                subterranean   = option_values.subterranean,
+                skyview        = option_values.skyview,
+                aquifer        = option_values.aquifer,
+                autocorrect    = option_values.autocorrect,
             }
             box:iterate(function(pos)
                 if settings.validator(pos) then
                     setTile(pos, emptyTiletype)
                 end
             end)
-        else
-            local option_values = self.options_popup.values
-
+        elseif self.subviews.tile_config.valid_combination then
             ---@type TileType
             local tiletype = {
                 shape          = self.cur_shape,
@@ -1638,8 +1635,8 @@ function TiletypeWindow:confirm()
                 subterranean   = option_values.subterranean,
                 skyview        = option_values.skyview,
                 aquifer        = option_values.aquifer,
+                autocorrect    = option_values.autocorrect,
                 stone_material = self.cur_stone,
-                vein_type      = self.cur_vein_type,
             }
             box:iterate(function(pos)
                 if settings.validator(pos) then
@@ -1708,13 +1705,16 @@ function TiletypeScreen:generateDataLists()
         return name == "NONE" and UI_COLORS.VALUE_NONE or UI_COLORS.VALUE
     end
 
-    local function getEnumLists(enum, short_dict)
+    local function getEnumLists(enum, short_dict, hidden_dict)
         list = {}
         short_list = {}
 
         for i=enum._first_item, enum._last_item do
             local name = enum[i]
             if name then
+                if hidden_dict and hidden_dict[i] then
+                    goto continue
+                end
                 local item = { label= name, value= i, pen= itemColor(name) }
                 table.insert(list, { text=name, value=item })
                 if short_dict then
@@ -1725,15 +1725,16 @@ function TiletypeScreen:generateDataLists()
                     end
                 end
             end
+            ::continue::
         end
 
         return list, short_list
     end
 
     local data_lists = {}
-    data_lists.shape_list, data_lists.short_shape_list = getEnumLists(df.tiletype_shape, CYCLE_VALUES.shape)
-    data_lists.mat_list, data_lists.short_mat_list = getEnumLists(df.tiletype_material, CYCLE_VALUES.material)
-    data_lists.special_list, data_lists.short_special_list = getEnumLists(df.tiletype_special, CYCLE_VALUES.special)
+    data_lists.shape_list, data_lists.short_shape_list = getEnumLists(df.tiletype_shape, CYCLE_VALUES.shape, not self.unrestricted and HIDDEN_VALUES.shape)
+    data_lists.mat_list, data_lists.short_mat_list = getEnumLists(df.tiletype_material, CYCLE_VALUES.material, not self.unrestricted and HIDDEN_VALUES.material)
+    data_lists.special_list, data_lists.short_special_list = getEnumLists(df.tiletype_special, CYCLE_VALUES.special, not self.unrestricted and HIDDEN_VALUES.special)
     _, data_lists.variant_list = getEnumLists(df.tiletype_variant, { all = true})
 
     data_lists.stone_list = { { text = "none", value = -1 } }
@@ -1759,12 +1760,6 @@ function TiletypeScreen:generateDataLists()
         end
     end
 
-    _, data_lists.vein_type_list = getEnumLists(df.inclusion_type, { all = true})
-    table.insert(data_lists.vein_type_list, 1, { label= "NONE", value= -1, pen= itemColor("NONE") }) -- Equivalent to CLUSTER
-    for _, value in pairs(data_lists.vein_type_list) do
-        value.label = {{ text= value.label, pen= value.pen }}
-    end
-
     return data_lists
 end
 
@@ -1779,19 +1774,19 @@ end
 
 --#endregion
 
-function main(...)
-    local args = {...}
+function main(args)
+    local opts = {}
     local positionals = argparse.processArgsGetopt(args, {
-        { 'f', 'unrestricted', handler = function() args.unrestricted = true end },
+        { 'f', 'unrestricted', handler = function() opts.unrestricted = true end },
     })
 
     if not dfhack.isMapLoaded() then
-        qerror("This script requires a fortress map to be loaded")
+        qerror("This script requires a map to be loaded")
     end
 
-    view = view and view:raise() or TiletypeScreen{ unrestricted = args.unrestricted }:show()
+    view = view and view:raise() or TiletypeScreen{ unrestricted = opts.unrestricted }:show()
 end
 
 if not dfhack_flags.module then
-    main(...)
+    main({...})
 end

@@ -84,7 +84,7 @@ local function fixUnit(unit)
         end
 
         for index, _ in pairs(status_cache.rel_map) do
-            status_cache.rel_map[index] = -1
+            status_cache.rel_map[index][status_slot] = -1
         end
 
         -- TODO: what if there were status slots taken above status_slot?
