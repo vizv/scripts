@@ -28,6 +28,7 @@ Template for new versions:
 
 ## New Tools
 - `advtools`: collection of useful commands and overlays for adventure mode
+- `advtools`: advtools party - promotes one of your companions to become a controllable adventurer
 - `pop-control`: (reinstated) limit the maximum size of migrant waves
 - `bodyswap`: (reinstated) take control of another unit in adventure mode
 - `gui/sitemap`: list and zoom to people, locations, and artifacts
@@ -35,7 +36,6 @@ Template for new versions:
 - `gui/tiletypes`: interface for modifying map tiles and tile properties
 - `fix/population-cap`: fixes the situation where you continue to get migrant waves even when you are above your configured population cap
 - `fix/occupancy`: fixes issues where you can't build somewhere because the game tells you an item/unit/building is in the way but there's nothing there
-- `add-to-core-party`: promotes one of your companions to become a controllable adventurer
 - `fix/sleepers`: (reinstated) fixes sleeping units belonging to a camp that never wake up.
 
 ## New Features
