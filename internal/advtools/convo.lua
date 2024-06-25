@@ -1,26 +1,19 @@
--- Improve "Bring up specific incident or rumor", "Ask for Directions" and "Ask about Somebody" menus in Adventure mode
-
 --@ module=true
 
--- requirements
 local overlay = require('plugins.overlay')
 local utils = require('utils')
-local widgets = require('gui.widgets')
 
--- globals
-ignore_words = utils.invert{
+local ignore_words = utils.invert{
     "a", "an", "by", "in", "occurred", "of", "or",
     "s", "the", "this", "to", "was", "which"
 }
 
--- locals
 local adventure = df.global.game.main_interface.adventure
 
--- CORE FUNCTIONS
 -- Gets the keywords already present on the dialog choice
 local function getKeywords(choice)
     local keywords = {}
-    for i, keyword in ipairs(choice.key_word) do
+    for _, keyword in ipairs(choice.key_word) do
         table.insert(keywords, keyword.value:lower())
     end
     return keywords
@@ -35,7 +28,7 @@ end
 
 -- Adds multiple keywords to the dialog choice
 local function addKeywords(choice, keywords)
-    for i, keyword in ipairs(keywords) do
+    for _, keyword in ipairs(keywords) do
         addKeyword(choice, keyword)
     end
 end
@@ -80,12 +73,10 @@ end
 AdvRumorsOverlay = defclass(AdvRumorsOverlay, overlay.OverlayWidget)
 AdvRumorsOverlay.ATTRS{
     desc='Adds keywords to conversation entries.',
-    overlay_only=true,
     default_enabled=true,
     viewscreens='dungeonmode/Conversation',
+    frame={w=0, h=0},
 }
-
-OVERLAY_WIDGETS = {conversation=AdvRumorsOverlay}
 
 function AdvRumorsOverlay:render()
     rumorUpdate()
