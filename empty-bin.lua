@@ -31,17 +31,14 @@ if stockpile then
         emptyContainer(container)
     end
 elseif selectedItem then
-    moveItem(selectedItem, xyz2pos(dfhack.items.getPosition(selectedItem)))
     emptyContainer(selectedItem)
 elseif selectedBuilding then
-    if not df.building_actual:is_instance(selectedBuilding) then
-        qerror("This type of building does not contain any items!")
-    end
+    if not df.building_actual:is_instance(selectedBuilding) then return end
     local containedItems = selectedBuilding.contained_items
     for i=#containedItems-1,0,-1 do
         contained = containedItems[i]
         if contained.use_mode == df.building_item_role_type.TEMP then
-            moveItem(contained.item, xyz2pos(selectedBuilding.centerx, selectedBuilding.centery, selectedBuilding.z))
+            emptyContainer(contained.item)
         end
     end
 elseif viewsheets.open then
@@ -50,5 +47,5 @@ elseif viewsheets.open then
         emptyContainer(item)
     end
 else
-    qerror("No valid target found")
+    qerror("Please select a container, building, stockpile, or tile with a list of items.")
 end
