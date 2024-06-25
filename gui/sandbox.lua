@@ -222,7 +222,7 @@ function Sandbox:onInput(keys)
         local scr = dfhack.gui.getDFViewscreen(true)
         if dfhack.gui.matchFocusString('dwarfmode/ViewSheets/UNIT/Overview', scr) then
             local interface_rect = gui.ViewRect{rect=gui.get_interface_rect()}
-            local button_rect = interface_rect:viewport(60, 50, 20, 3)
+            local button_rect = interface_rect:viewport(interface_rect.width-77, interface_rect.height-7, 20, 3)
             local mouse_x, mouse_y = dfhack.screen.getMousePos()
             if mouse_x and button_rect:inClipGlobalXY(mouse_x, mouse_y) then
                 return true
