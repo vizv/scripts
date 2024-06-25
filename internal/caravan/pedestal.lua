@@ -669,7 +669,6 @@ PedestalOverlay.ATTRS{
     default_enabled=true,
     viewscreens='dwarfmode/ViewSheets/BUILDING/DisplayFurniture',
     frame={w=23, h=1},
-    frame_background=gui.CLEAR_PEN,
 }
 
 local function is_valid_building()
@@ -681,7 +680,7 @@ function PedestalOverlay:init()
     self:addviews{
         widgets.TextButton{
             frame={t=0, l=0},
-            label='DFHack assign items',
+            label='DFHack assign',
             key='CUSTOM_CTRL_T',
             visible=is_valid_building,
             on_activate=function() AssignItemsModal{}:show() end,
