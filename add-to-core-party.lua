@@ -20,7 +20,7 @@ local function addToCoreParty(nemesis)
     nemesis.flags.ADVENTURER = true
 end
 
-local function showExtraPartyPrompt(advSetUpScreen)
+local function showExtraPartyPrompt()
     local choices = {}
     for _, histfig_id in ipairs(df.global.adventure.interactions.party_extra_members) do
         local hf = df.historical_figure.find(histfig_id)
@@ -37,4 +37,4 @@ local function showExtraPartyPrompt(advSetUpScreen)
         end, nil, nil, true)
 end
 
-showExtraPartyPrompt(viewscreen)
+showExtraPartyPrompt()
