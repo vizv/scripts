@@ -34,9 +34,7 @@ elseif selectedItem then
     emptyContainer(selectedItem)
 elseif selectedBuilding then
     if not df.building_actual:is_instance(selectedBuilding) then return end
-    local containedItems = selectedBuilding.contained_items
-    for i=#containedItems-1,0,-1 do
-        contained = containedItems[i]
+    for _, contained in ipairs(selectedBuilding.contained_items) do
         if contained.use_mode == df.building_item_role_type.TEMP then
             emptyContainer(contained.item)
         end
