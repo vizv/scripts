@@ -35,6 +35,7 @@ Template for new versions:
 - `gui/tiletypes`: interface for modifying map tiles and tile properties
 - `fix/population-cap`: fixes the situation where you continue to get migrant waves even when you are above your configured population cap
 - `fix/occupancy`: fixes issues where you can't build somewhere because the game tells you an item/unit/building is in the way but there's nothing there
+- `fix/sleepers`: (reinstated) fixes sleeping units belonging to a camp that never wake up.
 
 ## New Features
 - `buildingplan`: dimension tooltip is now displayed for constructions and buildings that are designated over an area, like bridges and farm plots
@@ -87,6 +88,7 @@ Template for new versions:
 - `max-wave`: merged into `pop-control`
 - `devel/find-offsets`, `devel/find-twbt`, `devel/prepare-save`: remove development scripts that are no longer useful
 - `fix/item-occupancy`, `fix/tile-occupancy`: merged into `fix/occupancy`
+- `adv-fix-sleepers`: renamed to `fix/sleepers`
 - `adv-rumors`: merged into `advtools`
 
 # 50.13-r2
