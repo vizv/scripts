@@ -2,7 +2,7 @@
 local num_fixed = 0
 
 -- Loop through all the active units currently loaded
-for k, unit in pairs(df.global.world.units.active) do
+for _, unit in ipairs(df.global.world.units.active) do
     local army_controller = unit.enemy.army_controller
     -- Only Campers have been observed to sleep
     if army_controller and army_controller.goal == df.army_controller_goal_type.CAMP then
@@ -17,5 +17,5 @@ end
 if num_fixed == 0 then
     print ("No sleepers with the fixable bug were found, sorry.")
 else
-    print ("Fixed " .. num_fixed .. " bugged army_controller(s).")
+    print ("Fixed " .. num_fixed .. " group(s) of sleeping units.")
 end
