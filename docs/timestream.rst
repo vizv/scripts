@@ -20,7 +20,7 @@ fort, and mature forts are much more fun to play.
 
 Note that whereas your dwarves zip around like you're running at 100 FPS, the
 onscreen FPS counter, if enabled, will still show a lower number. See the
-`Technical details`_` section below if you're interested in what's going on
+`Technical details`_ section below if you're interested in what's going on
 under the hood.
 
 You can also use this tool to change the in-game calendar speed. Your dwarves
