@@ -343,6 +343,7 @@ function TextEditorView:onRenderBody(dc)
 
     local max_width = dc.width
     local new_line = self.debug and NEWLINE or ''
+
     for ind, line in ipairs(self.lines) do
         -- do not render new lines symbol
         local line = line:gsub(NEWLINE, new_line)
@@ -403,22 +404,33 @@ function TextEditorView:onRenderBody(dc)
             (cursor_char == '' and 'nil') or
             cursor_char
         )
+        local sel_debug_msg = self.sel_end and string.format(
+            'sel_end_x: %s sel_end_y: %s',
+            self.sel_end.x,
+            self.sel_end.y
+        ) or ''
         dc:pen({fg=COLOR_LIGHTRED, bg=COLOR_RESET})
             :seek(0, self.parent_view.frame_body.height - 1)
             :string(debug_msg)
+            :seek(0, self.parent_view.frame_body.height - 2)
+            :string(sel_debug_msg)
     end
 end
 
 function TextEditorView:onInput(keys)
     for _,ignore_key in ipairs(self.ignore_keys) do
-        if keys[ignore_key] then return false end
+        if keys[ignore_key] then
+            return false
+        end
     end
 
     if keys.SELECT then
         -- handle enter
         self:insert(NEWLINE)
         return true
-    elseif keys._MOUSE_L_DOWN then
+
+
+    elseif keys._MOUSE_L then
         local mouse_x, mouse_y = self:getMousePos()
         if mouse_x and mouse_y then
             y = math.min(#self.lines, mouse_y + 1)
@@ -427,7 +439,7 @@ function TextEditorView:onInput(keys)
             return true
         end
 
-    elseif keys._MOUSE_L then
+    elseif keys._MOUSE_L_DOWN then
         local mouse_x, mouse_y = self:getMousePos()
         if mouse_x and mouse_y then
             y = math.min(#self.lines, mouse_y + 1 )
@@ -594,7 +606,6 @@ JournalScreen.ATTRS {
     focus_path='journal',
 }
 
-
 function JournalScreen:init()
     local content = dfhack.persistent.getSiteDataString(JOURNAL_PERSIST_KEY) or ''
 
@@ -610,13 +621,15 @@ function JournalScreen:init()
         resizable=true,
         resize_min={w=32, h=10},
         autoarrange_subviews=true,
-        subviews={
-            TextEditor{
-                text=content,
-                on_change=on_text_change
-            }
+    }
+
+    self.window:addviews{
+        TextEditor{
+            text=content,
+            on_change=on_text_change
         }
-      }
+    }
+
     self:addviews{self.window}
 end
 
