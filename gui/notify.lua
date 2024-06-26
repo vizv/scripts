@@ -21,6 +21,22 @@ NotifyOverlay.ATTRS{
 function NotifyOverlay:init()
     self.state = {}
 
+    local on_submit
+    local on_submit2
+    
+    if not dfhack.world.isAdventureMode() then
+        on_submit = function(_, choice)
+            if not choice.data.on_click then return end
+            local prev_state = self.state[choice.data.name]
+            self.state[choice.data.name] = choice.data.on_click(prev_state, false)
+        end
+        on_submit2 = function(_, choice)
+            if not choice.data.on_click then return end
+            local prev_state = self.state[choice.data.name]
+            self.state[choice.data.name] = choice.data.on_click(prev_state, true)
+        end
+    end
+
     self:addviews{
         widgets.Panel{
             view_id='panel',
@@ -32,17 +48,10 @@ function NotifyOverlay:init()
                     frame={t=0, b=0, l=0, r=0},
                     -- disable scrolling with the keyboard since some people
                     -- have wasd mapped to the arrow keys
+                    -- don't do this for adventure mode to not eat inputs
                     scroll_keys={},
-                    on_submit=function(_, choice)
-                        if not choice.data.on_click then return end
-                        local prev_state = self.state[choice.data.name]
-                        self.state[choice.data.name] = choice.data.on_click(prev_state, false)
-                    end,
-                    on_submit2=function(_, choice)
-                        if not choice.data.on_click then return end
-                        local prev_state = self.state[choice.data.name]
-                        self.state[choice.data.name] = choice.data.on_click(prev_state, true)
-                    end,
+                    on_submit=on_submit,
+                    on_submit2=on_submit2,
                 },
             },
         },
