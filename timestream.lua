@@ -149,11 +149,26 @@ local function adjust_caravans(season_timeskip)
         if caravan.trade_state == df.caravan_state.T_trade_state.Approaching or
             caravan.trade_state == df.caravan_state.T_trade_state.AtDepot
         then
+            local was_before_message_threshold = caravan.time_remaining >= 501
             caravan.time_remaining = caravan.time_remaining - season_timeskip
+            if was_before_message_threshold and caravan.time_remaining <= 500 then
+                caravan.time_remaining = 501
+                need_season_tick = true
+            end
         end
         if caravan.time_remaining <= 0 then
             caravan.time_remaining = 0
             dfhack.run_script('caravan', 'leave', tostring(i))
+        end
+    end
+end
+
+local noble_cooldowns = {'manager_cooldown', 'bookkeeper_cooldown'}
+local function adjust_nobles(season_timeskip)
+    for _, field in ipairs(noble_cooldowns) do
+        df.global.plotinfo.nobles[field] = df.global.plotinfo.nobles[field] - season_timeskip
+        if df.global.plotinfo.nobles[field] < 0 then
+            df.global.plotinfo.nobles[field] = 0
         end
     end
 end
@@ -172,6 +187,16 @@ local function on_tick()
 
     local desired_calendar_timeskip = (timeskip * state.settings.calendar_rate) + calendar_timeskip_deficit
     local calendar_timeskip = math.max(1, math.floor(desired_calendar_timeskip))
+    if need_season_tick then
+        local old_ones = df.global.cur_year_tick % 10
+        local new_ones = (df.global.cur_year_tick + calendar_timeskip) % 10
+        if new_ones == 9 then
+            need_season_tick = false
+        elseif old_ones + calendar_timeskip >= 10 then
+            calendar_timeskip = 9 - old_ones
+            need_season_tick = false
+        end
+    end
     calendar_timeskip_deficit = math.max(0, desired_calendar_timeskip - calendar_timeskip)
 
     local new_cur_year_tick = df.global.cur_year_tick + calendar_timeskip
@@ -183,6 +208,7 @@ local function on_tick()
     adjust_units(timeskip)
     adjust_armies(timeskip)
     adjust_caravans(season_timeskip)
+    adjust_nobles(season_timeskip)
 end
 
 ------------------------------------
@@ -190,6 +216,7 @@ end
 
 local function do_enable()
     timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
+    need_season_tick = false
     state.enabled = true
     repeatutil.scheduleEvery(GLOBAL_KEY, 1, 'ticks', on_tick)
 end
