@@ -149,13 +149,16 @@ local function adjust_units(timeskip)
         if not has_caste_flag(unit, 'NO_DRINK') then
             c2.thirst_timer = c2.thirst_timer + timeskip
         end
+        local job = unit.job.current_job
         if not has_caste_flag(unit, 'NO_SLEEP') then
-            local job = unit.job.current_job
             if job and job.job_type == df.job_type.Sleep then
                 c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 19)
             else
                 c2.sleepiness_timer = c2.sleepiness_timer + timeskip
             end
+        end
+        if job and job.job_type == df.job_type.Rest then
+            c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 200)
         end
         ::continue::
     end
