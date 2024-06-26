@@ -1,3 +1,5 @@
+-- Fort journal with a multi-line rich text editor
+
 local gui = require 'gui'
 local widgets = require('gui.widgets')
 
@@ -637,9 +639,14 @@ function JournalScreen:onDismiss()
     view = nil
 end
 
-if not dfhack.isMapLoaded() then
-    qerror('journal requires a fortress map to be loaded')
+function main()
+    if not dfhack.isMapLoaded() then
+        qerror('journal requires a fortress map to be loaded')
+    end
+
+    view = view and view:raise() or JournalScreen{}:show()
 end
 
-view = view and view:raise() or JournalScreen{}:show()
-
+if not dfhack_flags.module then
+    main()
+end
