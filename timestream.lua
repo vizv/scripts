@@ -127,6 +127,12 @@ local function clamp_timeskip(timeskip)
         df.global.cur_year_tick - (df.global.cur_year_tick % 10 + 1) + (next_important_season_tick - df.global.cur_season_tick)*10)
 end
 
+local function has_caste_flag(unit, flag)
+    if unit.curse.rem_tags1[flag] then return false end
+    if unit.curse.add_tags1[flag] then return true end
+    return dfhack.units.casteFlagSet(unit.race, unit.caste, df.caste_raw_flags[flag])
+end
+
 local function adjust_units(timeskip)
     for _, unit in ipairs(df.global.world.units.active) do
         if not dfhack.units.isActive(unit) then goto continue end
@@ -136,6 +142,21 @@ local function adjust_units(timeskip)
             end
         end
         dfhack.units.subtractGroupActionTimers(unit, timeskip, df.unit_action_type_group.All)
+        local c2 = unit.counters2
+        if not has_caste_flag(unit, 'NO_EAT') then
+            c2.hunger_timer = c2.hunger_timer + timeskip
+        end
+        if not has_caste_flag(unit, 'NO_DRINK') then
+            c2.thirst_timer = c2.thirst_timer + timeskip
+        end
+        if not has_caste_flag(unit, 'NO_SLEEP') then
+            local job = unit.job.current_job
+            if job and job.job_type == df.job_type.Sleep then
+                c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 19)
+            else
+                c2.sleepiness_timer = c2.sleepiness_timer + timeskip
+            end
+        end
         ::continue::
     end
 end
