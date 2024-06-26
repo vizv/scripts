@@ -66,15 +66,18 @@ local TICKS_PER_DAY = 1200
 local TICKS_PER_WEEK = 7 * TICKS_PER_DAY
 
 -- determined from reverse engineering; don't skip these tick thresholds
--- something important happens when cur_season_tick % <mod> == <rem>
+-- something important happens when tick % <mod> == <rem>
 -- please keep remainder list elements in **descending** order
 local SEASON_TICK_TRIGGERS = {
     {mod=TICKS_PER_DAY//10, rem={0x6e, 0x50, 0x46, 0x3c, 0x32, 0x28, 0x14, 10, 0}},
     {mod=TICKS_PER_WEEK//10, rem={0x32, 0x1e}},
 }
+local YEAR_TICK_TRIGGERS = {
+    {mod=100, rem={0}}, -- crop growth
+}
 
 -- additional ticks we would like to skip at the next opportunity
-local timeskip_deficit = 0.0
+local timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
 
 local function get_desired_timeskip(real_fps, desired_fps)
     return (desired_fps / real_fps) - 1
@@ -90,28 +93,38 @@ local function get_next_timed_event_season_tick()
     return next_event_tick
 end
 
-local function get_next_trigger_season_tick()
-    local tick_offset = (df.global.cur_year_tick+1) % 10
-    local is_season_tick = tick_offset == 0
-    local next_season_tick = df.global.cur_season_tick + (is_season_tick and 0 or 1)
-
+local function get_next_trigger_tick(triggers, next_tick, is_tick_boundary)
     local next_trigger_tick = math.huge
-    for _, trigger in ipairs(SEASON_TICK_TRIGGERS) do
-        local cur_rem = next_season_tick % trigger.mod
+    for _, trigger in ipairs(triggers) do
+        local cur_rem = next_tick % trigger.mod
         for _, rem in ipairs(trigger.rem) do
-            if cur_rem < rem or (cur_rem == rem and is_season_tick) then
-                next_trigger_tick = math.min(next_trigger_tick, next_season_tick + (rem - cur_rem))
-                break
+            if cur_rem < rem or (cur_rem == rem and is_tick_boundary) then
+                    next_trigger_tick = math.min(next_trigger_tick, next_tick + (rem - cur_rem))
+                goto continue
             end
         end
+        next_trigger_tick = math.min(next_trigger_tick, next_tick + trigger.mod - cur_rem + trigger.rem[#trigger.rem])
+        ::continue::
     end
     return next_trigger_tick
+end
+
+local function get_next_trigger_year_tick()
+    return get_next_trigger_tick(YEAR_TICK_TRIGGERS, df.global.cur_year_tick + 1, true)
+end
+
+local function get_next_trigger_season_tick()
+    local is_season_tick = (df.global.cur_year_tick+1) % 10 == 0
+    local next_season_tick = df.global.cur_season_tick + (is_season_tick and 1 or 0)
+    return get_next_trigger_tick(SEASON_TICK_TRIGGERS, next_season_tick, is_season_tick)
 end
 
 local function clamp_timeskip(timeskip)
     if timeskip <= 0 then return 0 end
     local next_important_season_tick = math.min(get_next_timed_event_season_tick(), get_next_trigger_season_tick())
-    return math.min(timeskip, (next_important_season_tick-df.global.cur_season_tick)*10)
+    return math.min(timeskip,
+        get_next_trigger_year_tick()-df.global.cur_year_tick-1,
+        df.global.cur_year_tick - (df.global.cur_year_tick % 10 + 1) + (next_important_season_tick - df.global.cur_season_tick)*10)
 end
 
 local function adjust_units(timeskip)
@@ -127,34 +140,28 @@ local function adjust_units(timeskip)
     end
 end
 
-local function adjust_crops(timeskip)
-    -- TODO
-end
-
 local function adjust_armies(timeskip)
     -- TODO
 end
 
-local function adjust_evaporation(timeskip)
-    -- TODO
-end
-
-local function adjust_caravans(timeskip)
-    -- TODO
-end
-
-local function adjust_item_wear(timeskip)
-    -- TODO
-end
-
-local function adjust_buildings(timeskip)
-    -- TODO
+local function adjust_caravans(season_timeskip)
+    for i, caravan in ipairs(df.global.plotinfo.caravans) do
+        if caravan.trade_state == df.caravan_state.T_trade_state.Approaching or
+            caravan.trade_state == df.caravan_state.T_trade_state.AtDepot
+        then
+            caravan.time_remaining = caravan.time_remaining - season_timeskip
+        end
+        if caravan.time_remaining <= 0 then
+            caravan.time_remaining = 0
+            dfhack.run_script('caravan', 'leave', tostring(i))
+        end
+    end
 end
 
 local function on_tick()
     local real_fps = math.max(1, df.global.enabler.calculated_fps)
     if real_fps >= state.settings.fps then
-        timeskip_deficit = 0.0
+        timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
         return
     end
 
@@ -163,25 +170,26 @@ local function on_tick()
     timeskip_deficit = math.min(desired_timeskip - timeskip, state.settings.max_frame_skip)
     if timeskip <= 0 then return end
 
-    local calendar_timeskip = timeskip * state.settings.calendar_rate
+    local desired_calendar_timeskip = (timeskip * state.settings.calendar_rate) + calendar_timeskip_deficit
+    local calendar_timeskip = math.max(1, math.floor(desired_calendar_timeskip))
+    calendar_timeskip_deficit = math.max(0, desired_calendar_timeskip - calendar_timeskip)
+
     local new_cur_year_tick = df.global.cur_year_tick + calendar_timeskip
-    df.global.cur_season_tick = df.global.cur_season_tick + new_cur_year_tick//10 - df.global.cur_year_tick//10
+    local season_timeskip = new_cur_year_tick//10 - df.global.cur_year_tick//10
+
+    df.global.cur_season_tick = df.global.cur_season_tick + season_timeskip
     df.global.cur_year_tick = new_cur_year_tick
 
     adjust_units(timeskip)
-    adjust_crops(timeskip)
     adjust_armies(timeskip)
-    adjust_evaporation(timeskip)
-    adjust_caravans(timeskip)
-    adjust_item_wear(timeskip)
-    adjust_buildings(timeskip)
+    adjust_caravans(season_timeskip)
 end
 
 ------------------------------------
 -- hook management
 
 local function do_enable()
-    timeskip_deficit = 0
+    timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
     state.enabled = true
     repeatutil.scheduleEvery(GLOBAL_KEY, 1, 'ticks', on_tick)
 end

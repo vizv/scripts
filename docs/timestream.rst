@@ -76,7 +76,9 @@ Settings
     Values between 0 and 1 slow the calendar relative to the world, allowing
     units to get more done per day, and values above 1 speed the calendar
     relative to the world, causing the days to pass quicker and preventing
-    units from getting as much done per day.
+    units from getting as much done per day. The actual fps must be below the
+    configured target ``fps`` setting for the ``calendar-rate`` setting to take
+    effect.
 
 :max-frame-skip: Set the maximum number of ticks that can be skipped in one
     step. Dwarves can perform at most one action per step, and if too many
@@ -138,5 +140,3 @@ Here is a (likely incomplete) list of game elements that are not affected by
 
 - Army movement across the world map (including raids sent out from the fort)
 - Liquid movement and evaporation
-- Time that caravans stay at the trade depot
-- Crop growth rates
