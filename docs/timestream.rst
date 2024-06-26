@@ -78,12 +78,13 @@ Settings
     relative to the world, causing the days to pass quicker and preventing
     units from getting as much done per day.
 
-:max-boost: Set the maximum difference between the actual FPS that the computer
-    can support and the simulated FPS. The default value is 50. For example, if
-    the computer can support 30 FPS and your target FPS is set to 100, the
-    ``timestream`` simulation will target 80 FPS. This prevents unit movement
-    from becoming "jerky". Raise this value if speed of the simulation is more
-    important to you than its accuracy.
+:max-frame-skip: Set the maximum number of ticks that can be skipped in one
+    step. Dwarves can perform at most one action per step, and if too many
+    frames are skipped in one step, dwarves will "lose time" compared to the
+    movement of the calendar. The default is 4, which allows a target FPS of up
+    to 4x your actual FPS while still allowing dwarves to walk at full speed.
+    Raise this value if speed of the simulation is more important to you than
+    its accuracy and smoothness.
 
 Technical details
 -----------------
@@ -119,11 +120,11 @@ dwarves will move to their next tiles at *exactly* the same time. Moreover, the
 rate of action completion per unit is effectively capped at the granularity of
 the simulation, so very fast units will lose some of their advantage. In the
 extreme case, with the computer struggling to run at 1 FPS and ``timestream``
-simulating thousands of FPS (and the ``--max-boost`` cap increased to crazy
-values), all units will perform exactly one action per frame. This would make
-the game look robotic. With default settings, it will never get this bad, but
-you can always choose to alter the ``timestream`` configuration to your
-preferred balance of speed vs. accuracy.
+simulating thousands of FPS (and the ``max-frame-skip`` cap increased to 20),
+all units will perform exactly one action per frame. This would make the game
+look robotic. With default settings, it will never get this bad, but you can
+always choose to alter the ``timestream`` configuration to your preferred
+balance of speed vs. accuracy.
 
 Limitations
 -----------

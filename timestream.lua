@@ -31,10 +31,10 @@ local SETTINGS = {
         default=1.0,
     },
     {
-        name='max-boost',
-        internal_name='max_boost',
-        validate=function(arg) return argparse.nonnegativeInt(arg, 'max-boost') end,
-        default=50,
+        name='max-frame-skip',
+        internal_name='max_frame_skip',
+        validate=function(arg) return argparse.positiveInt(arg, 'max-frame-skip') end,
+        default=4,
     },
 }
 
@@ -76,8 +76,8 @@ local SEASON_TICK_TRIGGERS = {
 -- additional ticks we would like to skip at the next opportunity
 local timeskip_deficit = 0.0
 
-local function get_timeskip_per_tick(real_fps, desired_fps)
-    return (real_fps*(desired_fps - real_fps)) / desired_fps
+local function get_desired_timeskip(real_fps, desired_fps)
+    return (desired_fps / real_fps) - 1
 end
 
 local function get_next_timed_event_season_tick()
@@ -152,21 +152,19 @@ local function adjust_buildings(timeskip)
 end
 
 local function on_tick()
-    local real_fps = df.global.enabler.calculated_fps
+    local real_fps = math.max(1, df.global.enabler.calculated_fps)
     if real_fps >= state.settings.fps then
         timeskip_deficit = 0.0
         return
     end
 
-    local desired_timeskip = get_timeskip_per_tick(real_fps, state.settings.fps) + timeskip_deficit
-    local timeskip = math.floor(clamp_timeskip(desired_timeskip))
-    timeskip_deficit = desired_timeskip - timeskip
-    print(('desired_timeskip=%s, timeskip=%s, timeskip_deficit=%s'):format(desired_timeskip, timeskip, timeskip_deficit))
+    local desired_timeskip = get_desired_timeskip(real_fps, state.settings.fps) + timeskip_deficit
+    local timeskip = math.min(math.floor(clamp_timeskip(desired_timeskip)), state.settings.max_frame_skip)
+    timeskip_deficit = math.min(desired_timeskip - timeskip, state.settings.max_frame_skip)
     if timeskip <= 0 then return end
 
-    if timeskip > 0 then return end
-
-    local new_cur_year_tick = df.global.cur_year_tick + timeskip
+    local calendar_timeskip = timeskip * state.settings.calendar_rate
+    local new_cur_year_tick = df.global.cur_year_tick + calendar_timeskip
     df.global.cur_season_tick = df.global.cur_season_tick + new_cur_year_tick//10 - df.global.cur_year_tick//10
     df.global.cur_year_tick = new_cur_year_tick
 
