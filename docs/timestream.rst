@@ -50,13 +50,8 @@ Examples
 
 ``timestream set calendar-rate 0.5``
     Make the days twice as long and allow dwarves to accomplish twice as much
-    per day.
-
-``timestream set fps -1``
-``timestream set calendar-rate 2``
-    Don't change the granularity of the simulation, but make the in-game days
-    pass twice as quickly, as if the sun sped up across the sky. Units will get
-    half as much done as usual per game day.
+    per day (as long as the target FPS is sufficiently above the FPS the game
+    is actually running at).
 
 ``timestream reset``
     Reset settings to defaults: the vanilla FPS cap with no calendar speed
