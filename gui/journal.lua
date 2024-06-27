@@ -664,6 +664,10 @@ function TextEditorView:onInput(keys)
         )
         return true
     elseif keys.CUSTOM_CTRL_A then
+        -- select all
+        self:setSelection(1, 1, #self.lines[#self.lines], #self.lines)
+        return true
+    elseif keys.CUSTOM_CTRL_H then
         -- line start
         self:setCursor(1, self.cursor.y)
         return true
