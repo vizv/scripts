@@ -444,8 +444,7 @@ function TextEditorView:onRenderBody(dc)
     end
 
     if self.debug then
-        local cursor_ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
-        local cursor_char = self.text:sub(cursor_ind, cursor_ind)
+        local cursor_char = self:charAtCursor()
         local debug_msg = string.format(
             'x: %s y: %s ind: %s #line: %s char: %s',
             self.cursor.x,
@@ -470,6 +469,57 @@ function TextEditorView:onRenderBody(dc)
     end
 end
 
+function TextEditorView:charAtCursor()
+    local cursor_ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
+    return self.text:sub(cursor_ind, cursor_ind)
+end
+
+function TextEditorView:getMultiLeftClick()
+    local from_last_click_ms = (os.clock() - (self.last_click or 0)) * 1000
+
+    if (from_last_click_ms > 250) then
+        self.clicks_count = 0;
+    end
+
+    return self.clicks_count
+end
+
+function TextEditorView:triggerMultiLeftClick()
+    local clicks_count = self:getMultiLeftClick()
+
+    self.clicks_count = clicks_count + 1
+    self.last_click = os.clock()
+    return self.clicks_count
+end
+
+function TextEditorView:currentSpacesRange()
+    local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
+    -- select "word" only from spaces
+    local prev_word_end, _  = self.text
+        :sub(1, ind)
+        :find('[^%s]%s+$')
+    local _, next_word_start = self.text:find('%s[^%s]', ind)
+
+    return {
+        x_from=prev_word_end and self.cursor.x - (ind - prev_word_end) + 1 or 1,
+        x_to=next_word_start and self.cursor.x + next_word_start - ind - 1 or #self.text
+    }
+end
+
+function TextEditorView:currentWordRange()
+    -- select current word
+    local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
+    local _, prev_word_end = self.text
+        :sub(1, ind-1)
+        :find('.*[%s,."\']')
+    local next_word_start, _  = self.text:find('[%s,."\']', ind)
+
+    return {
+        x_from=prev_word_end and self.cursor.x - (ind - prev_word_end) + 1 or 1,
+        x_to=next_word_start and self.cursor.x + next_word_start - ind - 1 or #self.text
+    }
+end
+
 function TextEditorView:onInput(keys)
     for _,ignore_key in ipairs(self.ignore_keys) do
         if keys[ignore_key] then
@@ -482,17 +532,38 @@ function TextEditorView:onInput(keys)
         self:insert(NEWLINE)
         return true
 
-
     elseif keys._MOUSE_L then
         local mouse_x, mouse_y = self:getMousePos()
         if mouse_x and mouse_y then
-            y = math.min(#self.lines, mouse_y + 1)
-            x = math.min(#self.lines[y], mouse_x + 1)
-            self:setCursor(x, y)
+
+            local clicks_count = self:triggerMultiLeftClick()
+            if clicks_count >= 2 then
+                local cursor_char = self:charAtCursor()
+
+                local word_range = (
+                    cursor_char == ' ' or cursor_char == NEWLINE
+                ) and self:currentSpacesRange() or self:currentWordRange()
+
+                self:setSelection(
+                    word_range.x_from,
+                    self.cursor.y,
+                    word_range.x_to,
+                    self.cursor.y
+                )
+            elseif clicks_count == 1 then
+                y = math.min(#self.lines, mouse_y + 1)
+                x = math.min(#self.lines[y], mouse_x + 1)
+                self:setCursor(x, y)
+            end
+
             return true
         end
 
     elseif keys._MOUSE_L_DOWN then
+        if (self:getMultiLeftClick() > 1) then
+            return true
+        end
+
         local mouse_x, mouse_y = self:getMousePos()
         if mouse_x and mouse_y then
             y = math.min(#self.lines, mouse_y + 1 )
@@ -500,6 +571,7 @@ function TextEditorView:onInput(keys)
                 #self.lines[y],
                 mouse_x + 1
             )
+
             if self.cursor.x ~= x or self.cursor.y ~= y then
                 self:setSelection(self.cursor.x, self.cursor.y, x, y)
             else
@@ -564,6 +636,7 @@ function TextEditorView:onInput(keys)
         local _, prev_word_end = self.text
             :sub(1, ind-1)
             :find('.*%s[^%s]')
+
         self:setCursor(
             self.cursor.x - (ind - (prev_word_end or 1)),
             self.cursor.y
@@ -573,6 +646,7 @@ function TextEditorView:onInput(keys)
         -- forward one word
         local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
         local _, next_word_start = self.text:find('.-[^%s][%s]', ind)
+
         self:setCursor(
             self.cursor.x + ((next_word_start or #self.text) - ind),
             self.cursor.y
