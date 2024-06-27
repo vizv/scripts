@@ -2,8 +2,8 @@ gui/journal
 ===========
 
 .. dfhack-tool::
-    :summary: Fort journal with a multi-line rich text editor
-    :tags: fort inspection unavailable
+    :summary: Fort journal with a multi-line rich text editor.
+    :tags: fort interface
 
 The `gui/journal` plugin provides a handy tool to document
 the important details for the fortresses.
