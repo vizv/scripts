@@ -488,6 +488,10 @@ function TextEditorView:triggerMultiLeftClick()
     local clicks_count = self:getMultiLeftClick()
 
     self.clicks_count = clicks_count + 1
+    if (self.clicks_count >= 4) then
+        self.clicks_count = 1
+    end
+
     self.last_click = os.clock()
     return self.clicks_count
 end
@@ -537,7 +541,14 @@ function TextEditorView:onInput(keys)
         if mouse_x and mouse_y then
 
             local clicks_count = self:triggerMultiLeftClick()
-            if clicks_count >= 2 then
+            if clicks_count >= 3 then
+                self:setSelection(
+                    1,
+                    self.cursor.y,
+                    #self.lines[self.cursor.y],
+                    self.cursor.y
+                )
+            elseif clicks_count >= 2 then
                 local cursor_char = self:charAtCursor()
 
                 local word_range = (
