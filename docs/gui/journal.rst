@@ -29,6 +29,7 @@ Supported Features
 - Delete Character: 'Ctrl+D' deletes the character under the cursor.
 - Line Navigation: 'Ctrl+A' moves the cursor to the beginning of the current line, and 'Ctrl+E' moves it to the end.
 - Delete Current Line: 'Ctrl+U' deletes the entire current line where the cursor is located.
+- Delete Rest of Line: 'Ctrl+K' deletes text from the cursor to the end of the line.
 - Delete Last Word: 'Ctrl+W' removes the word immediately before the cursor.
 - Text Selection: Select text with the mouse, with support for replacing or removing selected text.
 - Clipboard Operations: Perform local cut, copy, and paste operations on selected text or the current line using 'Ctrl+X', 'Ctrl+C', and 'Ctrl+V'.
