@@ -1,4 +1,4 @@
--- Fort journal with a multi-line rich text editor
+-- Fort journal with a multi-line text editor
 
 local gui = require 'gui'
 local widgets = require('gui.widgets')
@@ -166,7 +166,7 @@ end
 --[[
 Supported features:
  - cursor controlled by arrow keys (left, right, top, bottom)
- - fast rewind by shift+left/alt+b and shift+right/alt+f
+ - fast rewind by shift+left/ctrl+b and shift+right/ctrl+f
  - remember longest x for up/bottom cursor movement
  - mouse control for cursor
  - support few new lines (submit key)
@@ -528,10 +528,10 @@ function TextEditorView:onInput(keys)
         end
 
         return true
-    elseif keys.KEYBOARD_CURSOR_LEFT or keys.CUSTOM_CTRL_B then
+    elseif keys.KEYBOARD_CURSOR_LEFT then
         self:setCursor(self.cursor.x - 1, self.cursor.y)
         return true
-    elseif keys.KEYBOARD_CURSOR_RIGHT or keys.CUSTOM_CTRL_F then
+    elseif keys.KEYBOARD_CURSOR_RIGHT then
         self:setCursor(self.cursor.x + 1, self.cursor.y)
         return true
     elseif keys.KEYBOARD_CURSOR_UP then
@@ -558,7 +558,7 @@ function TextEditorView:onInput(keys)
             #self.lines
         )
         return true
-    elseif keys.CUSTOM_ALT_B or keys.KEYBOARD_CURSOR_LEFT_FAST then
+    elseif keys.CUSTOM_CTRL_B or keys.KEYBOARD_CURSOR_LEFT_FAST then
         -- back one word
         local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
         local _, prev_word_end = self.text
@@ -569,7 +569,7 @@ function TextEditorView:onInput(keys)
             self.cursor.y
         )
         return true
-    elseif keys.CUSTOM_ALT_F or keys.KEYBOARD_CURSOR_RIGHT_FAST then
+    elseif keys.CUSTOM_CTRL_F or keys.KEYBOARD_CURSOR_RIGHT_FAST then
         -- forward one word
         local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
         local _, next_word_start = self.text:find('.-[^%s][%s]', ind)
@@ -604,11 +604,16 @@ function TextEditorView:onInput(keys)
             local y = self.cursor.y
             self:setSelection(1, y, #self.lines[y], y)
             self:eraseSelection()
-
-            -- local line_start = self:cursorToIndex(1, self.cursor.y)
-            -- local line_end = self:cursorToIndex(#self.lines[self.cursor.y], self.cursor.y)
-            -- local new_text = self.text:sub(1, line_start - 1) .. self.text:sub(line_end + 1)
-            -- self:setText(new_text)
+        end
+        return true
+    elseif keys.CUSTOM_CTRL_K then
+        -- delete from cursor to end of current line
+        if (self:hasSelection()) then
+            self:eraseSelection()
+        else
+            local y = self.cursor.y
+            self:setSelection(self.cursor.x, y, #self.lines[y] - 1, y)
+            self:eraseSelection()
         end
         return true
     elseif keys.CUSTOM_CTRL_D then

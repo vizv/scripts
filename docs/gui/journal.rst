@@ -2,7 +2,7 @@ gui/journal
 ===========
 
 .. dfhack-tool::
-    :summary: Fort journal with a multi-line rich text editor.
+    :summary: Fort journal with a multi-line text editor.
     :tags: fort interface
 
 The `gui/journal` plugin provides a handy tool to document
@@ -20,7 +20,7 @@ Supported Features
 ------------------
 
 - Cursor Control: Navigate through text using arrow keys (left, right, up, down) for precise cursor placement.
-- Fast Rewind: Quickly move the cursor by using 'Shift+Left'/'Alt+B' to jump backward and 'Shift+Right'/'Alt+F' to jump forward by words.
+- Fast Rewind: Use 'Shift+Left'/'Ctrl+B' and 'Shift+Right'/'Ctrl+F'to move the cursor one word back or forward
 - Longest X Position Memory: The cursor remembers the longest x position when moving up or down, making vertical navigation more intuitive.
 - Mouse Control: Use the mouse to position the cursor within the text, providing an alternative to keyboard navigation.
 - New Lines: Easily insert new lines using the submit key, supporting multiline text input.
