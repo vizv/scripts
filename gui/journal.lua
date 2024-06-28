@@ -17,7 +17,7 @@ TextEditor.ATTRS{
 }
 
 function TextEditor:init()
-    self.render_start_line = 1
+    self.render_start_line_y = 1
     self.scrollbar = widgets.Scrollbar{
         frame={r=0},
         on_scroll=self:callback('onScrollbar')
@@ -30,8 +30,8 @@ function TextEditor:init()
         debug = self.debug,
 
         on_change = function (val)
-            if (self.editor.cursor.y >= self.render_start_line + self.editor.frame_body.height) then
-                self.render_start_line = self.editor.cursor.y - self.editor.frame_body.height + 1
+            if (self.editor.cursor.y >= self.render_start_line_y + self.editor.frame_body.height) then
+                self.render_start_line_y = self.editor.cursor.y - self.editor.frame_body.height + 1
             end
 
             self:updateLayout()
@@ -58,22 +58,24 @@ end
 
 function TextEditor:onScrollbar(scroll_spec)
     local height = self.editor.frame_body.height
+
+    local render_start_line = self.render_start_line_y
     if scroll_spec == 'down_large' then
-        self.render_start_line = self.render_start_line + math.ceil(height / 2)
+        render_start_line = render_start_line + math.ceil(height / 2)
     elseif scroll_spec == 'up_large' then
-        self.render_start_line = self.render_start_line - math.ceil(height / 2)
+        render_start_line = render_start_line - math.ceil(height / 2)
     elseif scroll_spec == 'down_small' then
-        self.render_start_line = self.render_start_line + 1
+        render_start_line = render_start_line + 1
     elseif scroll_spec == 'up_small' then
-        self.render_start_line = self.render_start_line - 1
+        render_start_line = render_start_line - 1
     else
-        self.render_start_line = tonumber(scroll_spec)
+        render_start_line = tonumber(scroll_spec)
     end
 
-    self.render_start_line = math.min(
+    self:setRenderStartLineY(math.min(
         #self.editor.lines - height + 1,
-        math.max(1, self.render_start_line)
-    )
+        math.max(1, render_start_line)
+    ))
 
     self:updateScrollbar()
 end
@@ -82,20 +84,27 @@ function TextEditor:updateScrollbar()
     local lines_count = #self.editor.lines
 
     self.scrollbar:update(
-        self.render_start_line,
+        self.render_start_line_y,
         self.frame_body.height,
         lines_count
     )
+
     if (self.frame_body.height >= lines_count) then
-        self.render_start_line = 1
+        self:setRenderStartLineY(1)
     end
 end
 
 function TextEditor:renderSubviews(dc)
-    self.editor.frame_body.y1 = self.frame_body.y1-(self.render_start_line - 1)
+    self.editor.frame_body.y1 = self.frame_body.y1-(self.render_start_line_y - 1)
     self.editor:render(dc)
     self.scrollbar:render(dc)
 end
+
+function TextEditor:setRenderStartLineY(render_start_line_y)
+    self.render_start_line_y = render_start_line_y
+    self.editor:setRenderStartLineY(render_start_line_y)
+end
+
 
 TextEditorView = defclass(TextEditorView, widgets.Widget)
 
@@ -114,8 +123,12 @@ function TextEditorView:init()
     self.lines = {}
     self.clipboard = nil
     self.clipboard_mode = CLIPBOARD_MODE.LOCAL
+    self.render_start_line_y = 1
 end
 
+function TextEditorView:setRenderStartLineY(render_start_line_y)
+    self.render_start_line_y = render_start_line_y
+end
 
 function TextEditorView:getPreferredFocusState()
     return true
@@ -321,9 +334,15 @@ function TextEditorView:onRenderBody(dc)
     local max_width = dc.width
     local new_line = self.debug and NEWLINE or ''
 
-    for ind, line in ipairs(self.lines) do
+    local lines_to_render = math.min(
+        dc.height,
+        #self.lines - self.render_start_line_y + 1
+    )
+
+    dc:seek(0, self.render_start_line_y - 1)
+    for i = self.render_start_line_y, self.render_start_line_y + lines_to_render - 1 do
         -- do not render new lines symbol
-        local line = line:gsub(NEWLINE, new_line)
+        local line = self.lines[i]:gsub(NEWLINE, new_line)
         dc:string(line)
         dc:newline()
     end
@@ -331,6 +350,7 @@ function TextEditorView:onRenderBody(dc)
     local show_focus = not self:hasSelection()
         and self.parent_view.focus
         and gui.blink_visible(530)
+
     if (show_focus) then
         dc:seek(self.cursor.x - 1, self.cursor.y - 1)
             :char('_')
