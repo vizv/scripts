@@ -1,7 +1,7 @@
 -- Fort journal with a multi-line text editor
 
 local gui = require 'gui'
-local widgets = require('gui.widgets')
+local widgets = require 'gui.widgets'
 
 local CLIPBOARD_MODE = {LOCAL = 1, LINE = 2}
 
@@ -667,7 +667,7 @@ function TextEditorView:onInput(keys)
 
 end
 
-JOURNAL_PERSIST_KEY = 'dfjournal-content'
+JOURNAL_PERSIST_KEY = 'journal'
 
 JournalScreen = defclass(JournalScreen, gui.ZScreen)
 JournalScreen.ATTRS {
