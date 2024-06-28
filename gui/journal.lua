@@ -415,9 +415,9 @@ function TextEditorView:onRenderBody(dc)
             self.sel_end.y
         ) or ''
         dc:pen({fg=COLOR_LIGHTRED, bg=COLOR_RESET})
-            :seek(0, self.parent_view.frame_body.height - 1)
+            :seek(0, self.parent_view.frame_body.height + self.render_start_line_y - 2)
             :string(debug_msg)
-            :seek(0, self.parent_view.frame_body.height - 2)
+            :seek(0, self.parent_view.frame_body.height + self.render_start_line_y - 3)
             :string(sel_debug_msg)
     end
 end
