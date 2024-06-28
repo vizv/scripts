@@ -16,6 +16,8 @@ TextEditor.ATTRS{
     debug = false
 }
 
+DOUBLE_CLICK_MS=500
+
 -- similar to string:wrap, but do not skip any spaces and new lines characters
 -- it returns table of lines on the output, instead of string. such table items
 -- contacted will always generate exactly the same text like provided to the fun
@@ -442,9 +444,9 @@ function TextEditorView:charAtCursor()
 end
 
 function TextEditorView:getMultiLeftClick()
-    local from_last_click_ms = (os.clock() - (self.last_click or 0)) * 1000
+    local from_last_click_ms = (dfhack.getTickCount() - (self.last_click or 0))
 
-    if (from_last_click_ms > 250) then
+    if (from_last_click_ms > DOUBLE_CLICK_MS) then
         self.clicks_count = 0;
     end
 
@@ -459,7 +461,7 @@ function TextEditorView:triggerMultiLeftClick()
         self.clicks_count = 1
     end
 
-    self.last_click = os.clock()
+    self.last_click = dfhack.getTickCount()
     return self.clicks_count
 end
 
