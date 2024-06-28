@@ -18,57 +18,6 @@ TextEditor.ATTRS{
 
 DOUBLE_CLICK_MS=500
 
--- similar to string:wrap, but do not skip any spaces and new lines characters
--- it returns table of lines on the output, instead of string. such table items
--- contacted will always generate exactly the same text like provided to the fun
-function string_strict_wrap(text, width)
-    width = width or 72
-    if width <= 0 then error('expected width > 0; got: '..tostring(width)) end
-    local lines = {}
-    for line in text:gmatch('[^\n]*') do
-        local line_start_pos = 1
-        local local_lines = {}
-        for start_pos, word, end_pos in string.gmatch(line, '()(%s*%S+%s*)()') do
-            if end_pos - line_start_pos <= width then
-                -- word fits within the current line
-                local curr = math.max(1, #local_lines)
-                local_lines[curr] = (local_lines[curr] or '') .. word
-            elseif #word <= width then
-                -- word needs to go on the next line, but is not itself longer
-                -- than the specified width
-                line_start_pos = start_pos
-                table.insert(local_lines, word)
-            else
-                -- word is too long to fit on one line and needs to be split up
-                local char_ind = 0
-                repeat
-                    local word_frag = word:sub(char_ind + 1, char_ind + width)
-                    table.insert(local_lines, word_frag)
-                    line_start_pos = start_pos + char_ind
-                    char_ind = char_ind + #word_frag
-                until char_ind >= #word
-            end
-        end
-
-        if #local_lines == 0 then
-            table.insert(lines, '')
-        end
-
-        for _, line in ipairs(local_lines) do
-            table.insert(lines, line)
-        end
-
-        lines[#lines] = lines[#lines] .. '\n'
-    end
-
-    if #lines > 0 then
-        local last_line = lines[#lines]
-        lines[#lines] = last_line:sub(1, #last_line - 1)
-    end
-
-    return lines
-end
-
 function TextEditor:init()
     self.render_start_line = 1
     self.scrollbar = widgets.Scrollbar{
@@ -188,7 +137,15 @@ function TextEditorView:recomputeLines()
         self.sel_end.y
     )
 
-    self.lines = string_strict_wrap(self.text, self.frame_body.width)
+    self.lines = self.text:wrap(
+        self.frame_body.width,
+        {return_as_table=true, keep_trailing_spaces=true}
+    )
+    -- add newlines chars between lines (at the end of preceding line)
+    for i = 1, #self.lines - 1 do
+        self.lines[i] = self.lines[i] .. NEWLINE
+    end
+
     -- as cursor always point to "next" char we need invisible last char
     -- that can not be pass by
     self.lines[#self.lines] = self.lines[#self.lines] .. NEWLINE
@@ -756,7 +713,7 @@ function JournalScreen:onDismiss()
 end
 
 function main()
-    if not dfhack.isMapLoaded() then
+    if not dfhack.isMapLoaded() or not dfhack.world.isFortressMode() then
         qerror('journal requires a fortress map to be loaded')
     end
 
