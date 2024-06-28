@@ -5,10 +5,10 @@ gui/journal
     :summary: Fort journal with a multi-line text editor.
     :tags: fort interface
 
-The `gui/journal` plugin provides a handy tool to document
-the important details for the fortresses.
+The `gui/journal` interface makes it easy to take notes and document
+important details for the fortresses.
 
-With this multi-line rich text editor,
+With this multi-line text editor,
 you can keep track of your fortress's background story, goals, notable events,
 and both short-term and long-term plans.
 
@@ -23,7 +23,7 @@ Supported Features
 - Fast Rewind: Use 'Shift+Left'/'Ctrl+B' and 'Shift+Right'/'Ctrl+F'to move the cursor one word back or forward
 - Longest X Position Memory: The cursor remembers the longest x position when moving up or down, making vertical navigation more intuitive.
 - Mouse Control: Use the mouse to position the cursor within the text, providing an alternative to keyboard navigation.
-- New Lines: Easily insert new lines using the submit key, supporting multiline text input.
+- New Lines: Easily insert new lines using the :kbd:`Enter` key, supporting multiline text input.
 - Text Wrapping: Text automatically wraps within the editor, ensuring lines fit within the display without manual adjustments.
 - Backspace Support: Use the backspace key to delete characters to the left of the cursor.
 - Delete Character: 'Ctrl+D' deletes the character under the cursor.

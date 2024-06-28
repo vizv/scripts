@@ -60,7 +60,7 @@ function string_strict_wrap(text, width)
     end
 
     if #lines > 0 then
-        last_line = lines[#lines]
+        local last_line = lines[#lines]
         lines[#lines] = last_line:sub(1, #last_line - 1)
     end
 
@@ -93,8 +93,8 @@ function TextEditor:init()
     }
 
     self:addviews{
-        self.scrollbar,
-        self.editor
+        self.editor,
+        self.scrollbar
     }
     self:setFocus(true)
 end
@@ -127,9 +127,6 @@ function TextEditor:onScrollbar(scroll_spec)
     )
 
     self:updateScrollbar()
-    -- local max_page_top = math.max(1, #self.choices - self.page_size + 1)
-    -- self.page_top = math.max(1, math.min(max_page_top, self.page_top + v))
-    -- update_list_scrollbar(self)
 end
 
 function TextEditor:updateScrollbar()
@@ -145,41 +142,12 @@ function TextEditor:updateScrollbar()
     end
 end
 
-function TextEditor:onInput(keys)
-    if self.scrollbar:onInput(keys) then
-        return true
-    end
-
-    if not self.scrollbar:getMousePos() and not self.scrollbar.is_dragging then
-        return self.editor:onInput(keys)
-    end
-end
-
 function TextEditor:renderSubviews(dc)
-    dc:clear()
     self.editor.frame_body.y1 = self.frame_body.y1-(self.render_start_line - 1)
     self.editor:render(dc)
     self.scrollbar:render(dc)
 end
 
--- multiline text editor, features
---[[
-Supported features:
- - cursor controlled by arrow keys (left, right, top, bottom)
- - fast rewind by shift+left/ctrl+b and shift+right/ctrl+f
- - remember longest x for up/bottom cursor movement
- - mouse control for cursor
- - support few new lines (submit key)
- - wrapable text
- - backspace
- - ctrl+d as delete
- - ctrl+a / ctrl+e go to beginning/end of line
- - ctrl+u delete current line
- - ctrl+w delete last word
- - mouse text selection and replace/remove features for it
- - local copy/paste selection text or current line (ctrl+x/ctrl+c/ctrl+v)
- - go to text begin/end by shift+up/shift+down
---]]
 TextEditorView = defclass(TextEditorView, widgets.Widget)
 
 TextEditorView.ATTRS{
@@ -193,8 +161,7 @@ TextEditorView.ATTRS{
 
 function TextEditorView:init()
     self.cursor = nil
-    -- lines are derivate of text, stored as variable
-    -- for performance
+    -- lines are derivate of text, stored as variable for performance
     self.lines = {}
     self.clipboard = nil
     self.clipboard_mode = CLIPBOARD_MODE.LOCAL
@@ -747,9 +714,6 @@ JOURNAL_PERSIST_KEY = 'dfjournal-content'
 
 JournalScreen = defclass(JournalScreen, gui.ZScreen)
 JournalScreen.ATTRS {
-    frame_title = 'journal',
-    frame_width = 80,
-    frame_height = 40,
     focus_path='journal',
 }
 
@@ -762,22 +726,17 @@ function JournalScreen:init()
         end
     end
 
-    self.window = widgets.Window{
-        frame_title='DF Journal',
-        frame={w=65, h=45},
-        resizable=true,
-        resize_min={w=32, h=10},
-        autoarrange_subviews=true,
-    }
-
-    self.window:addviews{
-        TextEditor{
-            text=content,
-            on_change=on_text_change
+    self:addviews{
+        widgets.Window{
+            frame_title='DF Journal',
+            frame={w=65, h=45},
+            resizable=true,
+            resize_min={w=32, h=10},
+            subviews={
+                TextEditor{text=content, on_change=on_text_change}
+            }
         }
     }
-
-    self:addviews{self.window}
 end
 
 function JournalScreen:onDismiss()
