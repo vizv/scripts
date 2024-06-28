@@ -113,11 +113,17 @@ of their advantage.
 Limitations
 -----------
 
-Right now, not all aspects of the game are perfectly adjusted. For example,
+DF does critial game tasks every 10 ticks that must not be skipped, so
+`timestream` cannot advance more than 9 ticks at a time. This means that, with
+the default target of 100 FPS, the game will start showing signs of slowdown if
+the real FPS drops below about 15. The interface will also become less
+responsive to mouse gestures as the real FPS drops.
+
+Finally, not all aspects of the game are perfectly adjusted. For example,
 armies on world map will move at the same (real-time) rate regardless of
 changes that ``timestream`` is making to the calendar.
 
-Here is a (likely incomplete) list of game elements that are not adjusted by
+Here is a (possibly incomplete) list of game elements that are not adjusted by
 ``timestream`` and will appear "slow" in-game:
 
 - Army movement across the world map (including raids sent out from the fort)

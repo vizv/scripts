@@ -143,11 +143,19 @@ local function on_tick()
     local timeskip = math.floor(clamp_timeskip(desired_timeskip))
 
     -- add some jitter so we don't fall into a constant pattern
-    -- to reduce the risk of repeatedly missing an unknown threshold
-    timeskip = math.random(timeskip - 1, timeskip)
+    -- this reduces the risk of repeatedly missing an unknown threshold
+    -- also keeps the game from looking robotic at lower frame rates
+    local jitter_category = math.random(1, 10)
+    if jitter_category <= 1 then
+        timeskip = math.random(0, timeskip)
+    elseif jitter_category <= 3 then
+        timeskip = math.random(math.max(0, timeskip-2), timeskip)
+    elseif jitter_category <= 5 then
+        timeskip = math.random(math.max(0, timeskip-4), timeskip)
+    end
 
-    -- no need to let our deficit grow beyond the maximum single-step jump
-    timeskip_deficit = math.min(desired_timeskip - timeskip, 9.0)
+    -- no need to let our deficit grow unbounded
+    timeskip_deficit = math.min(desired_timeskip - timeskip, 100.0)
 
     if timeskip <= 0 then return end
 
