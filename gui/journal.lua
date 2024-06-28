@@ -16,8 +16,6 @@ TextEditor.ATTRS{
     debug = false
 }
 
-DOUBLE_CLICK_MS=500
-
 function TextEditor:init()
     self.render_start_line = 1
     self.scrollbar = widgets.Scrollbar{
@@ -403,7 +401,7 @@ end
 function TextEditorView:getMultiLeftClick()
     local from_last_click_ms = (dfhack.getTickCount() - (self.last_click or 0))
 
-    if (from_last_click_ms > DOUBLE_CLICK_MS) then
+    if (from_last_click_ms > widgets.DOUBLE_CLICK_MS) then
         self.clicks_count = 0;
     end
 
