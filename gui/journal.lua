@@ -195,7 +195,7 @@ function TextEditorView:recomputeLines()
 
     local cursor = orig_index and self:indexToCursor(orig_index)
         or {
-            x = math.max(1, #self.lines[#self.lines] - 1),
+            x = math.max(1, #self.lines[#self.lines]),
             y = math.max(1, #self.lines)
         }
     self:setCursor(cursor.x, cursor.y)
@@ -720,13 +720,7 @@ JournalScreen.ATTRS {
 }
 
 function JournalScreen:init()
-    local content = dfhack.persistent.getSiteDataString(JOURNAL_PERSIST_KEY) or ''
-
-    local function on_text_change(text)
-        if dfhack.isWorldLoaded() then
-            dfhack.persistent.saveSiteDataString(JOURNAL_PERSIST_KEY, text)
-        end
-    end
+    local content = self:loadContextContent()
 
     self:addviews{
         widgets.Window{
@@ -735,10 +729,26 @@ function JournalScreen:init()
             resizable=true,
             resize_min={w=32, h=10},
             subviews={
-                TextEditor{text=content, on_change=on_text_change}
+                TextEditor{
+                    text=content,
+                    on_change=function(text) self:saveContextContent(text) end
+                }
             }
         }
     }
+end
+
+function JournalScreen:loadContextContent()
+    local site_data = dfhack.persistent.getSiteData(JOURNAL_PERSIST_KEY) or {
+        text = {''}
+    }
+    return site_data.text ~= nil and site_data.text[1] or ''
+end
+
+function JournalScreen:saveContextContent(text)
+    if dfhack.isWorldLoaded() then
+        dfhack.persistent.saveSiteData(JOURNAL_PERSIST_KEY, {text={text}})
+    end
 end
 
 function JournalScreen:onDismiss()
