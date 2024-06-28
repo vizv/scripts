@@ -30,13 +30,17 @@ function TextEditor:init()
         debug = self.debug,
 
         on_change = function (val)
-            if (self.editor.cursor.y >= self.render_start_line_y + self.editor.frame_body.height) then
-                self.render_start_line_y = self.editor.cursor.y - self.editor.frame_body.height + 1
-            end
-
             self:updateLayout()
             if self.on_change then
                 self.on_change(val)
+            end
+        end,
+
+        on_cursor_change = function ()
+            if (self.editor.cursor.y >= self.render_start_line_y + self.editor.frame_body.height) then
+                self:setRenderStartLineY(self.editor.cursor.y - self.editor.frame_body.height + 1)
+            elseif  (self.editor.cursor.y < self.render_start_line_y) then
+                self:setRenderStartLineY(self.editor.cursor.y)
             end
         end
     }
@@ -114,6 +118,7 @@ TextEditorView.ATTRS{
     ignore_keys = {'STRING_A096'},
     select_pen = COLOR_CYAN,
     on_change = DEFAULT_NIL,
+    on_cursor_change = DEFAULT_NIL,
     debug = false
 }
 
@@ -176,6 +181,10 @@ function TextEditorView:setCursor(x, y)
 
     self.sel_end = nil
     self.last_cursor_x = nil
+
+    if self.on_cursor_change then
+        self.on_cursor_change()
+    end
 end
 
 function TextEditorView:normalizeCursor(x, y)
