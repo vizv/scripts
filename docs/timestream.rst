@@ -50,8 +50,8 @@ Examples
 
 ``timestream set calendar-rate 0.5``
     Make the days twice as long and allow dwarves to accomplish twice as much
-    per day (as long as the target FPS is sufficiently above the FPS the game
-    is actually running at).
+    per day (requires that your target FPS is set at least 2x higher than the
+    FPS the game is actually running at).
 
 ``timestream reset``
     Reset settings to defaults: the vanilla FPS cap with no calendar speed
@@ -75,14 +75,6 @@ Settings
     configured target ``fps`` setting for the ``calendar-rate`` setting to take
     effect.
 
-:max-frame-skip: Set the maximum number of ticks that can be skipped in one
-    step. Dwarves can perform at most one action per step, and if too many
-    frames are skipped in one step, dwarves will "lose time" compared to the
-    movement of the calendar. The default is 4, which allows a target FPS of up
-    to 4x your actual FPS while still allowing dwarves to walk at full speed.
-    Raise this value if speed of the simulation is more important to you than
-    its accuracy and smoothness.
-
 Technical details
 -----------------
 
@@ -102,9 +94,9 @@ it all in fewer "steps".
 
 That's essentially what ``timestream`` is doing to the game. All "actions" in
 DF have counters associated with them. For example, when a dwarf wants to walk
-to the next tile, a counter is initialized to 500. Every "tick" of the game
-(the "frame" in FPS) decrements that counter by by a certain amount. When the
-counter gets to zero, the dwarf appears on the next tile.
+to the next tile, a counter is initialized to 8. Every "tick" of the game (the
+"frame" in FPS) decrements that counter by 1. When the counter gets to zero,
+the dwarf appears on the next tile.
 
 When ``timestream`` is active, it monitors all those counters and makes them
 decrement more per tick. It then balances things out by proportionally
@@ -112,16 +104,11 @@ advancing the in-game calendar. Therefore, more "happens" per step, and DF has
 to simulate fewer "steps" for the same amount of work to get done.
 
 The cost of this simplification is that the world becomes less "smooth". As the
-discrepancy between the "natural" and simulated FPS grows, more and more
-dwarves will move to their next tiles at *exactly* the same time. Moreover, the
-rate of action completion per unit is effectively capped at the granularity of
-the simulation, so very fast units will lose some of their advantage. In the
-extreme case, with the computer struggling to run at 1 FPS and ``timestream``
-simulating thousands of FPS (and the ``max-frame-skip`` cap increased to 20),
-all units will perform exactly one action per frame. This would make the game
-look robotic. With default settings, it will never get this bad, but you can
-always choose to alter the ``timestream`` configuration to your preferred
-balance of speed vs. accuracy.
+discrepancy between the actual and simulated FPS grows, more and more dwarves
+will move to their next tiles at *exactly* the same time. Moreover, the rate of
+action completion per unit is effectively capped at the granularity of the
+simulation, so very fast units (say, those in a martial trance) will lose some
+of their advantage.
 
 Limitations
 -----------
@@ -130,8 +117,8 @@ Right now, not all aspects of the game are perfectly adjusted. For example,
 armies on world map will move at the same (real-time) rate regardless of
 changes that ``timestream`` is making to the calendar.
 
-Here is a (likely incomplete) list of game elements that are not affected by
-``timestream``:
+Here is a (likely incomplete) list of game elements that are not adjusted by
+``timestream`` and will appear "slow" in-game:
 
 - Army movement across the world map (including raids sent out from the fort)
 - Liquid movement and evaporation
