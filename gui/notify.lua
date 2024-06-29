@@ -32,14 +32,13 @@ function NotifyOverlay:init()
                     frame={t=0, b=0, l=0, r=0},
                     -- disable scrolling with the keyboard since some people
                     -- have wasd mapped to the arrow keys
-                    -- don't do this for adventure mode to not eat inputs
                     scroll_keys={},
-                    on_submit = function(_, choice)
+                    on_submit=function(_, choice)
                         if not choice.data.on_click then return end
                         local prev_state = self.state[choice.data.name]
                         self.state[choice.data.name] = choice.data.on_click(prev_state, false)
                     end,
-                    on_submit2 = function(_, choice)
+                    on_submit2=function(_, choice)
                         if not choice.data.on_click then return end
                         local prev_state = self.state[choice.data.name]
                         self.state[choice.data.name] = choice.data.on_click(prev_state, true)
@@ -57,9 +56,7 @@ end
 function NotifyOverlay:onInput(keys)
     if keys.SELECT then return false end
 
-    if NotifyOverlay.super.onInput(self, keys) then
-        return true
-    end
+    return NotifyOverlay.super.onInput(self, keys)
 end
 
 local function get_fn(notification, is_adv)
