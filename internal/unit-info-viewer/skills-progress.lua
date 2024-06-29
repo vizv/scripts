@@ -73,8 +73,6 @@ function SkillProgressOverlay:init()
 end
 
 function SkillProgressOverlay:preUpdateLayout()
-    self.subviews.toggle_progress.enabled = not dfhack.world.isAdventureMode() and dfhack.screen.inGraphicsMode()
-
     local screen_width, screen_height = dfhack.screen.getWindowSize()
     self.frame.h = screen_height - 20
 end
@@ -90,6 +88,11 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
         table.insert(annotations, "\n\n")
     end
 
+    local progress_bar_needed = not dfhack.world.isAdventureMode() or not dfhack.screen.inGraphicsMode()
+    self.subviews.toggle_progress.disabled = not progress_bar_needed
+    local progress_bar = self.subviews.toggle_progress:getOptionValue() and progress_bar_needed
+    local experience = self.subviews.toggle_experience:getOptionValue()
+
     local margin = self.subviews.annotations.frame.w
     local num_elems = self.frame.h // 3 - 1
     local start = math.min(view_sheets.scroll_position_unit_skill,
@@ -103,8 +106,8 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
             goto continue
         end
         local rating = df.skill_rating.attrs[math.max(0, math.min(skill.rating, 19))]
-        if self.subviews.toggle_experience:getOptionValue() then
-            if not self.subviews.toggle_progress:getOptionValue() then
+        if experience then
+            if not progress_bar then
                 table.insert(annotations, NEWLINE)
             end
             local level_color = COLOR_GRAY
@@ -152,7 +155,7 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
         -- 3rd line (last)
 
         -- Progress Bar
-        if self.subviews.toggle_progress:getOptionValue() then
+        if progress_bar then
             table.insert(annotations, NEWLINE)
             local percentage = skill.experience / rating.xp_threshold
             local barstop = math.floor((margin * percentage) + 0.5)
