@@ -7,7 +7,7 @@ local overlay = require('plugins.overlay')
 local view_sheets = df.global.game.main_interface.view_sheets
 
 local function get_skill(id)
-    local unit = df.unit.find(view_sheets.viewing_unid[view_sheets.active_id])
+    local unit = df.unit.find(view_sheets.active_id)
     if not unit then return nil end
     local soul = unit.status.current_soul
     if not soul then return nil end
@@ -21,7 +21,7 @@ end
 SkillProgressOverlay=defclass(SkillProgressOverlay, overlay.OverlayWidget)
 SkillProgressOverlay.ATTRS {
     desc="Display progress bars for learning skills on unit viewsheets.",
-    default_pos={x=-43,y=20},
+    default_pos={x=-43,y=18},
     default_enabled=true,
     viewscreens= {
         'dwarfmode/ViewSheets/UNIT/Skills/Labor',
@@ -34,7 +34,7 @@ SkillProgressOverlay.ATTRS {
         'dungeonmode/ViewSheets/UNIT/Skills/Social',
         'dungeonmode/ViewSheets/UNIT/Skills/Other',
     },
-    frame={w=54, h=67},
+    frame={w=54, h=20},
 }
 
 function SkillProgressOverlay:init()
@@ -49,7 +49,7 @@ function SkillProgressOverlay:init()
             text_pen=COLOR_GRAY,
         },
         widgets.ToggleHotkeyLabel{
-            frame={b=1, l=2, w=25},
+            frame={b=0, l=2, w=25},
             label='Progress Bar',
             key='CUSTOM_CTRL_B',
             options={
@@ -57,10 +57,10 @@ function SkillProgressOverlay:init()
                 {label='Yes', value=true, pen=COLOR_YELLOW},
             },
             view_id='toggle_progress',
-            on_change=function(val) self.progress_bar = val end,
+            initial_option=true
         },
         widgets.ToggleHotkeyLabel{
-            frame={b=1, l=28, w=25},
+            frame={b=0, l=28, w=25},
             label='Experience  ',
             key='CUSTOM_CTRL_E',
             options={
@@ -68,30 +68,31 @@ function SkillProgressOverlay:init()
                 {label='Yes', value=true, pen=COLOR_YELLOW},
             },
             view_id='toggle_experience',
-            on_change=function(val) self.display_experience = val end,
+            initial_option=true
         },
     }
 end
 
--- Use render to set On/Off dynamically for each unit
-function SkillProgressOverlay:render(dc)
-    local unit = dfhack.gui.getSelectedUnit(true)
+function SkillProgressOverlay:preUpdateLayout()
+    self.subviews.toggle_progress.enabled = not dfhack.world.isAdventureMode() and dfhack.screen.inGraphicsMode()
 
-    if unit then
-        self.subviews.toggle_progress:setOption(self.progress_bar)
-        self.subviews.toggle_experience:setOption(self.display_experience)
-    end
-
-    SkillProgressOverlay.super.render(self, dc)
+    local screen_width, screen_height = dfhack.screen.getWindowSize()
+    self.frame.h = screen_height - 20
 end
 
 function SkillProgressOverlay:onRenderFrame(dc, rect)
     local margin = self.subviews.annotations.frame.w
-    local num_elems = self.frame.h // 3
+    local num_elems = self.frame.h // 3 - 1
     local max_elem = math.min(#view_sheets.unit_skill-1,
         view_sheets.scroll_position_unit_skill+num_elems-1)
 
     local annotations = {}
+    local unit = df.unit.find(view_sheets.active_id)
+    if unit and unit.portrait_texpos > 0 then
+        -- If a portrait is present, displace the bars down 2 tiles
+        table.insert(annotations, "\n\n")
+    end
+
     for idx = view_sheets.scroll_position_unit_skill, max_elem do
         local skill = get_skill(idx)
         if not skill then 
@@ -99,8 +100,8 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
             goto continue
         end
         local rating = df.skill_rating.attrs[math.max(0, math.min(skill.rating, 19))]
-        if self.display_experience then
-            if not self.progress_bar then
+        if self.subviews.toggle_experience:getOptionValue() then
+            if not self.subviews.toggle_progress:getOptionValue() then
                 table.insert(annotations, NEWLINE)
             end
             local level_color = COLOR_GRAY
@@ -148,7 +149,7 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
         -- 3rd line (last)
 
         -- Progress Bar
-        if self.progress_bar then
+        if self.subviews.toggle_progress:getOptionValue() then
             table.insert(annotations, NEWLINE)
             local percentage = skill.experience / rating.xp_threshold
             local barstop = math.floor((margin * percentage) + 0.5)
