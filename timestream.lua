@@ -5,6 +5,8 @@ local argparse = require('argparse')
 local repeatutil = require("repeat-util")
 local utils = require('utils')
 
+DEBUG = DEBUG or false
+
 ------------------------------------
 -- state management
 
@@ -91,54 +93,61 @@ local function clamp_timeskip(timeskip)
     return math.min(timeskip, get_next_trigger_year_tick(next_tick)-next_tick)
 end
 
-local function has_caste_flag(unit, flag)
-    if unit.curse.rem_tags1[flag] then return false end
-    if unit.curse.add_tags1[flag] then return true end
-    return dfhack.units.casteFlagSet(unit.race, unit.caste, df.caste_raw_flags[flag])
+local function increment_counter(obj, counter_name, timeskip)
+    if obj[counter_name] <= 0 then return end
+    obj[counter_name] = obj[counter_name] + timeskip
 end
 
+local function decrement_counter(obj, counter_name, timeskip)
+    if obj[counter_name] <= 0 then return end
+    obj[counter_name] = math.max(1, obj[counter_name] - timeskip)
+end
+
+local function adjust_unit_counters(unit, timeskip)
+    local c1 = unit.counters
+    decrement_counter(c1, 'think_counter', timeskip)
+    decrement_counter(c1, 'job_counter', timeskip)
+    decrement_counter(c1, 'swap_counter', timeskip)
+    decrement_counter(c1, 'winded', timeskip)
+    decrement_counter(c1, 'stunned', timeskip)
+    decrement_counter(c1, 'unconscious', timeskip)
+    decrement_counter(c1, 'suffocation', timeskip)
+    decrement_counter(c1, 'webbed', timeskip)
+    decrement_counter(c1, 'soldier_mood_countdown', timeskip)
+    decrement_counter(c1, 'pain', timeskip)
+    decrement_counter(c1, 'nausea', timeskip)
+    decrement_counter(c1, 'dizziness', timeskip)
+    local c2 = unit.counters2
+    decrement_counter(c2, 'paralysis', timeskip)
+    decrement_counter(c2, 'numbness', timeskip)
+    decrement_counter(c2, 'fever', timeskip)
+    decrement_counter(c2, 'exhaustion', timeskip * 3)
+    increment_counter(c2, 'hunger_timer', timeskip)
+    increment_counter(c2, 'thirst_timer', timeskip)
+    local job = unit.job.current_job
+    if job and job.job_type == df.job_type.Rest then
+        decrement_counter(c2, 'sleepiness_timer', timeskip * 200)
+    elseif job and job.job_type == df.job_type.Sleep then
+        decrement_counter(c2, 'sleepiness_timer', timeskip * 19)
+    else
+        increment_counter(c2, 'sleepiness_timer', timeskip)
+    end
+    decrement_counter(c2, 'stomach_content', timeskip * 5)
+    decrement_counter(c2, 'stomach_food', timeskip * 5)
+    decrement_counter(c2, 'vomit_timeout', timeskip)
+    -- stored_fat wanders about based on other state; we can probably leave it alone
+end
+
+-- unit needs appear to be incremented on season ticks, so we don't need to worry about those
 local function adjust_units(timeskip)
     for _, unit in ipairs(df.global.world.units.active) do
         if not dfhack.units.isActive(unit) then goto continue end
-        if unit.sex == df.pronoun_type.she then
-            if unit.pregnancy_timer > 0 then
-                unit.pregnancy_timer = math.max(1, unit.pregnancy_timer - timeskip)
-            end
-        end
+        decrement_counter(unit, 'pregnancy_timer', timeskip)
         dfhack.units.subtractGroupActionTimers(unit, timeskip, df.unit_action_type_group.All)
-        local job = unit.job.current_job
-        local c2 = unit.counters2
-        if job and job.job_type == df.job_type.Rest then
-            c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 200)
-        end
-        if not dfhack.units.isCitizen(unit, true) then goto continue end
-        if not has_caste_flag(unit, 'NO_EAT') then
-            c2.hunger_timer = c2.hunger_timer + timeskip
-        end
-        if not has_caste_flag(unit, 'NO_DRINK') then
-            c2.thirst_timer = c2.thirst_timer + timeskip
-        end
-        if not has_caste_flag(unit, 'NO_SLEEP') then
-            if job and job.job_type == df.job_type.Sleep then
-                c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 19)
-            else
-                c2.sleepiness_timer = c2.sleepiness_timer + timeskip
-            end
-        end
-        -- TODO: c2.stomach_content, c2.stomach_food, and c2.stored_fat
-        -- TODO: needs
+        if not dfhack.units.isOwnGroup(unit) then goto continue end
+        adjust_unit_counters(unit, timeskip)
         ::continue::
     end
-end
-
-local function increment_counter(ev, counter_name, timeskip)
-    if ev[counter_name] <= 0 then return end
-    ev[counter_name] = ev[counter_name] + timeskip
-end
-
-local function decrement_counter(ev, counter_name, timeskip)
-    if ev[counter_name] <= 0 then return end
-    ev[counter_name] = math.max(1, ev[counter_name] - timeskip)
 end
 
 local function adjust_activities(timeskip)
@@ -214,18 +223,19 @@ local function on_tick()
     -- add some jitter so we don't fall into a constant pattern
     -- this reduces the risk of repeatedly missing an unknown threshold
     -- also keeps the game from looking robotic at lower frame rates
-    local jitter_category = math.random(1, 10)
-    if jitter_category <= 1 then
+    local jitter_strategy = math.random(1, 10)
+    if jitter_strategy <= 1 then
         timeskip = math.random(0, timeskip)
-    elseif jitter_category <= 3 then
+    elseif jitter_strategy <= 3 then
         timeskip = math.random(math.max(0, timeskip-2), timeskip)
-    elseif jitter_category <= 5 then
+    elseif jitter_strategy <= 5 then
         timeskip = math.random(math.max(0, timeskip-4), timeskip)
     end
 
-    -- no need to let our deficit grow unbounded
+    -- don't let our deficit grow unbounded if we can never catch up
     timeskip_deficit = math.min(desired_timeskip - timeskip, 100.0)
 
+    if DEBUG then print(('timeskip (%d, +%.2f)'):format(timeskip, timeskip_deficit)) end
     if timeskip <= 0 then return end
 
     local desired_calendar_timeskip = (timeskip * state.settings.calendar_rate) + calendar_timeskip_deficit
