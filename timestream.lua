@@ -150,12 +150,14 @@ local function adjust_units(timeskip)
     end
 end
 
+-- behavior ascertained from in-game observation
 local function adjust_activities(timeskip)
     for i, act in ipairs(df.global.world.activities.all) do
         for _, ev in ipairs(act.events) do
             if df.activity_event_training_sessionst:is_instance(ev) then
-                -- noop
+                -- no counters
             elseif df.activity_event_combat_trainingst:is_instance(ev) then
+                -- has organize_counter at a non-zero value, but it doesn't seem to move
             elseif df.activity_event_skill_demonstrationst:is_instance(ev) then
                 -- can be negative or positive, but always counts towards 0
                 if ev.organize_counter < 0 then
@@ -165,17 +167,27 @@ local function adjust_activities(timeskip)
                 end
                 decrement_counter(ev, 'train_countdown', timeskip)
             elseif df.activity_event_fill_service_orderst:is_instance(ev) then
+                -- no counters
             elseif df.activity_event_individual_skill_drillst:is_instance(ev) then
                 -- only counts down on season ticks, nothing to do here
             elseif df.activity_event_sparringst:is_instance(ev) then
+                decrement_counter(ev, 'countdown', timeskip * 2)
             elseif df.activity_event_ranged_practicest:is_instance(ev) then
+                -- countdown appears to never move from 0
                 decrement_counter(ev, 'countdown', timeskip)
             elseif df.activity_event_harassmentst:is_instance(ev) then
+                -- TODO: counter behavior not yet analyzed
+                -- print(i)
             elseif df.activity_event_encounterst:is_instance(ev) then
+                -- TODO: counter behavior not yet analyzed
+                -- print(i)
             elseif df.activity_event_reunionst:is_instance(ev) then
+                -- TODO: counter behavior not yet analyzed
+                -- print(i)
             elseif df.activity_event_conversationst:is_instance(ev) then
                 increment_counter(ev, 'pause', timeskip)
             elseif df.activity_event_guardst:is_instance(ev) then
+                -- no counters
             elseif df.activity_event_conflictst:is_instance(ev) then
                 increment_counter(ev, 'inactivity_timer', timeskip)
                 increment_counter(ev, 'attack_inactivity_timer', timeskip)
@@ -183,7 +195,7 @@ local function adjust_activities(timeskip)
             elseif df.activity_event_prayerst:is_instance(ev) then
                 decrement_counter(ev, 'timer', timeskip)
             elseif df.activity_event_researchst:is_instance(ev) then
-                -- noop
+                -- no counters
             elseif df.activity_event_playst:is_instance(ev) then
                 increment_counter(ev, 'down_time_counter', timeskip)
             elseif df.activity_event_worshipst:is_instance(ev) then
@@ -191,20 +203,26 @@ local function adjust_activities(timeskip)
             elseif df.activity_event_socializest:is_instance(ev) then
                 increment_counter(ev, 'down_time_counter', timeskip)
             elseif df.activity_event_ponder_topicst:is_instance(ev) then
+                decrement_counter(ev, 'timer', timeskip)
             elseif df.activity_event_discuss_topicst:is_instance(ev) then
                 decrement_counter(ev, 'timer', timeskip)
             elseif df.activity_event_teach_topicst:is_instance(ev) then
+                decrement_counter(ev, 'time_left', timeskip)
             elseif df.activity_event_readst:is_instance(ev) then
                 decrement_counter(ev, 'timer', timeskip)
             elseif df.activity_event_writest:is_instance(ev) then
                 decrement_counter(ev, 'timer', timeskip)
             elseif df.activity_event_copy_written_contentst:is_instance(ev) then
+                decrement_counter(ev, 'time_left', timeskip)
             elseif df.activity_event_make_believest:is_instance(ev) then
                 decrement_counter(ev, 'time_left', timeskip)
             elseif df.activity_event_play_with_toyst:is_instance(ev) then
+                decrement_counter(ev, 'time_left', timeskip)
             elseif df.activity_event_performancest:is_instance(ev) then
                 increment_counter(ev, 'current_position', timeskip)
             elseif df.activity_event_store_objectst:is_instance(ev) then
+                -- TODO: counter behavior not yet analyzed
+                -- print(i)
             end
         end
     end
