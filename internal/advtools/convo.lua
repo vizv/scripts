@@ -13,7 +13,7 @@ local adventure = df.global.game.main_interface.adventure
 -- Gets the keywords already present on the dialog choice
 local function getKeywords(choice)
     local keywords = {}
-    for _, keyword in ipairs(choice.key_word) do
+    for _, keyword in ipairs(choice.keywords) do
         table.insert(keywords, keyword.value:lower())
     end
     return keywords
@@ -23,7 +23,7 @@ end
 local function addKeyword(choice, keyword)
     local keyword_ptr = df.new('string')
     keyword_ptr.value = dfhack.toSearchNormalized(keyword)
-    choice.key_word:insert('#', keyword_ptr)
+    choice.keywords:insert('#', keyword_ptr)
 end
 
 -- Adds multiple keywords to the dialog choice
@@ -45,7 +45,7 @@ local function generateKeywordsForChoice(choice)
     end
 
     -- generate keywords from useful words in the text
-    for _, data in ipairs(choice.print_string.text) do
+    for _, data in ipairs(choice.title.text) do
         for word in dfhack.toSearchNormalized(data.value):gmatch('%w+') do
             -- collect additional keywords based on the special words
             if word == 'slew' or word == 'slain' then
@@ -68,7 +68,7 @@ local function new_choice(choice_type, title, keywords)
     choice.cc.type = choice_type
     local text = df.new("string")
     text.value = title
-    choice.print_string.text:insert("#", text)
+    choice.title.text:insert("#", text)
 
     if keywords ~= nil then
         addKeywords(choice, keywords)
@@ -136,7 +136,7 @@ end
 
 -- Condense the rumor system choices
 local function rumorUpdate()
-    local conversation_state = adventure.conversation.conv_act.event[0].state
+    local conversation_state = adventure.conversation.conv_act.events[0].menu
     -- add new conversation options depending on state
 
     -- If we're asking about directions, add ability to ask about all our relationships - visual, historical and identities.
