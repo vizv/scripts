@@ -59,7 +59,7 @@ Template for new versions:
 - `quickfort`: allow farm plots to be built on muddy stone (as per vanilla behavior)
 - `suspend`: remove broken ``--onlyblocking`` option; restore functionality to ``suspend all``
 - `gui/create-item`: allow creation of adamantine thread, wool, and yarn
-- `gui/notify`: the notification panel no longer responds to SELECT so the SELECT key is passed through to the vanilla UI
+- `gui/notify`: the notification panel no longer responds to the Enter key so Enter key is passed through to the vanilla UI
 - `clear-smoke`: properly tag smoke flows for garbage collection to avoid memory leak
 
 ## Misc Improvements
