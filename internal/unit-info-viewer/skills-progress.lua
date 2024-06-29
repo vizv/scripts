@@ -6,8 +6,7 @@ local overlay = require('plugins.overlay')
 
 local view_sheets = df.global.game.main_interface.view_sheets
 
-local function get_skill(id)
-    local unit = df.unit.find(view_sheets.active_id)
+local function get_skill(id, unit)
     if not unit then return nil end
     local soul = unit.status.current_soul
     if not soul then return nil end
@@ -38,8 +37,8 @@ SkillProgressOverlay.ATTRS {
 }
 
 function SkillProgressOverlay:init()
-    self.progress_bar = true
-    self.display_experience = true
+    self.current_uid = -1
+    self.current_unit = nil
 
     self:addviews{
         widgets.Label{
@@ -81,20 +80,24 @@ function SkillProgressOverlay:preUpdateLayout()
 end
 
 function SkillProgressOverlay:onRenderFrame(dc, rect)
-    local margin = self.subviews.annotations.frame.w
-    local num_elems = self.frame.h // 3 - 1
-    local max_elem = math.min(#view_sheets.unit_skill-1,
-        view_sheets.scroll_position_unit_skill+num_elems-1)
-
     local annotations = {}
-    local unit = df.unit.find(view_sheets.active_id)
-    if unit and unit.portrait_texpos > 0 then
+    if view_sheets.active_id ~= self.current_uid then
+        self.current_uid = view_sheets.active_id
+        self.current_unit = df.unit.find(self.current_uid)
+    end
+    if self.current_unit and self.current_unit.portrait_texpos > 0 then
         -- If a portrait is present, displace the bars down 2 tiles
         table.insert(annotations, "\n\n")
     end
 
-    for idx = view_sheets.scroll_position_unit_skill, max_elem do
-        local skill = get_skill(idx)
+    local margin = self.subviews.annotations.frame.w
+    local num_elems = self.frame.h // 3 - 1
+    local start = math.min(view_sheets.scroll_position_unit_skill,
+        math.max(0,#view_sheets.unit_skill-num_elems))
+    local max_elem = math.min(#view_sheets.unit_skill-1,
+        view_sheets.scroll_position_unit_skill+num_elems-1)
+    for idx = start, max_elem do
+        local skill = get_skill(idx, self.current_unit)
         if not skill then 
             table.insert(annotations, "\n\n\n\n")
             goto continue
