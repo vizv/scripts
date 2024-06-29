@@ -106,19 +106,21 @@ local function adjust_units(timeskip)
             end
         end
         dfhack.units.subtractGroupActionTimers(unit, timeskip, df.unit_action_type_group.All)
-        local c2 = unit.counters2
-        if not has_caste_flag(unit, 'NO_EAT') then
-            c2.hunger_timer = c2.hunger_timer + timeskip
-        end
-        if not has_caste_flag(unit, 'NO_DRINK') then
-            c2.thirst_timer = c2.thirst_timer + timeskip
-        end
         local job = unit.job.current_job
-        if not has_caste_flag(unit, 'NO_SLEEP') then
-            if job and job.job_type == df.job_type.Sleep then
-                c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 19)
-            else
-                c2.sleepiness_timer = c2.sleepiness_timer + timeskip
+        local c2 = unit.counters2
+        if not dfhack.units.isAnimal(unit) then
+            if not has_caste_flag(unit, 'NO_EAT') then
+                c2.hunger_timer = c2.hunger_timer + timeskip
+            end
+            if not has_caste_flag(unit, 'NO_DRINK') then
+                c2.thirst_timer = c2.thirst_timer + timeskip
+            end
+            if not has_caste_flag(unit, 'NO_SLEEP') then
+                if job and job.job_type == df.job_type.Sleep then
+                    c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 19)
+                else
+                    c2.sleepiness_timer = c2.sleepiness_timer + timeskip
+                end
             end
         end
         if job and job.job_type == df.job_type.Rest then
