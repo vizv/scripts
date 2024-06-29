@@ -24,7 +24,7 @@ local DEFAULT_JOB_TYPES = {
     'SeekInfant', 'SetBone', 'Surgery', 'Suture',
     -- ensure prisoners and animals are tended to quickly
     -- (Animal/prisoner storage already covered by 'StoreItemInStockpile' above)
-    'SlaughterAnimal', 'PenLargeAnimal', 'ChainAnimal', 'LoadCageTrap',
+    'SlaughterAnimal', 'ButcherAnimal', 'PenLargeAnimal', 'ChainAnimal', 'LoadCageTrap',
     -- ensure noble tasks never get starved
     'InterrogateSubject', 'ManageWorkOrders', 'ReportCrime', 'TradeAtDepot',
     -- get tasks done quickly that might block the player from getting on to
@@ -640,13 +640,16 @@ if dfhack.internal.IN_TEST then
     }
 end
 
-if dfhack_flags.module then
-    return
-end
-
 --------------------------------
 -- EnRouteOverlay
 --
+
+local function is_visible()
+    local job = dfhack.gui.getSelectedJob(true)
+    return job and not job.flags.suspend and
+        (job.job_type == df.job_type.DestroyBuilding or
+         job.job_type == df.job_type.ConstructBuilding)
+end
 
 EnRouteOverlay = defclass(EnRouteOverlay, overlay.OverlayWidget)
 EnRouteOverlay.ATTRS{
@@ -657,6 +660,7 @@ EnRouteOverlay.ATTRS{
     frame={w=57, h=5},
     frame_style=gui.FRAME_MEDIUM,
     frame_background=gui.CLEAR_PEN,
+    visible=is_visible,
 }
 
 function EnRouteOverlay:init()
@@ -704,12 +708,6 @@ end
 
 function EnRouteOverlay:render(dc)
     local job = dfhack.gui.getSelectedJob(true)
-    if not job then return end
-    if job.job_type ~= df.job_type.DestroyBuilding and
-        job.job_type ~= df.job_type.ConstructBuilding
-    then
-        return
-    end
     self.builder = dfhack.job.getWorker(job)
     self.subviews.do_now:setOption(job.flags.do_now)
     EnRouteOverlay.super.render(self, dc)
@@ -717,6 +715,10 @@ function EnRouteOverlay:render(dc)
 end
 
 OVERLAY_WIDGETS = {enroute=EnRouteOverlay}
+
+if dfhack_flags.module then
+    return
+end
 
 if df.global.gamemode ~= df.game_mode.DWARF or not dfhack.isMapLoaded() then
     dfhack.printerr('prioritize needs a loaded fortress map to work')

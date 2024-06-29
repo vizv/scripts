@@ -68,7 +68,8 @@ local function is_valid_tile_dirt(pos)
     local mat = tileattrs.material
     local bad_shape =
             shape == df.tiletype_shape.BOULDER or
-            shape == df.tiletype_shape.PEBBLES
+            shape == df.tiletype_shape.PEBBLES or
+            shape == df.tiletype_shape.WALL
     local good_material =
             mat == df.tiletype_material.SOIL or
             mat == df.tiletype_material.GRASS_LIGHT or
@@ -76,7 +77,30 @@ local function is_valid_tile_dirt(pos)
             mat == df.tiletype_material.GRASS_DRY or
             mat == df.tiletype_material.GRASS_DEAD or
             mat == df.tiletype_material.PLANT
-    return is_valid_tile_generic(pos) and not bad_shape and good_material
+    return good_material and not bad_shape and is_valid_tile_generic(pos)
+end
+
+local function is_floor(pos)
+    local tt = dfhack.maps.getTileType(pos)
+    if not tt then return false end
+    local shape = df.tiletype.attrs[tt].shape
+    return df.tiletype_shape.attrs[shape].basic_shape == df.tiletype_shape_basic.Floor
+end
+
+local function has_mud(pos)
+    local block = dfhack.maps.getTileBlock(pos)
+    for _, bev in ipairs(block.block_events) do
+        if bev:getType() ~= df.block_square_event_type.material_spatter then goto continue end
+        if bev.mat_type == df.builtin_mats.MUD and bev.mat_state == df.matter_state.Solid then
+            return true
+        end
+        ::continue::
+    end
+    return false
+end
+
+local function is_valid_tile_farm(pos)
+    return is_valid_tile_dirt(pos) or (is_floor(pos) and has_mud(pos))
 end
 
 -- essentially, anywhere you could build a construction, plus constructed floors
@@ -157,13 +181,6 @@ local function is_tile_generic_and_wall_adjacent(pos)
             is_shape_at(xyz2pos(pos.x-1, pos.y, pos.z), allowed_door_shapes) or
             is_shape_at(xyz2pos(pos.x, pos.y+1, pos.z), allowed_door_shapes) or
             is_shape_at(xyz2pos(pos.x, pos.y-1, pos.z), allowed_door_shapes)
-end
-
-local function is_floor(pos)
-    local tt = dfhack.maps.getTileType(pos)
-    if not tt then return false end
-    local shape = df.tiletype.attrs[tt].shape
-    return df.tiletype_shape.attrs[shape].basic_shape == df.tiletype_shape_basic.Floor
 end
 
 local function is_tile_floor_adjacent(pos)
@@ -827,8 +844,9 @@ local building_db_raw = {
     p={label='Farm Plot',
        type=df.building_type.FarmPlot, has_extents=true,
        no_extents_if_solid=true,
-       is_valid_tile_fn=is_valid_tile_dirt,
+       is_valid_tile_fn=is_valid_tile_farm,
        is_valid_extent_fn=is_extent_nonempty,
+       ignore_extent_errors=true,
        props_fn=do_farm_props},
     o={label='Paved Road',
        type=df.building_type.RoadPaved, has_extents=true,
@@ -1197,6 +1215,10 @@ local function custom_building(_, keys)
         db_entry.props.name = props.name
         props.name = nil
     end
+    if props.do_now then
+        db_entry.do_now = true
+        props.do_now = nil
+    end
     if db_entry.props_fn then db_entry:props_fn(props) end
     for k,v in pairs(props) do
         dfhack.printerr(('unhandled property: "%s"="%s"'):format(k, v))
@@ -1235,7 +1257,7 @@ local function create_building(b, cache, dry_run)
         pos=b.pos, width=b.width, height=b.height, direction=db_entry.direction,
         fields=fields}
     if not bld then
-        -- this is an error instead of a qerror since our validity checking
+        -- this is an error instead of just a message since our validity checking
         -- is supposed to prevent this from ever happening
         error(string.format('unable to place %s: %s', db_entry.label, err))
     end
@@ -1279,6 +1301,12 @@ local function create_building(b, cache, dry_run)
                 db_entry.custom or -1) then
         log('registering %s with buildingplan', db_entry.label)
         buildingplan.addPlannedBuilding(bld)
+        if db_entry.do_now then
+            buildingplan.makeTopPriority(bld)
+        end
+    end
+    if db_entry.do_now and #bld.jobs > 0 then
+        bld.jobs[0].flags.do_now = true
     end
 end
 
