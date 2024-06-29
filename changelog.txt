@@ -58,6 +58,7 @@ Template for new versions:
 - `suspend`: remove broken ``--onlyblocking`` option; restore functionality to ``suspend all``
 - `gui/create-item`: allow creation of adamantine thread, wool, and yarn
 - `clear-smoke`: fix memory leak caused by the smoke flow not being deleted from memory
+- `gui/notify`: the notification panel no longer responds to SELECT so the SELECT key is passed through to the vanilla UI
 
 ## Misc Improvements
 - `gui/launcher`: "space space to toggle pause" behavior is skipped if the game was paused when `gui/launcher` came up to prevent accidental unpausing
