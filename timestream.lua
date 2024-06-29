@@ -108,24 +108,25 @@ local function adjust_units(timeskip)
         dfhack.units.subtractGroupActionTimers(unit, timeskip, df.unit_action_type_group.All)
         local job = unit.job.current_job
         local c2 = unit.counters2
-        if not dfhack.units.isAnimal(unit) then
-            if not has_caste_flag(unit, 'NO_EAT') then
-                c2.hunger_timer = c2.hunger_timer + timeskip
-            end
-            if not has_caste_flag(unit, 'NO_DRINK') then
-                c2.thirst_timer = c2.thirst_timer + timeskip
-            end
-            if not has_caste_flag(unit, 'NO_SLEEP') then
-                if job and job.job_type == df.job_type.Sleep then
-                    c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 19)
-                else
-                    c2.sleepiness_timer = c2.sleepiness_timer + timeskip
-                end
-            end
-        end
         if job and job.job_type == df.job_type.Rest then
             c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 200)
         end
+        if not dfhack.units.isCitizen(unit, true) then goto continue end
+        if not has_caste_flag(unit, 'NO_EAT') then
+            c2.hunger_timer = c2.hunger_timer + timeskip
+        end
+        if not has_caste_flag(unit, 'NO_DRINK') then
+            c2.thirst_timer = c2.thirst_timer + timeskip
+        end
+        if not has_caste_flag(unit, 'NO_SLEEP') then
+            if job and job.job_type == df.job_type.Sleep then
+                c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 19)
+            else
+                c2.sleepiness_timer = c2.sleepiness_timer + timeskip
+            end
+        end
+        -- TODO: c2.stomach_content, c2.stomach_food, and c2.stored_fat
+        -- TODO: needs
         ::continue::
     end
 end
