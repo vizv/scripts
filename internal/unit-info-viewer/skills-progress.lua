@@ -101,7 +101,7 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
         view_sheets.scroll_position_unit_skill+num_elems-1)
     for idx = start, max_elem do
         local skill = get_skill(idx, self.current_unit)
-        if not skill then 
+        if not skill then
             table.insert(annotations, "\n\n\n\n")
             goto continue
         end
@@ -192,4 +192,3 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
 
     SkillProgressOverlay.super.onRenderFrame(self, dc, rect)
 end
-
