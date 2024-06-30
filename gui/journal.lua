@@ -239,7 +239,7 @@ function TextEditorView:eraseSelection()
 end
 
 function TextEditorView:setClipboard(text)
-    self.clipboard = text
+    dfhack.internal.setClipboardTextCp437Multiline(text)
 end
 
 function TextEditorView:copy()
@@ -269,10 +269,10 @@ function TextEditorView:cut()
 end
 
 function TextEditorView:paste()
-    if self.clipboard then
-        local clipboard = self.clipboard
+    local clipboard_lines = dfhack.internal.getClipboardTextCp437Multiline()
+    local clipboard = table.concat(clipboard_lines, '\n')
+    if clipboard then
         if self.clipboard_mode == CLIPBOARD_MODE.LINE and not self:hasSelection() then
-            clipboard = self.clipboard
             local cursor_x = self.cursor.x
             self:setCursor(1, self.cursor.y)
             self:insert(clipboard)
