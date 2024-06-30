@@ -95,6 +95,8 @@ COMMANDS_BY_IDX = {
     {command='preserve-tombs', group='bugfix', mode='enable', default=true},
     {command='reaction-gloves', help_command='tweak', group='bugfix', mode='tweak', default=true,
         desc='Fixes reactions not producing gloves in sets with correct handedness.'},
+    {command='fix/shooting', group='bugfix', mode='tweak', default=true,
+        desc='Fixes shooting your weapon in adventure mode breaking your Throw action in increasibly dangerous ways.'},
 
     -- gameplay tools
     {command='agitation-rebalance', group='gameplay', mode='enable'},
