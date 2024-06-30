@@ -155,13 +155,12 @@ function TextEditorView:recomputeLines()
 
     self.lines = self.text:wrap(
         self.frame_body.width,
-        {return_as_table=true, keep_trailing_spaces=true}
+        {
+            return_as_table=true,
+            keep_trailing_spaces=true,
+            keep_original_newlines=true
+        }
     )
-    -- add newlines chars between lines (at the end of preceding line)
-    for i = 1, #self.lines - 1 do
-        self.lines[i] = self.lines[i] .. NEWLINE
-    end
-
     -- as cursor always point to "next" char we need invisible last char
     -- that can not be pass by
     self.lines[#self.lines] = self.lines[#self.lines] .. NEWLINE
