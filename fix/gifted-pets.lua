@@ -2,22 +2,6 @@
 -- Fixes pets owned by companions missing from the companions list
 local utils = require 'utils'
 
-local function isPetOf(petNemesis, ownerNemesis)
-    if petNemesis.unit then
-        local owner_id = petNemesis.unit.relationship_ids.PetOwner
-        if owner_id ~= -1 and owner_id == ownerNemesis.unit_id then
-            return true
-        end
-    elseif petNemesis.figure then -- in case the unit is offloaded
-        for _, link in ipairs(petNemesis.figure.histfig_links) do
-            if link._type == df.histfig_hf_link_pet_ownerst and ownerNemesis.figure and link.target_hf == ownerNemesis.figure.id then
-                return true
-            end
-        end
-    end
-    return false
-end
-
 local function findPetOwnerOf(petNemesis)
     if petNemesis.figure then
         for _, link in ipairs(petNemesis.figure.histfig_links) do
@@ -38,7 +22,7 @@ local function fixMissingCompanionPets(nemesis)
     local party = df.global.adventure.interactions
     for i, nem_id in ipairs(nemesis.companions) do
         local pet_record = df.nemesis_record.find(nem_id)
-        if isPetOf(pet_record, nemesis) and not findInParty(party.party_pets, pet_record.figure.id) then
+        if findPetOwnerOf(pet_record) == nemesis and not findInParty(party.party_pets, pet_record.figure.id) then
             print("inserting pet "..pet_record.id.." of companion "..nemesis.id.." into the party!")
             party.party_pets:insert('#', pet_record.figure.id)
         end
@@ -83,11 +67,14 @@ local function fixGiftedPets(nemesis)
             if pet_owner_record then
                 print("pet owner confirmed! Identified nemesis "..pet_owner_record.id.." as owner.")
                 local party = party
-                local owner_in_party = findInParty(party.party_core_members, companion_record.figure.id) or findInParty(party.party_extra_members, companion_record.figure.id)
+                local owner_in_party = findInParty(party.party_core_members, pet_owner_record.figure.id) or findInParty(party.party_extra_members, pet_owner_record.figure.id)
                 if not owner_in_party then
                     print("the pet's owner is NOT a companion. We need to associate the pet with the owner correctly so the pet's unit is not inaccessible.")
                     fixGiftedPet(companion_record, pet_owner_record)
                     queueCompanionErase[companion_record.id] = true
+                else
+                    print("the pet's owner is a companion! Assigning their pets to our follower pets.")
+                    party.party_pets:insert('#', companion_record.figure.id)
                 end
             end
         end
