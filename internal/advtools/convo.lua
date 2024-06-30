@@ -77,7 +77,7 @@ local function new_choice(choice_type, title, keywords)
 end
 
 local function addHistFigWhereaboutsChoice(profile)
-    for i, c in pairs(adventure.conversation.conv_choice_info) do
+    for i, c in ipairs(adventure.conversation.conv_choice_info) do
         if c.cc.type == df.talk_choice_type.AskWhereabouts and
           c.cc.invocation_target_hfid ~= -1 and
           c.cc.invocation_target_hfid == profile.histfig_id then
@@ -104,7 +104,7 @@ local function addHistFigWhereaboutsChoice(profile)
 end
 
 local function addIdentityWhereaboutsChoice(identity)
-    for i, c in pairs(adventure.conversation.conv_choice_info) do
+    for _, c in ipairs(adventure.conversation.conv_choice_info) do
         if c.cc.type == df.talk_choice_type.AskWhereabouts and
            c.cc.invocation_target_hfid ~= -1 and
            c.cc.invocation_target_hfid == identity.impersonated_hf then
