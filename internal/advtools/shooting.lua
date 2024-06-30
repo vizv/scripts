@@ -26,7 +26,3 @@ function FixShootingOverlay:onInput()
         aim_projectile.thrown_it = nil
     end
 end
-
-OVERLAY_WIDGETS = {
-    fixshooting=FixShootingOverlay,
-}
