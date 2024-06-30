@@ -61,6 +61,7 @@ Template for new versions:
 - `gui/create-item`: allow creation of adamantine thread, wool, and yarn
 - `gui/notify`: the notification panel no longer responds to the Enter key so Enter key is passed through to the vanilla UI
 - `clear-smoke`: properly tag smoke flows for garbage collection to avoid memory leak
+- `warn-stranded`: don't warn for babies carried by mothers who happen to be gathering fruit from trees
 
 ## Misc Improvements
 - `item`: option for ignoring uncollected spider webs when you search for "silk"
