@@ -1,8 +1,10 @@
 --@ module = true
 
+local dialogs = require('gui.dialogs')
 local gui = require('gui')
 local overlay = require('plugins.overlay')
 local specs = reqscript('internal/confirm/specs')
+local utils = require('utils')
 local widgets = require("gui.widgets")
 
 ------------------------
@@ -27,76 +29,6 @@ end
 ------------------------
 -- Overlay
 
-PromptWindow = defclass(PromptWindow, widgets.Window)
-PromptWindow.ATTRS {
-    frame={w=47, h=13},
-    conf=DEFAULT_NIL,
-    propagate_fn=DEFAULT_NIL,
-}
-
-function PromptWindow:init()
-    self:addviews{
-        widgets.WrappedLabel{
-            frame={t=0, l=0, r=0},
-            text_to_wrap=self.conf.message,
-        },
-        widgets.HotkeyLabel{
-            frame={b=2, l=0},
-            label='Yes, proceed',
-            key='SELECT',
-            auto_width=true,
-            on_activate=self:callback('proceed'),
-        },
-        widgets.HotkeyLabel{
-            frame={b=2, l=32},
-            label='Settings',
-            key='CUSTOM_SHIFT_S',
-            auto_width=true,
-            on_activate=self:callback('settings'),
-        },
-        widgets.HotkeyLabel{
-            frame={b=0, l=0},
-            label='Pause confirmations while on this screen',
-            key='CUSTOM_SHIFT_P',
-            auto_width=true,
-            visible=self.conf.pausable,
-            on_activate=self:callback('pause'),
-        },
-    }
-end
-
-function PromptWindow:proceed()
-    self.parent_view:dismiss()
-    self.propagate_fn()
-end
-
-function PromptWindow:settings()
-    self.parent_view:dismiss()
-    dfhack.run_script('gui/confirm', self.conf.id)
-end
-
-function PromptWindow:pause()
-    self.parent_view:dismiss()
-    self.propagate_fn(true)
-end
-
-PromptScreen = defclass(PromptScreen, gui.ZScreenModal)
-PromptScreen.ATTRS {
-    focus_path='confirm/prompt',
-    conf=DEFAULT_NIL,
-    propagate_fn=DEFAULT_NIL,
-}
-
-function PromptScreen:init()
-    self:addviews{
-        PromptWindow{
-            frame_title=self.conf.title,
-            conf=self.conf,
-            propagate_fn=self.propagate_fn,
-        }
-    }
-end
-
 local function get_contexts()
     local contexts, contexts_set = {}, {}
     for id, conf in pairs(specs.REGISTRY) do
@@ -113,8 +45,8 @@ ConfirmOverlay.ATTRS{
     desc='Detects dangerous actions and prompts with confirmation dialogs.',
     default_pos={x=1,y=1},
     default_enabled=true,
-    overlay_only=true,  -- not player-repositionable
-    hotspot=true,       -- need to unpause when we're not in target contexts
+    full_interface=true,  -- not player-repositionable
+    hotspot=true,       -- need to reset pause when we're not in target contexts
     overlay_onupdate_max_freq_seconds=300,
     viewscreens=get_contexts(),
 }
@@ -134,7 +66,8 @@ function ConfirmOverlay:init()
 end
 
 function ConfirmOverlay:preUpdateLayout()
-    self.frame.w, self.frame.h = dfhack.screen.getWindowSize()
+    local interface_rect = gui.get_interface_rect()
+    self.frame.w, self.frame.h = interface_rect.width, interface_rect.height
     -- reset frames if any of them have been pushed out of position
     for id, conf in pairs(specs.REGISTRY) do
         if conf.intercept_frame then
@@ -198,7 +131,8 @@ function ConfirmOverlay:onInput(keys)
                 gui.simulateInput(scr, keys)
                 self.simulating = false
             end
-            PromptScreen{conf=conf, propagate_fn=propagate_fn}:show()
+            dialogs.showYesNoPrompt(conf.title, utils.getval(conf.message):wrap(45), COLOR_YELLOW,
+                propagate_fn, nil, curry(propagate_fn, true), curry(dfhack.run_script, 'gui/confirm', tostring(conf.id)))
             return true
         end
     end

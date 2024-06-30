@@ -77,7 +77,7 @@ function toggle_fishing_labour(state)
     local work_details = df.global.plotinfo.labor_info.work_details
     for _,v in pairs(work_details) do
         if v.allowed_labors.FISH then
-            v.work_detail_flags.mode = state and
+            v.flags.mode = state and
                 df.work_detail_mode.OnlySelectedDoesThis or df.work_detail_mode.NobodyDoesThis
 
             -- since the work details are not actually applied unless a button

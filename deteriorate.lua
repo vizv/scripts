@@ -41,7 +41,7 @@ local function keep_usable(opts, item)
                     item.corpse_flags.bone or
                     item.corpse_flags.horn or
                     item.corpse_flags.leather or
-                    item.corpse_flags.skull2 or
+                    item.corpse_flags.skull or
                     item.corpse_flags.tooth) or (
                 item.corpse_flags.hair_wool or
                 item.corpse_flags.pearl or
@@ -109,8 +109,7 @@ local function deteriorate(opts, get_item_vectors_fn, is_valid_fn, increment_wea
         for _,item in ipairs(v) do
             if is_valid_fn(opts, item) and increment_wear_fn(item)
                     and not item.flags.garbage_collect then
-                item.flags.garbage_collect = true
-                item.flags.hidden = true
+                dfhack.items.remove(item)
                 count = count + 1
             end
         end

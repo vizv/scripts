@@ -28,7 +28,7 @@ function LegendsManager:init()
     -- missing, but it shows that jumping back and forth between modes is not
     -- safe.
     self.region_details_backup = {} --as:df.world_region_details[]
-    local vec = df.global.world.world_data.region_details
+    local vec = df.global.world.world_data.midmap_data.region_details
     utils.assign(self.region_details_backup, vec)
     vec:resize(0)
 
@@ -41,14 +41,19 @@ function LegendsManager:init()
 
     self:addviews{
         widgets.Panel{
-            view_id='done_mask',
-            frame={t=1, r=1, w=9, h=3},
+            frame=gui.get_interface_frame(),
+            subviews={
+                widgets.Panel{
+                    view_id='done_mask',
+                    frame={t=1, r=1, w=9, h=3},
+                },
+            },
         },
     }
 end
 
 function LegendsManager:onInput(keys)
-    if keys.LEAVESCREEN or (keys._MOUSE_L and self.subviews.done_mask:getMousePos()) then
+    if keys.LEAVESCREEN or keys._MOUSE_R or (keys._MOUSE_L and self.subviews.done_mask:getMousePos()) then
         if self.no_autoquit then
             self:dismiss()
         else
@@ -68,7 +73,7 @@ function LegendsManager:onDestroy()
     else
         df.global.gametype = self.gametype_backup
 
-        local vec = df.global.world.world_data.region_details
+        local vec = df.global.world.world_data.midmap_data.region_details
         vec:resize(0)
         utils.assign(vec, self.region_details_backup)
 

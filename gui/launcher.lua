@@ -32,7 +32,13 @@ user_freq = user_freq or json.open('dfhack-config/command_counts.json')
 -- track whether the user has enabled dev mode
 dev_mode = dev_mode or false
 
-local function get_default_tag_filter()
+-- track the last value of mortal mode
+prev_mortal_mode = prev_mortal_mode
+if prev_mortal_mode == nil then
+    prev_mortal_mode = dfhack.getMortalMode()
+end
+
+local function get_default_tag_filter_base(mortal_mode)
     local ret = {
         includes={},
         excludes={},
@@ -40,11 +46,15 @@ local function get_default_tag_filter()
     if not dev_mode then
         ret.excludes.dev = true
         ret.excludes.unavailable = true
-        if dfhack.getHideArmokTools() then
+        if mortal_mode then
             ret.excludes.armok = true
         end
     end
     return ret
+end
+
+local function get_default_tag_filter()
+    return get_default_tag_filter_base(dfhack.getMortalMode())
 end
 
 _tag_filter = _tag_filter or nil
@@ -61,7 +71,7 @@ local function toggle_dev_mode()
     tag_filter.excludes.unavailable = dev_mode or nil
     if not dev_mode then
         tag_filter.excludes.armok = nil
-    elseif dfhack.getHideArmokTools() then
+    elseif dfhack.getMortalMode() then
         tag_filter.excludes.armok = true
     end
     dev_mode = not dev_mode
@@ -77,11 +87,15 @@ local function matches(a, b)
     return true
 end
 
-local function is_default_filter()
+local function is_default_filter_base(mortal_mode)
     local tag_filter = get_tag_filter()
-    local default_filter = get_default_tag_filter()
+    local default_filter = get_default_tag_filter_base(mortal_mode)
     return matches(tag_filter.includes, default_filter.includes) and
         matches(tag_filter.excludes, default_filter.excludes)
+end
+
+local function is_default_filter()
+    return is_default_filter_base(dfhack.getMortalMode())
 end
 
 local function get_filter_text()
@@ -114,31 +128,29 @@ local function get_filter_pen()
 end
 
 -- trims the history down to its maximum size, if needed
-local function trim_history(hist, hist_set)
-    if #hist <= HISTORY_SIZE then return end
-    -- we can only ever go over by one, so no need to loop
+local function trim_history(hist)
+    local hist_size = #hist
+    local overage = hist_size - HISTORY_SIZE
+    if overage <= 0 then return end
     -- This is O(N) in the HISTORY_SIZE. if we need to make this more efficient,
     -- we can use a ring buffer.
-    local line = table.remove(hist, 1)
-    -- since all lines are guaranteed to be unique, we can just remove the hash
-    -- from the set instead of, say, decrementing a counter
-    hist_set[line] = nil
-end
-
--- removes duplicate existing history lines and adds the given line to the front
-local function add_history(hist, hist_set, line)
-    line = line:trim()
-    if hist_set[line] then
-        for i,v in ipairs(hist) do
-            if v == line then
-                table.remove(hist, i)
-                break
-            end
+    for i=overage+1,hist_size do
+        hist[i-overage] = hist[i]
+        if i > HISTORY_SIZE then
+            hist[i] = nil
         end
     end
+end
+
+-- adds the given line to the front of the history as long as it is different from the previous command
+local function add_history(hist, line, defer_trim)
+    line = line:trim()
+    local hist_size = #hist
+    if line == hist[hist_size] then return end
     table.insert(hist, line)
-    hist_set[line] = true
-    trim_history(hist, hist_set)
+    if not defer_trim then
+        trim_history(hist)
+    end
 end
 
 local function file_exists(fname)
@@ -147,13 +159,15 @@ end
 
 -- history files are written with the most recent entry on *top*, which the
 -- opposite of what we want. add the file contents to our history in reverse.
-local function add_history_lines(lines, hist, hist_set)
+-- you must manually call trim_history() after this function
+local function add_history_lines(lines, hist)
     for i=#lines,1,-1 do
-        add_history(hist, hist_set, lines[i])
+        add_history(hist, lines[i], true)
     end
 end
 
-local function add_history_file(fname, hist, hist_set)
+-- you must manually call trim_history() after this function
+local function add_history_file(fname, hist)
     if not file_exists(fname) then
         return
     end
@@ -161,27 +175,27 @@ local function add_history_file(fname, hist, hist_set)
     for line in io.lines(fname) do
         table.insert(lines, line)
     end
-    add_history_lines(lines, hist, hist_set)
+    add_history_lines(lines, hist)
 end
 
 local function init_history()
-    local hist, hist_set = {}, {}
+    local hist = {}
     -- snarf the console history into our active history. it would be better if
     -- both the launcher and the console were using the same history object so
     -- the sharing would be "live", but we can address that later.
-    add_history_file(CONSOLE_HISTORY_FILE_OLD, hist, hist_set)
-    add_history_file(CONSOLE_HISTORY_FILE, hist, hist_set)
+    add_history_file(CONSOLE_HISTORY_FILE_OLD, hist)
+    add_history_file(CONSOLE_HISTORY_FILE, hist)
 
     -- read in our own command history
-    add_history_lines(dfhack.getCommandHistory(HISTORY_ID, HISTORY_FILE),
-                      hist, hist_set)
+    add_history_lines(dfhack.getCommandHistory(HISTORY_ID, HISTORY_FILE), hist)
 
-    return hist, hist_set
+    trim_history(hist)
+
+    return hist
 end
 
-if not history then
-    history, history_set = init_history()
-end
+-- history is a list of previously run commands, most recent at history[#history]
+history = history or init_history()
 
 local function get_first_word(text)
     local word = text:trim():split(' +')[1]
@@ -194,7 +208,7 @@ local function get_command_count(command)
 end
 
 local function record_command(line)
-    add_history(history, history_set, line)
+    add_history(history, line)
     local firstword = get_first_word(line)
     user_freq.data[firstword] = (user_freq.data[firstword] or 0) + 1
     user_freq:write()
@@ -456,6 +470,7 @@ EditPanel.ATTRS{
 
 function EditPanel:init()
     self.stack = {}
+    self.seen_search = {}
     self:reset_history_idx()
 
     self:addviews{
@@ -474,7 +489,10 @@ function EditPanel:init()
             -- to the commandline
             ignore_keys={'STRING_A096'},
             on_char=function(ch, text)
-                if ch == ' ' then return text:match('%S$') end
+                -- if game was not initially paused, then allow double-space to toggle pause
+                if ch == ' ' and not self.parent_view.parent_view.saved_pause_state then
+                    return text:sub(1, self.subviews.editfield.cursor - 1):match('%S$')
+                end
                 return true
             end,
             on_change=self.on_change,
@@ -562,16 +580,22 @@ function EditPanel:move_history(delta)
 end
 
 function EditPanel:on_search_text(search_str, next_match)
+    if not next_match then self.seen_search = {} end
     if not search_str or #search_str == 0 then return end
     local start_idx = math.min(self.history_idx - (next_match and 1 or 0),
                                #history)
     for history_idx = start_idx, 1, -1 do
-        if history[history_idx]:find(search_str, 1, true) then
+        local line = history[history_idx]
+        if line:find(search_str, 1, true) then
             self:move_history(history_idx - self.history_idx)
-            return
+            if not self.seen_search[line] then
+                self.seen_search[line] = true
+                return
+            end
         end
     end
     -- no matches. restart at the saved input buffer for the next search.
+    self.seen_search = {}
     self:move_history(#history + 1 - self.history_idx)
 end
 
@@ -862,7 +886,7 @@ local function get_frame_r()
     return 0
 end
 
-function LauncherUI:init(args)
+function LauncherUI:init()
     self.firstword = ""
 
     local main_panel = MainPanel{
@@ -892,6 +916,24 @@ function LauncherUI:init(args)
                     if v < 0 then
                         new_frame[k] = 0
                     end
+                end
+                local w, h = dfhack.screen.getWindowSize()
+                local min = MainPanel.ATTRS.resize_min
+                if new_frame.t and h - new_frame.t - (new_frame.b or 0) < min.h then
+                    new_frame.t = h - min.h
+                    new_frame.b = 0
+                end
+                if new_frame.b and h - new_frame.b - (new_frame.t or 0) < min.h then
+                    new_frame.b = h - min.h
+                    new_frame.t = 0
+                end
+                if new_frame.l and w - new_frame.l - (new_frame.r or 0) < min.w then
+                    new_frame.l = w - min.w
+                    new_frame.r = 0
+                end
+                if new_frame.r and w - new_frame.r - (new_frame.l or 0) < min.w then
+                    new_frame.r = w - min.w
+                    new_frame.l = 0
                 end
             end
         end
@@ -1000,7 +1042,7 @@ local function add_top_related_entries(entries, entry, n)
     local dev_ok = dev_mode or helpdb.get_entry_tags(entry).dev
     local tags = helpdb.get_entry_tags(entry)
     local affinities, buckets = {}, {}
-    local skip_armok = dfhack.getHideArmokTools()
+    local skip_armok = dfhack.getMortalMode()
     for tag in pairs(tags) do
         for _,peer in ipairs(helpdb.get_tag_data(tag)) do
             if not skip_armok or not helpdb.get_entry_tags(peer).armok then
@@ -1137,6 +1179,18 @@ function LauncherUI:run_command(reappear, command)
     if not reappear then
         self:dismiss()
     end
+end
+
+function LauncherUI:render(dc)
+    local mortal_mode = dfhack.getMortalMode()
+    if mortal_mode ~= prev_mortal_mode then
+        prev_mortal_mode = mortal_mode
+        if is_default_filter_base(not mortal_mode) then
+            _tag_filter = get_default_tag_filter_base(mortal_mode)
+            self.subviews.main:refresh_autocomplete()
+        end
+    end
+    LauncherUI.super.render(self, dc)
 end
 
 function LauncherUI:onDismiss()

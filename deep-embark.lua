@@ -122,7 +122,7 @@ function reveal(pos)
   local tiletype = block.tiletype[x%16][y%16]
   if tiletype ~= df.tiletype.GlowingBarrier then -- to avoid multiple instances
     block.tiletype[x%16][y%16] = df.tiletype.GlowingBarrier
-    local barriers = df.global.world.glowing_barriers
+    local barriers = df.global.world.event.glowing_barriers
     local barrier = df.glowing_barrier:new()
     barrier.buildings:insert('#',-1) -- being unbound to a building makes the barrier disappear immediately
     barrier.pos:assign(pos)
@@ -255,7 +255,7 @@ end
 
 function disableSpireDemons()
 --  marks underworld spires on the map as having been breached already, preventing HFS events
-  for _, spire in ipairs(df.global.world.deep_vein_hollows) do
+  for _, spire in ipairs(df.global.world.event.deep_vein_hollows) do
     spire.triggered = true
   end
 end

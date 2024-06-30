@@ -121,6 +121,7 @@ COMMANDS_BY_IDX = {
         desc='Displays percentages on partially-consumed items like hospital cloth.'},
     {command='pop-control', group='gameplay', mode='enable'},
     {command='starvingdead', group='gameplay', mode='enable'},
+    {command='timestream', group='gameplay', mode='enable'},
     {command='work-now', group='gameplay', mode='enable'},
 }
 
@@ -136,8 +137,8 @@ PREFERENCES_BY_IDX = {
         label='Mortal mode: hide "armok" tools',
         desc='Don\'t show tools that give you god-like powers wherever DFHack tools are listed.',
         default=false,
-        get_fn=function() return dfhack.HIDE_ARMOK_TOOLS end,
-        set_fn=function(val) dfhack.HIDE_ARMOK_TOOLS = val end,
+        get_fn=dfhack.getMortalMode,
+        set_fn=dfhack.setMortalMode,
     },
     {
         name='FILTER_FULL_TEXT',
@@ -152,8 +153,8 @@ PREFERENCES_BY_IDX = {
         label='Hide console on startup (MS Windows only)',
         desc='Hide the external DFHack terminal window on startup. Use the "show" command to unhide it.',
         default=true,
-        get_fn=function() return dfhack.HIDE_CONSOLE_ON_STARTUP end,
-        set_fn=function(val) dfhack.HIDE_CONSOLE_ON_STARTUP = val end,
+        get_fn=dfhack.getHideConsoleOnStartup,
+        set_fn=dfhack.setHideConsoleOnStartup,
     },
     {
         name='DEFAULT_INITIAL_PAUSE',
@@ -162,6 +163,21 @@ PREFERENCES_BY_IDX = {
         default=true,
         get_fn=function() return gui.DEFAULT_INITIAL_PAUSE end,
         set_fn=function(val) gui.DEFAULT_INITIAL_PAUSE = val end,
+    },
+    {
+        name='NUMBER_FORMAT',
+        label='Large number formatting',
+        desc='Number formatting style for DFHack tool UIs.',
+        default=0,
+        options={
+            {label='None (ex: 1234567)', value=0},
+            {label='English (ex: 1,234,567)', value=1},
+            {label='System locale', value=2},
+            {label='SI suffix (ex: 1.23M)', value=3},
+            {label='Scientific (ex: 1.2e+06)', value=4},
+        },
+        get_fn=dfhack.internal.getPreferredNumberFormat,
+        set_fn=dfhack.internal.setPreferredNumberFormat,
     },
     {
         name='INTERCEPT_HANDLED_HOTKEYS',

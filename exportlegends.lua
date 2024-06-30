@@ -256,9 +256,9 @@ local function export_more_legends_xml()
                         end
                         if df.abstract_building_templest:is_instance(buildingV) then
                             file:write("\t\t\t\t<deity_type>"..buildingV.deity_type.."</deity_type>\n")
-                            if buildingV.deity_type == df.temple_deity_type.Deity then
+                            if buildingV.deity_type == df.religious_practice_type.WORSHIP_HFID then
                                 file:write("\t\t\t\t<deity>"..buildingV.deity_data.Deity.."</deity>\n")
-                            elseif buildingV.deity_type == df.temple_deity_type.Religion then
+                            elseif buildingV.deity_type == df.religious_practice_type.RELIGION_ENID then
                                 file:write("\t\t\t\t<religion>"..buildingV.deity_data.Religion.."</religion>\n")
                             end
                         end
@@ -449,7 +449,7 @@ local function export_more_legends_xml()
                 file:write("\t\t<occasion>\n")
                 file:write("\t\t\t<id>"..occasionV.id.."</id>\n")
                 file:write("\t\t\t<name>"..escape_xml(dfhack.df2utf(dfhack.TranslateName(occasionV.name,1))).."</name>\n")
-                file:write("\t\t\t<event>"..occasionV.event.."</event>\n")
+                file:write("\t\t\t<event>"..occasionV.purpose_id.."</event>\n")
                 for scheduleK, scheduleV in pairs(occasionV.schedule) do
                     file:write("\t\t\t<schedule>\n")
                     file:write("\t\t\t\t<id>"..scheduleK.."</id>\n")
