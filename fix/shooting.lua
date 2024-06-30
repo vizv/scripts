@@ -1,5 +1,4 @@
 -- Fixes shooting/throwing options stacking on each other, causing null pointers and crashes
---@ enable = true
 --@ module = true
 
 local aim_projectile = df.global.game.main_interface.adventure.aim_projectile
@@ -8,17 +7,16 @@ local overlay = require('plugins.overlay')
 
 FixShootingOverlay = defclass(FixShootingOverlay, overlay.OverlayWidget)
 FixShootingOverlay.ATTRS{
-    desc='Adds keywords to conversation entries.',
+    desc='Fixes Shooting your weapon breaking your Throw action.',
     default_enabled=true,
     viewscreens={
         'dungeonmode/Inventory',
         'dungeonmode/AimProjectile'
     },
     frame={w=0, h=0},
-    overlay_onupdate_max_freq_seconds=0,
 }
 
-function FixShootingOverlay:overlay_onupdate()
+function FixShootingOverlay:onInput()
     if aim_projectile.open == false then
         aim_projectile.shooter_it = nil
         aim_projectile.ammo_it = nil
