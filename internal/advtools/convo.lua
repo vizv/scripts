@@ -76,62 +76,46 @@ local function new_choice(choice_type, title, keywords)
     return choice
 end
 
-local function addHistFigWhereaboutsChoice(profile)
-    for i, c in ipairs(adventure.conversation.conv_choice_info) do
-        if c.cc.type == df.talk_choice_type.AskWhereabouts and
-          c.cc.invocation_target_hfid ~= -1 and
-          c.cc.invocation_target_hfid == profile.histfig_id then
-            -- Don't add repeat entries
-            return
-        end
+local function addWhereaboutsChoice(race, name, target_id, heard_of)
+    local title = "Ask for the whereabouts of the " .. race .. " " .. dfhack.TranslateName(name, true)
+    if heard_of then
+        title = title .. " (Heard of)"
     end
+    local choice = new_choice(df.talk_choice_type.AskWhereabouts, title, dfhack.TranslateName(name):split())
+    -- insert before the last choice, which is usually "back"
+    adventure.conversation.conv_choice_info:insert(#adventure.conversation.conv_choice_info-1, choice)
+    choice.cc.invocation_target_hfid = target_id
+end
 
+local function addHistFigWhereaboutsChoice(profile)
     local histfig = df.historical_figure.find(profile.histfig_id)
-    local name = ""
+    local race = ""
     local creature = df.creature_raw.find(histfig.race)
     if creature then
         local caste = creature.caste[histfig.caste]
-        name = caste.caste_name[0]
+        race = caste.caste_name[0]
     end
-    local title = "Ask for the whereabouts of the " .. name .. " " .. dfhack.TranslateName(histfig.name, true)
-    if profile._type == df.relationship_profile_hf_historicalst then
-        title = title .. " (Heard of)"
-    end
-    local choice = new_choice(df.talk_choice_type.AskWhereabouts, title, dfhack.TranslateName(histfig.name):split())
-     -- insert before the last choice, which is usually "back"
-    adventure.conversation.conv_choice_info:insert(#adventure.conversation.conv_choice_info-1, choice)
-    choice.cc.invocation_target_hfid = histfig.id
+
+    addWhereaboutsChoice(race, histfig.name, histfig.id, profile._type == df.relationship_profile_hf_historicalst)
 end
 
 local function addIdentityWhereaboutsChoice(identity)
-    for _, c in ipairs(adventure.conversation.conv_choice_info) do
-        if c.cc.type == df.talk_choice_type.AskWhereabouts and
-           c.cc.invocation_target_hfid ~= -1 and
-           c.cc.invocation_target_hfid == identity.impersonated_hf then
-            -- Don't add repeat entries
-            return
-        end
-    end
     local identity_name = identity.name
-    local name = ""
+    local race = ""
     local creature = df.creature_raw.find(identity.race)
     if creature then
         local caste = creature.caste[identity.caste]
-        name = caste.caste_name[0]
+        race = caste.caste_name[0]
     else
         -- no race given for the identity, assume it's the histfig
         local histfig = df.historical_figure.find(identity.histfig_id)
         creature = df.creature_raw.find(histfig.race)
         if creature then
             local caste = creature.caste[histfig.caste]
-            name = caste.caste_name[0]
+            race = caste.caste_name[0]
         end
     end
-    local title = "Ask for the whereabouts of the " .. name .. " " .. dfhack.TranslateName(identity_name, true)
-    local choice = new_choice(df.talk_choice_type.AskWhereabouts, title)
-    -- insert before the last choice, which is usually "back"
-    adventure.conversation.conv_choice_info:insert(#adventure.conversation.conv_choice_info-1, choice, dfhack.TranslateName(identity_name):split())
-    choice.cc.invocation_target_hfid = identity.impersonated_hf
+    addWhereaboutsChoice(race, identity_name, identity.impersonated_hf)
 end
 
 -- Condense the rumor system choices
@@ -149,18 +133,18 @@ local function rumorUpdate()
         local historical = relationships.hf_historical
         local identity = relationships.hf_identity
 
-        for _, profile in pairs(visual) do
+        for _, profile in ipairs(visual) do
             addHistFigWhereaboutsChoice(profile)
         end
 
         -- This option will likely always fail unless the false identity is impersonating someone
         -- but giving away the false identity's true historical figure feels cheap.
-        for _, profile in pairs(identity) do
+        for _, profile in ipairs(identity) do
             addIdentityWhereaboutsChoice(df.identity.find(profile.identity_id))
         end
 
         -- Historical entities go last so as to not give away fake identities
-        for _, profile in pairs(historical) do
+        for _, profile in ipairs(historical) do
             addHistFigWhereaboutsChoice(profile)
         end
     end
@@ -185,7 +169,6 @@ local last_first_entry = nil
 function AdvRumorsOverlay:render()
     -- Only update if the first entry pointer changed, this reliably indicates the list changed
     if #adventure.conversation.conv_choice_info <= 0 or last_first_entry == adventure.conversation.conv_choice_info[0] then return end
-
     -- Remember the last first entry. This entry changes even if we quit out and return on the same menu!
     last_first_entry = adventure.conversation.conv_choice_info[0]
     rumorUpdate()
