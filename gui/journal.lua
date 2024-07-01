@@ -176,7 +176,7 @@ function TextEditorView:restoreCursor()
 end
 
 function TextEditorView:recomputeLines()
-    self.lines = strict_wrap(self.text,
+    self.lines = self.text:wrap(
         self.frame_body.width,
         {
             return_as_table=true,
