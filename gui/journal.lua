@@ -23,6 +23,7 @@ function TextEditor:init()
         on_scroll=self:callback('onScrollbar')
     }
     self.editor = TextEditorView{
+        frame={l=0,r=1},
         text = self.text,
         text_pen = self.text_pen,
         ignore_keys = self.ignore_keys,
@@ -80,8 +81,6 @@ function TextEditor:onScrollbar(scroll_spec)
         #self.editor.lines - height + 1,
         math.max(1, render_start_line)
     ))
-
-    self:updateScrollbar()
 end
 
 function TextEditor:updateScrollbar()
@@ -99,6 +98,8 @@ function TextEditor:updateScrollbar()
 end
 
 function TextEditor:renderSubviews(dc)
+    self:updateScrollbar()
+
     self.editor.frame_body.y1 = self.frame_body.y1-(self.render_start_line_y - 1)
     self.editor:render(dc)
     self.scrollbar:render(dc)
@@ -711,8 +712,10 @@ function JournalScreen:init()
             frame={w=65, h=45},
             resizable=true,
             resize_min={w=32, h=10},
+            frame_inset=0,
             subviews={
                 TextEditor{
+                    frame={l=1, t=1, b=1, r=0},
                     text=content,
                     on_change=function(text) self:saveContextContent(text) end
                 }
