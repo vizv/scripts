@@ -288,11 +288,12 @@ end
 function TextEditorView:setText(text, cursor_x, cursor_y)
     local changed = self.text ~= text
     self.text = text
-    self:recomputeLines()
 
     if cursor_x and cursor_y then
         self:setCursor(cursor_x, cursor_y)
     end
+
+    self:recomputeLines()
 
     if changed and self.on_change then
         self.on_change(text)
