@@ -141,20 +141,42 @@ function TextEditorView:getPreferredFocusState()
 end
 
 function TextEditorView:postComputeFrame()
+    self:stashCursor()
+
     self:recomputeLines()
+
+    self:restoreCursor()
 end
 
-function TextEditorView:recomputeLines()
-    local orig_index = self.cursor and self:cursorToIndex(
-        self.cursor.x - 1,
-        self.cursor.y
+function TextEditorView:stashCursor(cursor_x, cursor_y)
+    local cursor = (
+        cursor_x and cursor_y and {x=cursor_x, y=cursor_y}
+    ) or self.cursor
+    self.stash_cursor_index = cursor and self:cursorToIndex(
+        cursor.x - 1,
+        cursor.y
     )
-    local orig_sel_end = self.sel_end and self:cursorToIndex(
+    self.stash_sel_end = self.sel_end and self:cursorToIndex(
         self.sel_end.x - 1,
         self.sel_end.y
     )
+end
 
-    self.lines = self.text:wrap(
+function TextEditorView:restoreCursor()
+    local cursor = self.stash_cursor_index and
+        self:indexToCursor(self.stash_cursor_index)
+        or {
+            x = math.max(1, #self.lines[#self.lines]),
+            y = math.max(1, #self.lines)
+        }
+
+    self:setCursor(cursor.x, cursor.y)
+    self.sel_end = self.stash_sel_end and
+        self:indexToCursor(self.stash_sel_end) or nil
+end
+
+function TextEditorView:recomputeLines()
+    self.lines = strict_wrap(self.text,
         self.frame_body.width,
         {
             return_as_table=true,
@@ -165,19 +187,15 @@ function TextEditorView:recomputeLines()
     -- as cursor always point to "next" char we need invisible last char
     -- that can not be pass by
     self.lines[#self.lines] = self.lines[#self.lines] .. NEWLINE
-
-    local cursor = orig_index and self:indexToCursor(orig_index)
-        or {
-            x = math.max(1, #self.lines[#self.lines]),
-            y = math.max(1, #self.lines)
-        }
-    self:setCursor(cursor.x, cursor.y)
-    self.sel_end = orig_sel_end and self:indexToCursor(orig_sel_end) or nil
 end
 
 function TextEditorView:setCursor(x, y)
     x, y = self:normalizeCursor(x, y)
     self.cursor = {x=x, y=y}
+
+    if self.debug then
+        print(string.format('cursor {%s, %s}', x, y))
+    end
 
     self.sel_end = nil
     self.last_cursor_x = nil
@@ -289,11 +307,11 @@ function TextEditorView:setText(text, cursor_x, cursor_y)
     local changed = self.text ~= text
     self.text = text
 
-    if cursor_x and cursor_y then
-        self:setCursor(cursor_x, cursor_y)
-    end
+    self:stashCursor(cursor_x, cursor_y)
 
     self:recomputeLines()
+
+    self:restoreCursor()
 
     if changed and self.on_change then
         self.on_change(text)
@@ -311,6 +329,7 @@ function TextEditorView:insert(text)
         self.text:sub(1, index) ..
         text ..
         self.text:sub(index + 1)
+
     self:setText(new_text, self.cursor.x + #text, self.cursor.y)
 end
 
