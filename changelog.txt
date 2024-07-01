@@ -37,6 +37,7 @@ Template for new versions:
 - `fix/occupancy`: fixes issues where you can't build somewhere because the game tells you an item/unit/building is in the way but there's nothing there
 - `fix/sleepers`: (reinstated) fixes sleeping units belonging to a camp that never wake up.
 - `timestream`: (reinstated) keep the game running quickly even when there are large numbers of units on the map
+- `gui/journal`: fort journal with a multi-line text editor
 - `devel/luacov`: (reinstated) add Lua script coverage reporting for use in testing and performance analysis
 
 ## New Features
