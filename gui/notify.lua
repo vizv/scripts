@@ -70,6 +70,7 @@ end
 function NotifyOverlay:overlay_onupdate()
     local choices = {}
     local is_adv = dfhack.world.isAdventureMode()
+    self.critical = false
     for _, notification in ipairs(notifications.NOTIFICATIONS_BY_IDX) do
         if not notifications.config.data[notification.name].enabled then goto continue end
         local fn = get_fn(notification, is_adv)
@@ -80,6 +81,7 @@ function NotifyOverlay:overlay_onupdate()
                 text=str,
                 data=notification,
             })
+            self.critical = self.critical or notification.critical
         end
         ::continue::
     end
@@ -99,6 +101,7 @@ function NotifyOverlay:overlay_onupdate()
     if self.frame_parent_rect then
         self:preUpdateLayout(self.frame_parent_rect)
     end
+    self.prev_frame_counter = df.global.world.frame_counter
 end
 
 function NotifyOverlay:preUpdateLayout(parent_rect)
@@ -152,6 +155,14 @@ AdvNotifyOverlay.ATTRS{
     default_pos={x=18,y=-5},
     viewscreens='dungeonmode/Default',
 }
+
+function AdvNotifyOverlay:render(dc)
+    if self.critical and self.prev_frame_counter ~= df.global.world.frame_counter then
+        self.prev_frame_counter = df.global.world.frame_counter
+        self:overlay_onupdate()
+    end
+    AdvNotifyOverlay.super.render(self, dc)
+end
 
 OVERLAY_WIDGETS = {
     panel=DwarfNotifyOverlay,
