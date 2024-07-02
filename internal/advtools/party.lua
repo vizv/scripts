@@ -23,7 +23,7 @@ local function addToCoreParty(nemesis)
     end
     -- Adds them to unretire list
     nemesis.flags.ADVENTURER = true
-    
+
     -- Make sure they're no longer nameless
     local unit = df.unit.find(nemesis.figure.unit_id)
     makeown.name_unit(unit)
