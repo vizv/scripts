@@ -229,7 +229,7 @@ local function adjust_activities(timeskip)
 end
 
 local function on_tick()
-    local real_fps = math.max(1, df.global.enabler.calculated_fps)
+    local real_fps = math.max(1, dfhack.internal.getUnpausedFps())
     if real_fps >= state.settings.fps then
         timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
         return
