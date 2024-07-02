@@ -5,7 +5,7 @@ local shooting = reqscript('internal/advtools/shooting')
 
 OVERLAY_WIDGETS = {
     conversation=convo.AdvRumorsOverlay,
-    shooting=shooting.FixShootingOverlay,
+    fix_shooting=shooting.FixShootingOverlay,
 }
 
 if dfhack_flags.module then
