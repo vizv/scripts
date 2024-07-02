@@ -58,13 +58,10 @@ local function adjustPetOwner(pet_owner_record, pet_record)
     local party = df.global.adventure.interactions
     local owner_in_party = findInParty(party.party_core_members, pet_owner_record.figure.id) or findInParty(party.party_extra_members, pet_owner_record.figure.id)
     if not owner_in_party then
-        print("the pet's owner is NOT a companion. We need to associate the pet with the owner correctly so the pet's unit is not inaccessible.")
         fixGiftedPet(pet_record, pet_owner_record)
         utils.erase_sorted(party.party_pets, pet_record.figure.id)
         return true
     else
-        print("the pet's owner is a companion! Assigning their pets to our follower pets.")
-        party.party_pets:insert('#', pet_record.figure.id)
         return false
     end
 end
@@ -81,8 +78,12 @@ local function fixGiftedPets(nemesis)
             local pet_owner_record = findPetOwnerOf(companion_record)
             if pet_owner_record then
                 print("pet owner confirmed! Identified nemesis "..pet_owner_record.id.." as owner.")
-                if adjustPetOwner(pet_owner_record, pet_record) then
+                if adjustPetOwner(pet_owner_record, companion_record) then
+                    print("the pet's owner is NOT a companion. We need to associate the pet with the owner correctly so the pet's unit is not inaccessible.")
                     queueCompanionErase[companion_record.id] = true
+                else -- owner needed no adjusting, all that's missing is pet being attached to adventurer so fast travel pets work
+                    print("the pet's owner is a companion! Added them to our adventurer party pets so they don't get lost in fast travel.")
+                    party.party_pets:insert('#', companion_record.figure.id)
                 end
             end
         end
