@@ -45,6 +45,7 @@ Template for new versions:
 - `gui/notify`: new notification type: injured citizens; click to zoom to injured units; also displays a warning if your hospital is not functional (or if you have no hospital)
 - `prioritize`: new info panel on under-construction buildings showing if the construction job has been taken and by whom. click to zoom to builder; toggle high priority status for job if it's not yet taken and you need it to be built ASAP
 - `gui/pathable`: new "Depot" mode that shows whether wagons can path to your trade depot
+- `advtools`: automatically add a conversation option to "ask whereabouts of" for all your relationships (before, you could only ask whereabouts of people involved in rumors)
 - `gui/design`: all-new visually-driven UI for much improved usability
 
 ## Fixes

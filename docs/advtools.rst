@@ -35,4 +35,7 @@ framework. They can be repositioned via `gui/overlay` or toggled via
 
 When enabled, this overlay will automatically add additional searchable
 keywords to conversation topics. In particular, topics that relate to slain
-enemies will gain the ``slay`` and ``kill`` keywords.
+enemies will gain the ``slay`` and ``kill`` keywords. It will also add additional
+conversation options for asking whereabouts of your relationships - in vanilla,
+you can only ask whereabouts of historical figures involved in rumors you personally
+witnessed or heard about.
