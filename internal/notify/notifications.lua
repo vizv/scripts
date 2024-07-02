@@ -494,14 +494,14 @@ NOTIFICATIONS_BY_IDX = {
         name='suffocation_adv',
         desc='Shows a suffocation bar when you are drowning or breathless.',
         default=true,
-        adv_fn=curry(get_bar, function() return get_breath() < get_max_breath() end, "Suffocation!", LIGHT_CYAN),
+        adv_fn=curry(get_bar, function() return get_breath() < get_max_breath() end, "Suffocation!", COLOR_LIGHTCYAN),
         on_click=nil,
     },
     {
         name='bleeding_adv',
         desc='Shows a bleeding bar when you are losing blood.',
         default=true,
-        adv_fn=curry(get_bar, function() return get_blood() < get_max_blood() end, "Bloodloss!", LIGHT_RED),
+        adv_fn=curry(get_bar, function() return get_blood() < get_max_blood() end, "Bloodloss!", COLOR_RED),
         on_click=nil,
     },
 }
