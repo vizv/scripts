@@ -28,6 +28,7 @@ Template for new versions:
 
 ## New Tools
 - `advtools`: collection of useful commands and overlays for adventure mode
+- `advtools`: added a fix for the shooting bug that corrupts throwing/shooting and can cause crashes between save loads
 - `pop-control`: (reinstated) limit the maximum size of migrant waves
 - `bodyswap`: (reinstated) take control of another unit in adventure mode
 - `gui/sitemap`: list and zoom to people, locations, and artifacts
