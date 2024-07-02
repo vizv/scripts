@@ -107,4 +107,6 @@ local function fixGiftedPets(nemesis)
     end
 end
 
-fixGiftedPets(df.nemesis_record.find(df.global.adventure.player_id))
+function run()
+    fixGiftedPets(df.nemesis_record.find(df.global.adventure.player_id))
+end

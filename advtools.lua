@@ -2,6 +2,7 @@
 
 local convo = reqscript('internal/advtools/convo')
 local party = reqscript('internal/advtools/party')
+local pets = reqscript('internal/advtools/pets')
 
 OVERLAY_WIDGETS = {
     conversation=convo.AdvRumorsOverlay,
@@ -13,6 +14,7 @@ end
 
 local commands = {
     party=party.run,
+    pets=pets.run,
 }
 
 local args = {...}
