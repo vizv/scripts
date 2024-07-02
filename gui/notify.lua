@@ -16,7 +16,6 @@ NotifyOverlay = defclass(NotifyOverlay, overlay.OverlayWidget)
 NotifyOverlay.ATTRS{
     default_enabled=true,
     frame={w=30, h=LIST_MAX_HEIGHT+2},
-    overlay_onupdate_max_freq_seconds=5,
 }
 
 function NotifyOverlay:init()
@@ -71,11 +70,6 @@ end
 function NotifyOverlay:overlay_onupdate()
     local choices = {}
     local is_adv = dfhack.world.isAdventureMode()
-    if is_adv then
-        self.overlay_onupdate_max_freq_seconds=0
-    else
-        self.overlay_onupdate_max_freq_seconds=5
-    end
     for _, notification in ipairs(notifications.NOTIFICATIONS_BY_IDX) do
         if not notifications.config.data[notification.name].enabled then goto continue end
         local fn = get_fn(notification, is_adv)
