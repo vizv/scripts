@@ -197,16 +197,16 @@ local EffectFlagDescription = {
 
         return ("RECIEVED DAMAGE SCALED BY %s%%%s"):format(
             (effect.fraction_mul * 100 / effect.fraction_div * 100) / 100,
-            material and ("vs. %s"):format(material.stone_name)
+            material and ("vs. %s"):format(material.stone_name) or ''
         )
     end,
-    -- TODO: Unfinished, unknown fields from previous script.
     [df.creature_interaction_effect_type.BODY_MAT_INTERACTION] = function(effect)
         return ("%s %s"):format(effect.interaction_name, effect.interaction_id)
     end,
-    -- TODO: Unfinished.
     [df.creature_interaction_effect_type.BODY_APPEARANCE_MODIFIER] = function(effect)
-        return ("TODO"):format(effect.interaction_name, effect.interaction_id)
+        return ("VALUE=%s MODIFIER_TYPE=%s"):format(
+            effect.appearance_modifier_value,
+            df.appearance_modifier_type[effect.appearance_modifier])
     end,
     [df.creature_interaction_effect_type.BP_APPEARANCE_MODIFIER] = function(effect)
         return ("VALUE=%s MODIFIER_TYPE=%s CHANGE_TYPE_ENUM=%s"):format(
