@@ -291,20 +291,17 @@ local function get_breath()
     return get_max_breath() - dfhack.world.getAdventurer().counters.suffocation
 end
 
-local function get_suffocation_message()
-    if get_breath() < get_max_breath() then
+local function get_bar(fn, text, color)
+    if fn() then
         local label_text = {}
-        local suffocation_pen = COLOR_LIGHTCYAN
-        -- if self.blink then
-        --     suffocation_pen = COLOR_CYAN
-        -- end
-        table.insert(label_text, {text = "Suffocating!", pen = suffocation_pen, width = 14})
+        local suffocation_pen = color
+        table.insert(label_text, {text = text, pen = suffocation_pen, width = 14})
 
         local bar_width = 16
         local percentage = get_breath() / get_max_breath()
         local barstop = math.floor((bar_width * percentage) + 0.5)
         for idx = 0, bar_width-1 do
-            local color = COLOR_LIGHTCYAN
+            local color = color
             local char = 219
             if idx >= barstop then
                 -- offset it to the hollow graphic
@@ -315,32 +312,7 @@ local function get_suffocation_message()
         end
         return label_text
     end
-end
-
-local function get_bleeding_message()
-    if get_blood() < get_max_blood() then
-        local label_text = {}
-        local bloodloss_pen = COLOR_RED
-        -- if self.blink then
-        --     bloodloss_pen = COLOR_LIGHTRED
-        -- end
-        table.insert(label_text, {text = "Bloodloss!", pen = bloodloss_pen, width = 14})
-
-        local margin = 14
-        local percentage = get_blood() / get_max_blood()
-        local barstop = math.floor((margin * percentage) + 0.5)
-        for idx = 0, margin-1 do
-            local color = COLOR_RED
-            local char = 219
-            if idx >= barstop then
-                -- offset it to the hollow graphic
-                color = COLOR_DARKGRAY
-                char = 177
-            end
-            table.insert(label_text, { width = 1, tile={ch=char, fg=color}})
-        end
-        return label_text
-    end
+    return nil
 end
 
 -- the order of this list controls the order the notifications will appear in the overlay
@@ -522,14 +494,14 @@ NOTIFICATIONS_BY_IDX = {
         name='suffocation_adv',
         desc='Shows a suffocation bar when you are drowning or breathless.',
         default=true,
-        adv_fn=get_suffocation_message,
+        adv_fn=curry(get_bar, function() return get_breath() < get_max_breath() end, "Suffocation!", LIGHT_CYAN),
         on_click=nil,
     },
     {
         name='bleeding_adv',
         desc='Shows a bleeding bar when you are losing blood.',
         default=true,
-        adv_fn=get_bleeding_message,
+        adv_fn=curry(get_bar, function() return get_blood() < get_max_blood() end, "Bloodloss!", LIGHT_RED),
         on_click=nil,
     },
 }
