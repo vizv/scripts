@@ -21,7 +21,7 @@ Examples
 ``party`` Command
 -----------------
 
-When you run this command, it will show you a list of your extra party and let you choose
+When you run this command, you will get a list of your extra party members and can choose
 who to promote into your "core party", aka let you control them in the tactics mode, not
 dissimilar to what you get if you create a group of adventurers during character creation.
 
