@@ -1,6 +1,6 @@
 -- Fixes pets gifted to another unit in Adventure Mode
 -- Fixes pets owned by companions missing from the companions list
-local utils = require 'utils'
+local utils = require('utils')
 
 local function findPetOwnerOf(petNemesis)
     if petNemesis.figure then
