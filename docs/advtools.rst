@@ -11,9 +11,10 @@ Usage
 ::
 
     advtools party
+    advtools pets
 
-Examples
---------
+Party
+-----
 
 ``advtools party``
     Shows a dialog prompt to promote your extra party members to your core (controllable) party.
@@ -24,6 +25,23 @@ Examples
 When you run this command, you will get a list of your extra party members and can choose
 who to promote into your "core party", aka let you control them in the tactics mode, not
 dissimilar to what you get if you create a group of adventurers during character creation.
+
+Pets
+----
+
+``advtools pets``
+    Fixes companion pets and pets you have gifted to prevent buggy behavior and crashes.
+
+``pets`` Command
+----------------
+
+Run this command after you gift a pet or after you hire a companion who has their own pets following them.
+
+For companions, this script fixes their pets not being added to your adventurer party,
+preventing their pets from getting lost in fast-travel and being forced to follow you as a separate army.
+
+If run after you gift a pet to a unit outside of your party, this script prevents those pets from being lost in the site and
+ignoring their pet owner's associated home building. It also removes the link the pet erroneously retains to your companion data.
 
 Overlays
 --------
