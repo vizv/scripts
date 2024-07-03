@@ -97,17 +97,18 @@ function TextEditor:init()
         end,
 
         on_cursor_change = function ()
-            -- if (self.editor.cursor.y >= self.render_start_line_y + self.editor.frame_body.height) then
-            --     self:setRenderStartLineY(self.editor.cursor.y - self.editor.frame_body.height + 1)
-            -- elseif  (self.editor.cursor.y < self.render_start_line_y) then
-            --     self:setRenderStartLineY(self.editor.cursor.y)
-            -- end
+            local x, y = self.editor.wrapped_text:indexToCoords(self.editor.cursor)
+            if (y >= self.render_start_line_y + self.editor.frame_body.height) then
+                self:setRenderStartLineY(y - self.editor.frame_body.height + 1)
+            elseif  (y < self.render_start_line_y) then
+                self:setRenderStartLineY(self.editor.cursor.y)
+            end
         end
     }
 
     self:addviews{
-        self.editor,
-        self.scrollbar
+        self.scrollbar,
+        self.editor
     }
     self:setFocus(true)
 end
@@ -164,6 +165,15 @@ function TextEditor:renderSubviews(dc)
     self.scrollbar:render(dc)
 end
 
+function TextEditor:onInput(keys)
+    if (self.scrollbar.is_dragging) then
+        return self.scrollbar:onInput(keys)
+    end
+
+    return self:inputToSubviews(keys)
+end
+
+
 function TextEditor:setRenderStartLineY(render_start_line_y)
     self.render_start_line_y = render_start_line_y
     self.editor:setRenderStartLineY(render_start_line_y)
@@ -183,11 +193,11 @@ TextEditorView.ATTRS{
 }
 
 function TextEditorView:init()
-    self.cursor = #self.text
     self.sel_end = nil
     self.clipboard = nil
     self.clipboard_mode = CLIPBOARD_MODE.LOCAL
     self.render_start_line_y = 1
+    self.cursor = #self.text + 1
     self.wrapped_text = WrappedText{
         text=self.text,
         wrap_width=256
@@ -205,33 +215,6 @@ end
 function TextEditorView:postComputeFrame()
     self:recomputeLines()
 end
-
--- function TextEditorView:stashCursor(cursor_x, cursor_y)
---     local cursor = (
---         cursor_x and cursor_y and {x=cursor_x, y=cursor_y}
---     ) or self.cursor
---     self.stash_cursor_index = cursor and self.wrapped_text:coordsToIndex(
---         cursor.x - 1,
---         cursor.y
---     )
---     self.stash_sel_end = self.sel_end and self.wrapped_text:coordsToIndex(
---         self.sel_end.x - 1,
---         self.sel_end.y
---     )
--- end
-
--- function TextEditorView:restoreCursor()
---     local cursor = self.stash_cursor_index and
---         self:indexToCoords(self.stash_cursor_index)
---         or {
---             x = math.max(1, #self.wrapped_text.lines[#self.wrapped_text.lines]),
---             y = math.max(1, #self.wrapped_text.lines)
---         }
-
---     self:setCursor(cursor.x, cursor.y)
---     self.sel_end = self.stash_sel_end and
---         self:indexToCoords(self.stash_sel_end) or nil
--- end
 
 function TextEditorView:recomputeLines()
     self.wrapped_text:update(self.text, self.frame_body.width)
@@ -353,11 +336,7 @@ function TextEditorView:setText(text)
     local changed = self.text ~= text
     self.text = text
 
-    -- self:stashCursor(cursor_x, cursor_y)
-
     self:recomputeLines()
-
-    -- self:restoreCursor()
 
     if changed and self.on_change then
         self.on_change(text)

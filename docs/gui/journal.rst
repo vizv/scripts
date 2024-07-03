@@ -45,7 +45,7 @@ Supported Features
 - Paste Text: Use :kbd:`Ctrl+V` to paste text from the clipboard into the editor.
   - replace selected text, if available
   - If no text is selected, paste text in the cursor position
-
+- Scrolling behaviour for long text build-in
 Usage
 -----
 
