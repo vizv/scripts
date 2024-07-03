@@ -3,6 +3,8 @@
 local gui = require('gui')
 local widgets = require('gui.widgets')
 
+local skills_progress = reqscript('internal/unit-info-viewer/skills-progress')
+
 --------------------------------------------------
 ---------------------- Time ----------------------
 --------------------------------------------------
@@ -546,6 +548,10 @@ end
 function UnitInfoScreen:onDismiss()
     view = nil
 end
+
+OVERLAY_WIDGETS = {
+    skillprogress=skills_progress.SkillProgressOverlay,
+}
 
 if dfhack_flags.module then
     return
