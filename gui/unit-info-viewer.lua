@@ -549,12 +549,12 @@ function UnitInfoScreen:onDismiss()
     view = nil
 end
 
+OVERLAY_WIDGETS = {
+    skillprogress=skills_progress.SkillProgressOverlay,
+}
+
 if dfhack_flags.module then
     return
 end
 
 view = view and view:raise() or UnitInfoScreen{}:show()
-
-OVERLAY_WIDGETS = {
-    skillprogress=skills_progress.SkillProgressOverlay,
-}
