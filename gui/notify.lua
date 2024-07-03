@@ -158,12 +158,22 @@ AdvNotifyOverlay.ATTRS{
     right_offset=13,
 }
 
-function AdvNotifyOverlay:render(dc)
-    if mi.current_hover > -1 or
-        df.global.adventure.player_control_state ~= df.adventurest.T_player_control_state.TAKING_INPUT
-    then
-        return
+function AdvNotifyOverlay:set_width()
+    local desired_width = 13
+    if df.global.adventure.player_control_state ~= df.adventurest.T_player_control_state.TAKING_INPUT then
+        local offset = self.frame_parent_rect.width > 137 and 26 or
+            (self.frame_parent_rect.width+1) // 2 - 43
+        desired_width = self.frame_parent_rect.width // 2 + offset
     end
+    if self.right_offset ~= desired_width then
+        self.right_offset = desired_width
+        self:updateLayout()
+    end
+end
+
+function AdvNotifyOverlay:render(dc)
+    if mi.current_hover > -1 then return end
+    self:set_width()
     if self.critical and self.prev_tick_counter ~= df.global.adventure.tick_counter then
         self.prev_tick_counter = df.global.adventure.tick_counter
         self:overlay_onupdate()
