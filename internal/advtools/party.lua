@@ -47,8 +47,5 @@ local function showExtraPartyPrompt()
 end
 
 function run()
-    if not dfhack.world.isAdventureMode() then
-        qerror("This script can only be used during adventure mode!")
-    end
     showExtraPartyPrompt()
 end
