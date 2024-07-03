@@ -5,6 +5,65 @@ local widgets = require 'gui.widgets'
 
 local CLIPBOARD_MODE = {LOCAL = 1, LINE = 2}
 
+-- wrapped text are derivate of text,
+-- stored as class for performance and readability
+WrappedText = defclass(WrappedText)
+
+WrappedText.ATTRS{
+    text = '',
+    wrap_width = 0,
+}
+
+function WrappedText:init()
+    self:update(self.text, self.wrap_width)
+end
+
+function WrappedText:update(text, wrap_width)
+    self.lines = text:wrap(
+        wrap_width,
+        {
+            return_as_table=true,
+            keep_trailing_spaces=true,
+            keep_original_newlines=true
+        }
+    )
+
+    -- as cursor always point to "next" char we need invisible last char
+    -- that can not be pass by
+    self.lines[#self.lines] = self.lines[#self.lines] .. NEWLINE
+end
+
+function WrappedText:coordsToIndex(x, y)
+    local offset = 0
+
+    local normalized_y = math.max(
+        1,
+        math.min(y, #self.lines)
+    )
+    local normalized_x = math.max(
+        1,
+        math.min(x, #self.lines[normalized_y])
+    )
+
+    for i=1, normalized_y - 1 do
+      offset = offset + #self.lines[i]
+    end
+
+    return offset + normalized_x
+end
+
+function WrappedText:indexToCoords(index)
+    local offset = index
+    for y, line in ipairs(self.lines) do
+        if offset < #line then
+            return offset, y
+        end
+        offset = offset - #line
+    end
+
+    return #self.lines[#self.lines], #self.lines
+end
+
 TextEditor = defclass(TextEditor, widgets.Widget)
 
 TextEditor.ATTRS{
@@ -13,7 +72,7 @@ TextEditor.ATTRS{
     ignore_keys = {'STRING_A096'},
     select_pen = COLOR_CYAN,
     on_change = DEFAULT_NIL,
-    debug = false
+    debug = true
 }
 
 function TextEditor:init()
@@ -38,11 +97,11 @@ function TextEditor:init()
         end,
 
         on_cursor_change = function ()
-            if (self.editor.cursor.y >= self.render_start_line_y + self.editor.frame_body.height) then
-                self:setRenderStartLineY(self.editor.cursor.y - self.editor.frame_body.height + 1)
-            elseif  (self.editor.cursor.y < self.render_start_line_y) then
-                self:setRenderStartLineY(self.editor.cursor.y)
-            end
+            -- if (self.editor.cursor.y >= self.render_start_line_y + self.editor.frame_body.height) then
+            --     self:setRenderStartLineY(self.editor.cursor.y - self.editor.frame_body.height + 1)
+            -- elseif  (self.editor.cursor.y < self.render_start_line_y) then
+            --     self:setRenderStartLineY(self.editor.cursor.y)
+            -- end
         end
     }
 
@@ -78,13 +137,13 @@ function TextEditor:onScrollbar(scroll_spec)
     end
 
     self:setRenderStartLineY(math.min(
-        #self.editor.lines - height + 1,
+        #self.editor.wrapped_text.lines - height + 1,
         math.max(1, render_start_line)
     ))
 end
 
 function TextEditor:updateScrollbar()
-    local lines_count = #self.editor.lines
+    local lines_count = #self.editor.wrapped_text.lines
 
     self.scrollbar:update(
         self.render_start_line_y,
@@ -125,11 +184,15 @@ TextEditorView.ATTRS{
 
 function TextEditorView:init()
     self.cursor = nil
-    -- lines are derivate of text, stored as variable for performance
-    self.lines = {}
+    self.cursor_offset = #self.text
+    self.sel_end_offset = nil
     self.clipboard = nil
     self.clipboard_mode = CLIPBOARD_MODE.LOCAL
     self.render_start_line_y = 1
+    self.wrapped_text = WrappedText{
+        text=self.text,
+        wrap_width=256
+    }
 end
 
 function TextEditorView:setRenderStartLineY(render_start_line_y)
@@ -141,63 +204,48 @@ function TextEditorView:getPreferredFocusState()
 end
 
 function TextEditorView:postComputeFrame()
-    self:stashCursor()
-
     self:recomputeLines()
-
-    self:restoreCursor()
 end
 
-function TextEditorView:stashCursor(cursor_x, cursor_y)
-    local cursor = (
-        cursor_x and cursor_y and {x=cursor_x, y=cursor_y}
-    ) or self.cursor
-    self.stash_cursor_index = cursor and self:cursorToIndex(
-        cursor.x - 1,
-        cursor.y
-    )
-    self.stash_sel_end = self.sel_end and self:cursorToIndex(
-        self.sel_end.x - 1,
-        self.sel_end.y
-    )
-end
+-- function TextEditorView:stashCursor(cursor_x, cursor_y)
+--     local cursor = (
+--         cursor_x and cursor_y and {x=cursor_x, y=cursor_y}
+--     ) or self.cursor
+--     self.stash_cursor_index = cursor and self.wrapped_text:coordsToIndex(
+--         cursor.x - 1,
+--         cursor.y
+--     )
+--     self.stash_sel_end = self.sel_end and self.wrapped_text:coordsToIndex(
+--         self.sel_end.x - 1,
+--         self.sel_end.y
+--     )
+-- end
 
-function TextEditorView:restoreCursor()
-    local cursor = self.stash_cursor_index and
-        self:indexToCursor(self.stash_cursor_index)
-        or {
-            x = math.max(1, #self.lines[#self.lines]),
-            y = math.max(1, #self.lines)
-        }
+-- function TextEditorView:restoreCursor()
+--     local cursor = self.stash_cursor_index and
+--         self:indexToCoords(self.stash_cursor_index)
+--         or {
+--             x = math.max(1, #self.wrapped_text.lines[#self.wrapped_text.lines]),
+--             y = math.max(1, #self.wrapped_text.lines)
+--         }
 
-    self:setCursor(cursor.x, cursor.y)
-    self.sel_end = self.stash_sel_end and
-        self:indexToCursor(self.stash_sel_end) or nil
-end
+--     self:setCursor(cursor.x, cursor.y)
+--     self.sel_end = self.stash_sel_end and
+--         self:indexToCoords(self.stash_sel_end) or nil
+-- end
 
 function TextEditorView:recomputeLines()
-    self.lines = self.text:wrap(
-        self.frame_body.width,
-        {
-            return_as_table=true,
-            keep_trailing_spaces=true,
-            keep_original_newlines=true
-        }
-    )
-    -- as cursor always point to "next" char we need invisible last char
-    -- that can not be pass by
-    self.lines[#self.lines] = self.lines[#self.lines] .. NEWLINE
+    self.wrapped_text:update(self.text, self.frame_body.width)
 end
 
-function TextEditorView:setCursor(x, y)
-    x, y = self:normalizeCursor(x, y)
-    self.cursor = {x=x, y=y}
+function TextEditorView:setCursor(cursor_offset)
+    self.cursor_offset = cursor_offset
 
     if self.debug then
-        print(string.format('cursor {%s, %s}', x, y))
+        print('cursor', self.cursor_offset)
     end
 
-    self.sel_end = nil
+    self.sel_end_offset = nil
     self.last_cursor_x = nil
 
     if self.on_cursor_change then
@@ -206,34 +254,32 @@ function TextEditorView:setCursor(x, y)
 end
 
 function TextEditorView:normalizeCursor(x, y)
-    local lines_count = #self.lines
+    local lines_count = #self.wrapped_text.lines
 
     while (x < 1 and y > 1) do
         y = y - 1
-        x = x + #self.lines[y]
+        x = x + #self.wrapped_text.lines[y]
     end
 
-    while (x > #self.lines[y] and y < lines_count) do
-        x = x - #self.lines[y]
+    while (x > #self.wrapped_text.lines[y] and y < lines_count) do
+        x = x - #self.wrapped_text.lines[y]
         y = y + 1
     end
 
-    x = math.min(x, #self.lines[y])
+    x = math.min(x, #self.wrapped_text.lines[y])
     y = math.min(y, lines_count)
 
     return math.max(1, x), math.max(1, y)
 end
 
-function TextEditorView:setSelection(from_x, from_y, to_x, to_y)
-    from_x, from_y = self:normalizeCursor(from_x, from_y)
-    to_x, to_y = self:normalizeCursor(to_x, to_y)
-
+function TextEditorView:setSelection(from_offset, to_offset)
     -- text selection is always start on self.cursor and on self.sel_end
-    local from = {x=from_x, y=from_y}
-    local to = {x=to_x, y=to_y}
+    self:setCursor(from_offset)
+    self.sel_end = to_offset
 
-    self.cursor = from
-    self.sel_end = to
+    if self.debug and to_offset then
+        print('sel_end', to_offset)
+    end
 end
 
 function TextEditorView:hasSelection()
@@ -242,16 +288,15 @@ end
 
 function TextEditorView:eraseSelection()
     if (self:hasSelection()) then
-        local from, to = self.cursor, self.sel_end
-        if (from.y > to.y or (from.y == to.y and from.x > to.x)) then
+        local from, to = self.cursor_offset, self.sel_end
+        if (from > to) then
             from, to = to, from
         end
 
-        local from_ind = self:cursorToIndex(from.x, from.y)
-        local to_ind = self:cursorToIndex(to.x, to.y)
+        local new_text = self.text:sub(1, from - 1) .. self.text:sub(to + 1)
+        self:setText(new_text)
 
-        local new_text = self.text:sub(1, from_ind - 1) .. self.text:sub(to_ind + 1)
-        self:setText(new_text, from.x, from.y)
+        self:setCursor(from)
         self.sel_end = nil
     end
 end
@@ -264,20 +309,22 @@ function TextEditorView:copy()
     if self.sel_end then
         self.clipboard_mode =  CLIPBOARD_MODE.LOCAL
 
-        local from = self.cursor
+        local from = self.cursor_offset
         local to = self.sel_end
 
-        local from_ind = self:cursorToIndex(from.x, from.y)
-        local to_ind = self:cursorToIndex(to.x, to.y)
-        if from_ind > to_ind then
-            from_ind, to_ind = to_ind, from_ind
+        if from > to then
+            from, to = to, from
         end
 
-        self:setClipboard(self.text:sub(from_ind, to_ind))
+        self:setClipboard(self.text:sub(from, to))
     else
         self.clipboard_mode = CLIPBOARD_MODE.LINE
 
-        self:setClipboard(self.lines[self.cursor.y])
+        local curr_line = self.text:sub(
+            self:lineStartOffset(),
+            self:lineEndOffset()
+        )
+        self:setClipboard(curr_line)
     end
 end
 
@@ -291,10 +338,10 @@ function TextEditorView:paste()
     local clipboard = table.concat(clipboard_lines, '\n')
     if clipboard then
         if self.clipboard_mode == CLIPBOARD_MODE.LINE and not self:hasSelection() then
-            local cursor_x = self.cursor.x
-            self:setCursor(1, self.cursor.y)
+            local origin_offset = self.cursor_offset
+            self:setCursor(self:lineStartOffset())
             self:insert(clipboard)
-            self:setCursor(cursor_x, self.cursor.y)
+            self:setCursor(origin_offset)
         else
             self:eraseSelection()
             self:insert(clipboard)
@@ -303,15 +350,15 @@ function TextEditorView:paste()
     end
 end
 
-function TextEditorView:setText(text, cursor_x, cursor_y)
+function TextEditorView:setText(text)
     local changed = self.text ~= text
     self.text = text
 
-    self:stashCursor(cursor_x, cursor_y)
+    -- self:stashCursor(cursor_x, cursor_y)
 
     self:recomputeLines()
 
-    self:restoreCursor()
+    -- self:restoreCursor()
 
     if changed and self.on_change then
         self.on_change(text)
@@ -320,41 +367,13 @@ end
 
 function TextEditorView:insert(text)
     self:eraseSelection()
-    local index = self:cursorToIndex(
-        self.cursor.x - 1,
-        self.cursor.y
-    )
-
     local new_text =
-        self.text:sub(1, index) ..
+        self.text:sub(1, self.cursor_offset - 1) ..
         text ..
-        self.text:sub(index + 1)
+        self.text:sub(self.cursor_offset)
 
-    self:setText(new_text, self.cursor.x + #text, self.cursor.y)
-end
-
-function TextEditorView:cursorToIndex(x, y)
-    local cursor = x
-    local lines = {table.unpack(self.lines, 1, y - 1)}
-    for _, line in ipairs(lines) do
-      cursor = cursor + #line
-    end
-
-    return cursor
-end
-
-function TextEditorView:indexToCursor(index)
-    for y, line in ipairs(self.lines) do
-        if index < #line then
-            return {x=index + 1, y=y}
-        end
-        index = index - #line
-    end
-
-    return {
-        x=#self.lines[#self.lines],
-        y=#self.lines
-    }
+    self:setText(new_text)
+    self:setCursor(self.cursor_offset + #text)
 end
 
 function TextEditorView:onRenderBody(dc)
@@ -365,13 +384,13 @@ function TextEditorView:onRenderBody(dc)
 
     local lines_to_render = math.min(
         dc.height,
-        #self.lines - self.render_start_line_y + 1
+        #self.wrapped_text.lines - self.render_start_line_y + 1
     )
 
     dc:seek(0, self.render_start_line_y - 1)
     for i = self.render_start_line_y, self.render_start_line_y + lines_to_render - 1 do
         -- do not render new lines symbol
-        local line = self.lines[i]:gsub(NEWLINE, new_line)
+        local line = self.wrapped_text.lines[i]:gsub(NEWLINE, new_line)
         dc:string(line)
         dc:newline()
     end
@@ -381,49 +400,54 @@ function TextEditorView:onRenderBody(dc)
         and gui.blink_visible(530)
 
     if (show_focus) then
-        dc:seek(self.cursor.x - 1, self.cursor.y - 1)
+        local x, y = self.wrapped_text:indexToCoords(self.cursor_offset)
+        dc:seek(x - 1, y - 1)
             :char('_')
     end
 
     if self:hasSelection() then
         local sel_new_line = self.debug and PERIOD or ''
-        local from, to = self.cursor, self.sel_end
-        if (from.y > to.y or (from.y == to.y and from.x > to.x)) then
+        local from, to = self.cursor_offset, self.sel_end
+        if (from > to) then
             from, to = to, from
         end
 
-        local line = self.lines[from.y]
-            :sub(from.x, to.y == from.y and to.x or nil)
+        local from_x, from_y = self.wrapped_text:indexToCoords(from)
+        local to_x, to_y = self.wrapped_text:indexToCoords(to)
+
+        local line = self.wrapped_text.lines[from_y]
+            :sub(from_x, to_y == from_y and to_x or nil)
             :gsub(NEWLINE, sel_new_line)
+
         dc:pen({ fg=self.text_pen, bg=self.select_pen })
-            :seek(from.x - 1, from.y - 1)
+            :seek(from_x - 1, from_y - 1)
             :string(line)
 
-        for y = from.y + 1, to.y - 1 do
-            line = self.lines[y]:gsub(NEWLINE, sel_new_line)
+        for y = from_y + 1, to_y - 1 do
+            line = self.wrapped_text.lines[y]:gsub(NEWLINE, sel_new_line)
             dc:seek(0, y - 1)
                 :string(line)
         end
 
-        if (to.y > from.y) then
-            local line = self.lines[to.y]
-                :sub(1, to.x)
+        if (to_y > from_y) then
+            local line = self.wrapped_text.lines[to_y]
+                :sub(1, to_x)
                 :gsub(NEWLINE, sel_new_line)
-            dc:seek(0, to.y - 1)
+            dc:seek(0, to_y - 1)
                 :string(line)
         end
 
         dc:pen({fg=self.text_pen, bg=COLOR_RESET})
     end
 
-    if self.debug then
+    if false and self.debug then
         local cursor_char = self:charAtCursor()
         local debug_msg = string.format(
             'x: %s y: %s ind: %s #line: %s char: %s',
             self.cursor.x,
             self.cursor.y,
-            self:cursorToIndex(self.cursor.x, self.cursor.y),
-            #self.lines[self.cursor.y],
+            self.wrapped_text:coordsToIndex(self.cursor.x, self.cursor.y),
+            #self.wrapped_text.lines[self.cursor.y],
             (cursor_char == NEWLINE and 'NEWLINE') or
             (cursor_char == ' ' and 'SPACE') or
             (cursor_char == '' and 'nil') or
@@ -443,8 +467,7 @@ function TextEditorView:onRenderBody(dc)
 end
 
 function TextEditorView:charAtCursor()
-    local cursor_ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
-    return self.text:sub(cursor_ind, cursor_ind)
+    return self.text:sub(self.cursor_offset, self.cursor_offset)
 end
 
 function TextEditorView:getMultiLeftClick()
@@ -470,31 +493,33 @@ function TextEditorView:triggerMultiLeftClick()
 end
 
 function TextEditorView:currentSpacesRange()
-    local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
     -- select "word" only from spaces
     local prev_word_end, _  = self.text
-        :sub(1, ind)
+        :sub(1, self.cursor_offset)
         :find('[^%s]%s+$')
-    local _, next_word_start = self.text:find('%s[^%s]', ind)
+    local _, next_word_start = self.text:find('%s[^%s]', self.cursor_offset)
 
-    return {
-        x_from=prev_word_end and self.cursor.x - (ind - prev_word_end) + 1 or 1,
-        x_to=next_word_start and self.cursor.x + next_word_start - ind - 1 or #self.text
-    }
+    return prev_word_end + 1 or 1, next_word_start - 1 or #self.text
 end
 
 function TextEditorView:currentWordRange()
     -- select current word
-    local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
     local _, prev_word_end = self.text
-        :sub(1, ind-1)
+        :sub(1, self.cursor_offset - 1)
         :find('.*[%s,."\']')
-    local next_word_start, _  = self.text:find('[%s,."\']', ind)
+    local next_word_start, _  = self.text:find('[%s,."\']', self.cursor_offset)
 
-    return {
-        x_from=prev_word_end and self.cursor.x - (ind - prev_word_end) + 1 or 1,
-        x_to=next_word_start and self.cursor.x + next_word_start - ind - 1 or #self.text
-    }
+    return prev_word_end + 1 or 1, next_word_start - 1 or #self.text
+end
+
+function TextEditorView:lineStartOffset(offset)
+    local loc_offset = offset or self.cursor_offset
+    return self.text:sub(1, loc_offset):match(".*\n()") or 1
+end
+
+function TextEditorView:lineEndOffset(offset)
+    local loc_offset = offset or self.cursor_offset
+    return self.text:find("\n", loc_offset) or #self.text
 end
 
 function TextEditorView:onInput(keys)
@@ -516,28 +541,29 @@ function TextEditorView:onInput(keys)
             local clicks_count = self:triggerMultiLeftClick()
             if clicks_count >= 3 then
                 self:setSelection(
-                    1,
-                    self.cursor.y,
-                    #self.lines[self.cursor.y],
-                    self.cursor.y
+                    self:lineStartOffset(),
+                    self:lineEndOffset()
                 )
             elseif clicks_count >= 2 then
                 local cursor_char = self:charAtCursor()
 
-                local word_range = (
+                local is_white_space = (
                     cursor_char == ' ' or cursor_char == NEWLINE
-                ) and self:currentSpacesRange() or self:currentWordRange()
-
-                self:setSelection(
-                    word_range.x_from,
-                    self.cursor.y,
-                    word_range.x_to,
-                    self.cursor.y
                 )
+
+                local from, to
+                if is_white_space then
+                    from, to =  self:currentSpacesRange()
+                else
+                    from, to =  self:currentWordRange()
+                end
+
+                self:setSelection(from, to)
             elseif clicks_count == 1 then
-                y = math.min(#self.lines, mouse_y + 1)
-                x = math.min(#self.lines[y], mouse_x + 1)
-                self:setCursor(x, y)
+                self:setCursor(self.wrapped_text:coordsToIndex(
+                    mouse_x + 1,
+                    mouse_y + 1
+                ))
             end
 
             return true
@@ -550,14 +576,13 @@ function TextEditorView:onInput(keys)
 
         local mouse_x, mouse_y = self:getMousePos()
         if mouse_x and mouse_y then
-            y = math.min(#self.lines, mouse_y + 1 )
-            x = math.min(
-                #self.lines[y],
-                mouse_x + 1
+            local offset = self.wrapped_text:coordsToIndex(
+                mouse_x + 1,
+                mouse_y + 1
             )
 
-            if self.cursor.x ~= x or self.cursor.y ~= y then
-                self:setSelection(self.cursor.x, self.cursor.y, x, y)
+            if self.cursor_offset ~= offset then
+                self:setSelection(self.cursor_offset, offset)
             else
                 self.sel_end = nil
             end
@@ -571,84 +596,78 @@ function TextEditorView:onInput(keys)
             if (self:hasSelection()) then
                 self:eraseSelection()
             else
-                local x, y = self.cursor.x - 1, self.cursor.y
-                self:setSelection(x, y, x, y)
+                self:setSelection(
+                    self.cursor_offset - 1,
+                    self.cursor_offset - 1
+                )
                 self:eraseSelection()
             end
         else
             if (self:hasSelection()) then
                 self:eraseSelection()
             end
+
             local cv = string.char(keys._STRING)
             self:insert(cv)
         end
 
         return true
     elseif keys.KEYBOARD_CURSOR_LEFT then
-        self:setCursor(self.cursor.x - 1, self.cursor.y)
+        self:setCursor(self.cursor_offset - 1)
         return true
     elseif keys.KEYBOARD_CURSOR_RIGHT then
-        self:setCursor(self.cursor.x + 1, self.cursor.y)
+        self:setCursor(self.cursor_offset + 1)
         return true
     elseif keys.KEYBOARD_CURSOR_UP then
-        local last_cursor_x = self.last_cursor_x or self.cursor.x
-        local y = math.max(1, self.cursor.y - 1)
-        local x = math.min(last_cursor_x, #self.lines[y])
-        self:setCursor(x, y)
+        local x, y = self.wrapped_text:indexToCoords(self.cursor_offset)
+        local last_cursor_x = self.last_cursor_x or x
+        local offset = self.wrapped_text:coordsToIndex(last_cursor_x, y - 1)
+        self:setCursor(offset)
         self.last_cursor_x = last_cursor_x
         return true
     elseif keys.KEYBOARD_CURSOR_DOWN then
-        local last_cursor_x = self.last_cursor_x or self.cursor.x
-        local y = math.min(#self.lines, self.cursor.y + 1)
-        local x = math.min(last_cursor_x, #self.lines[y])
-        self:setCursor(x, y)
+        local x, y = self.wrapped_text:indexToCoords(self.cursor_offset)
+        local last_cursor_x = self.last_cursor_x or x
+        local offset = self.wrapped_text:coordsToIndex(last_cursor_x, y + 1)
+        self:setCursor(offset)
         self.last_cursor_x = last_cursor_x
         return true
     elseif keys.KEYBOARD_CURSOR_UP_FAST then
-        self:setCursor(1, 1)
+        self:setCursor(1)
         return true
     elseif keys.KEYBOARD_CURSOR_DOWN_FAST then
         -- go to text end
-        self:setCursor(
-            #self.lines[#self.lines],
-            #self.lines
-        )
+        self:setCursor(#self.text)
         return true
     elseif keys.CUSTOM_CTRL_B or keys.KEYBOARD_CURSOR_LEFT_FAST then
         -- back one word
-        local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
         local _, prev_word_end = self.text
-            :sub(1, ind-1)
+            :sub(1, self.cursor_offset - 1)
             :find('.*%s[^%s]')
-
-        self:setCursor(
-            self.cursor.x - (ind - (prev_word_end or 1)),
-            self.cursor.y
-        )
+        self:setCursor(prev_word_end)
         return true
     elseif keys.CUSTOM_CTRL_F or keys.KEYBOARD_CURSOR_RIGHT_FAST then
         -- forward one word
-        local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
-        local _, next_word_start = self.text:find('.-[^%s][%s]', ind)
-
-        self:setCursor(
-            self.cursor.x + ((next_word_start or #self.text) - ind),
-            self.cursor.y
+        local _, next_word_start = self.text:find(
+            '.-[^%s][%s]',
+            self.cursor_offset
         )
+        self:setCursor(next_word_start)
         return true
     elseif keys.CUSTOM_CTRL_A then
         -- select all
-        self:setSelection(1, 1, #self.lines[#self.lines], #self.lines)
+        self:setSelection(1, #self.text)
         return true
     elseif keys.CUSTOM_CTRL_H then
         -- line start
-        self:setCursor(1, self.cursor.y)
+        self:setCursor(
+            self:lineStartOffset()
+        )
         return true
     elseif keys.CUSTOM_CTRL_E then
         -- line end
         self:setCursor(
-            #self.lines[self.cursor.y],
-            self.cursor.y
+            self:lineEndOffset()
         )
         return true
     elseif keys.CUSTOM_CTRL_U then
@@ -656,15 +675,15 @@ function TextEditorView:onInput(keys)
         if (self:hasSelection()) then
             -- delete all lines that has selection
             self:setSelection(
-                1,
-                self.cursor.y,
-                #self.lines[self.sel_end.y],
-                self.sel_end.y
+                self:lineStartOffset(),
+                self:lineEndOffset()
             )
             self:eraseSelection()
         else
-            local y = self.cursor.y
-            self:setSelection(1, y, #self.lines[y], y)
+            self:setSelection(
+                self:lineStartOffset(),
+                self:lineEndOffset()
+            )
             self:eraseSelection()
         end
         return true
@@ -673,35 +692,36 @@ function TextEditorView:onInput(keys)
         if (self:hasSelection()) then
             self:eraseSelection()
         else
-            local y = self.cursor.y
-            self:setSelection(self.cursor.x, y, #self.lines[y] - 1, y)
+            self:setSelection(
+                self.cursor_offset,
+                self:lineEndOffset() - 1
+            )
             self:eraseSelection()
         end
         return true
     elseif keys.CUSTOM_CTRL_D then
         -- delete char, there is no support for `Delete` key
-        local old = self.text
         if (self:hasSelection()) then
             self:eraseSelection()
         else
-            local del_pos = self:cursorToIndex(
-                self.cursor.x,
-                self.cursor.y
+            self:setText(
+                self.text:sub(1, self.cursor_offset - 1) ..
+                self.text:sub(self.cursor_offset + 1)
             )
-            self:setText(old:sub(1, del_pos-1) .. old:sub(del_pos+1))
         end
 
         return true
     elseif keys.CUSTOM_CTRL_W then
         -- delete one word backward
-        local ind = self:cursorToIndex(self.cursor.x, self.cursor.y)
         local _, prev_word_end = self.text
-            :sub(1, ind-1)
+            :sub(1, self.cursor_offset - 1)
             :find('.*%s[^%s]')
         local word_start = prev_word_end or 1
-        local cursor = self:indexToCursor(word_start - 1)
-        local new_text = self.text:sub(1, word_start - 1) .. self.text:sub(ind)
-        self:setText(new_text, cursor.x, cursor.y)
+        self:setText(
+            self.text:sub(1, word_start - 1) ..
+            self.text:sub(self.cursor_offset)
+        )
+        self:setCursor(word_start - 1)
         return true
     elseif keys.CUSTOM_CTRL_C then
         self:copy()
