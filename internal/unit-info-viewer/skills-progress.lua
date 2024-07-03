@@ -105,27 +105,23 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
                 table.insert(annotations, NEWLINE)
             end
             local level_color = COLOR_WHITE
-            local rating = math.max(0, skill.rating - skill.demotion_counter)
+            local rating_val = math.max(0, skill.rating - skill.demotion_counter)
             if skill.demotion_counter > 0 then
                 level_color = COLOR_LIGHTRED
             elseif skill.rating >= df.skill_rating.Legendary then
                 level_color = COLOR_LIGHTCYAN
             end
             table.insert(annotations, {
-                text=('Lv%s'):format(rating >= 100 and '++' or tostring(rating)),
+                text=('Lv%s'):format(rating_val >= 100 and '++' or tostring(rating_val)),
                 width=7,
                 pen=level_color,
             })
-
-            table.insert(annotations, { text=string.format(
-                    "%4d/%4d",
-                    skill.experience,
-                    rating.xp_threshold
-                ),
-                pen = level_color,
-                width = 9,
-                rjustify=true, }
-            )
+            table.insert(annotations, {
+                text=('%4d/%4d'):format(skill.experience, rating.xp_threshold),
+                pen=level_color,
+                width=9,
+                rjustify=true,
+            })
         end
 
         -- 3rd line (last)
