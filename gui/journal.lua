@@ -522,6 +522,20 @@ function TextEditorView:lineEndOffset(offset)
     return self.text:find("\n", loc_offset) or #self.text + 1
 end
 
+function TextEditorView:wordStartOffset(offset)
+    return self.text
+        :sub(1, offset or self.cursor - 1)
+        :match('.*%s()[^%s]') or 1
+end
+
+function TextEditorView:wordEndOffset(offset)
+    return self.text
+        :match(
+            '[%s]*[^%s]-()%s',
+            offset or self.cursor
+        ) or #self.text + 1
+end
+
 function TextEditorView:onInput(keys)
     for _,ignore_key in ipairs(self.ignore_keys) do
         if keys[ignore_key] then
@@ -641,18 +655,13 @@ function TextEditorView:onInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_B or keys.KEYBOARD_CURSOR_LEFT_FAST then
         -- back one word
-        local _, prev_word_end = self.text
-            :sub(1, self.cursor - 1)
-            :find('.*%s[^%s]')
-        self:setCursor(prev_word_end)
+        local word_start = self:wordStartOffset()
+        self:setCursor(word_start)
         return true
     elseif keys.CUSTOM_CTRL_F or keys.KEYBOARD_CURSOR_RIGHT_FAST then
         -- forward one word
-        local _, next_word_start = self.text:find(
-            '.-[^%s][%s]',
-            self.cursor
-        )
-        self:setCursor(next_word_start)
+        local word_end = self:wordEndOffset()
+        self:setCursor(word_end)
         return true
     elseif keys.CUSTOM_CTRL_A then
         -- select all
@@ -713,10 +722,7 @@ function TextEditorView:onInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_W then
         -- delete one word backward
-        local curr_word_start = self.text
-            :sub(1, self.cursor - 1)
-            :match('.*%s()[^%s]')
-        local word_start = curr_word_start or 1
+        local word_start = self:wordStartOffset()
         self:setText(
             self.text:sub(1, word_start - 1) ..
             self.text:sub(self.cursor)
