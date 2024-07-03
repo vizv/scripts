@@ -37,9 +37,6 @@ SkillProgressOverlay.ATTRS {
 }
 
 function SkillProgressOverlay:init()
-    self.current_uid = -1
-    self.current_unit = nil
-
     self:addviews{
         widgets.Label{
             view_id='annotations',
@@ -79,11 +76,8 @@ end
 
 function SkillProgressOverlay:onRenderFrame(dc, rect)
     local annotations = {}
-    if view_sheets.active_id ~= self.current_uid then
-        self.current_uid = view_sheets.active_id
-        self.current_unit = df.unit.find(self.current_uid)
-    end
-    if self.current_unit and self.current_unit.portrait_texpos > 0 then
+    local current_unit = df.unit.find(view_sheets.active_id)
+    if current_unit and current_unit.portrait_texpos > 0 then
         -- If a portrait is present, displace the bars down 2 tiles
         table.insert(annotations, "\n\n")
     end
@@ -100,18 +94,20 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
     local max_elem = math.min(#view_sheets.unit_skill-1,
         view_sheets.scroll_position_unit_skill+num_elems-1)
     for idx = start, max_elem do
-        local skill = get_skill(idx, self.current_unit)
+        local skill = get_skill(idx, current_unit)
         if not skill then
             table.insert(annotations, "\n\n\n\n")
             goto continue
         end
-        local rating = df.skill_rating.attrs[math.max(0, math.min(skill.rating, 19))]
+        local rating = df.skill_rating.attrs[math.max(df.skill_rating.Dabbling, math.min(skill.rating, df.skill_rating.Legendary5))]
         if experience then
             if not progress_bar then
                 table.insert(annotations, NEWLINE)
             end
             local level_color = COLOR_WHITE
             local level_chara = "Lv"
+            local rating = math.max(0, skill.rating - skill.demotion_counter)
+            local text = level_chara .. rating
             if skill.rating == df.skill_rating.Legendary then
                 level_color = COLOR_CYAN
             end
@@ -124,12 +120,12 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
                 level_color = COLOR_LIGHTRED
             end
 
-            if skill.rating - skill.demotion_counter >= 100 then
-                level_chara = "L"
+            if rating >= 100 then
+                text = level_chara .. '++'
             end
 
             table.insert(annotations, {
-                text=level_chara .. math.max(0, skill.rating - skill.demotion_counter),
+                text=text,
                 width = 7,
                 pen = level_color }
             )
@@ -152,20 +148,20 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
             table.insert(annotations, NEWLINE)
             local percentage = skill.experience / rating.xp_threshold
             local barstop = math.floor((margin * percentage) + 0.5)
-            for idx = 0, margin-1 do
+            for i = 0, margin-1 do
                 local color = COLOR_LIGHTCYAN
                 local char = 219
                 -- start with the filled middle progress bar
                 local tex_idx = 1
                 -- at the beginning, use the left rounded corner
-                if idx == 0 then
+                if i == 0 then
                     tex_idx = 0
                 end
                 -- at the end, use the right rounded corner
-                if idx == margin-1 then
+                if i == margin-1 then
                     tex_idx = 2
                 end
-                if idx >= barstop then
+                if i >= barstop then
                     -- offset it to the hollow graphic
                     tex_idx = tex_idx + 3
                     color = COLOR_DARKGRAY
