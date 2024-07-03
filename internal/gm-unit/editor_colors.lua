@@ -99,6 +99,8 @@ function Editor_Colors:random()
 
   -- Update the unit's portrait
   self.target_unit.flags4.portrait_must_be_refreshed = true
+  -- Update the world texture
+  self.target_unit.flags4.any_texture_must_be_refreshed = true
 end
 
 function Editor_Colors:colorSelected(index, choice)
@@ -106,6 +108,8 @@ function Editor_Colors:colorSelected(index, choice)
   self.target_unit.appearance.colors[self.modIndex] = choice.index
   -- Update the unit's portrait
   self.target_unit.flags4.portrait_must_be_refreshed = true
+  -- Update the world texture
+  self.target_unit.flags4.any_texture_must_be_refreshed = true
 end
 
 function Editor_Colors:featureSelected(index, choice)

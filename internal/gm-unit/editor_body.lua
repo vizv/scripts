@@ -31,6 +31,8 @@ function Editor_Body_Modifier:setPartModifier(indexList, value)
 
   -- Update the unit's portrait
   self.target_unit.flags4.portrait_must_be_refreshed = true
+  -- Update the world texture
+  self.target_unit.flags4.any_texture_must_be_refreshed = true
 
   self:updateChoices()
 end
@@ -40,6 +42,8 @@ function Editor_Body_Modifier:setBodyModifier(modifierIndex, value)
 
   -- Update the unit's portrait
   self.target_unit.flags4.portrait_must_be_refreshed = true
+  -- Update the world texture
+  self.target_unit.flags4.any_texture_must_be_refreshed = true
 
   self:updateChoices()
 end
