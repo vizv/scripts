@@ -519,7 +519,7 @@ end
 
 function TextEditorView:lineEndOffset(offset)
     local loc_offset = offset or self.cursor
-    return self.text:find("\n", loc_offset) or #self.text
+    return self.text:find("\n", loc_offset) or #self.text + 1
 end
 
 function TextEditorView:onInput(keys)
@@ -637,7 +637,7 @@ function TextEditorView:onInput(keys)
         return true
     elseif keys.KEYBOARD_CURSOR_DOWN_FAST then
         -- go to text end
-        self:setCursor(#self.text)
+        self:setCursor(#self.text + 1)
         return true
     elseif keys.CUSTOM_CTRL_B or keys.KEYBOARD_CURSOR_LEFT_FAST then
         -- back one word
