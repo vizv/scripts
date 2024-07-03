@@ -5,11 +5,6 @@ local utils = require 'utils'
 
 local makeown = reqscript('makeown')
 
-local viewscreen = dfhack.gui.getDFViewscreen(true)
-if viewscreen._type ~= df.viewscreen_dungeonmodest then
-    qerror("This script can only be used during adventure mode!")
-end
-
 local function addToCoreParty(nemesis)
     -- Adds them to the party core members list
     local party = df.global.adventure.interactions
@@ -52,5 +47,8 @@ local function showExtraPartyPrompt()
 end
 
 function run()
+    if not dfhack.world.isAdventureMode() then
+        qerror("This script can only be used during adventure mode!")
+    end
     showExtraPartyPrompt()
 end
