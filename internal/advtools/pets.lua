@@ -39,7 +39,7 @@ local function fixGiftedPet(pet_record, pet_owner_record)
         pet_record.unit.relationship_ids.GroupLeader = pet_owner_record.unit_id
         pet_record.group_leader_id = pet_owner_record.id
     end
-    
+
     -- associate the site links
     local site_links = pet_owner_record.figure.site_links
     for _, link in ipairs(site_links) do
