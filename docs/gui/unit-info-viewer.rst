@@ -22,4 +22,4 @@ Overlays
 --------
 
 This tool adds progress bars, experience points and levels (affected by skill rust)
-in the unit view screen, all color-coded when enabled as a module. 
+in the unit view screen, all color-coded when enabled as a module.
