@@ -21,5 +21,9 @@ Usage
 Overlays
 --------
 
-This tool adds progress bars, experience points and levels (affected by skill rust)
-in the unit view screen, all color-coded when enabled as a module.
+This tool adds progress bars, experience points and levels in the unit skill panels,
+color-coded to highlight rust and the highest skill levels:
+
+- If a skill is rusty, then the level marker is colored light red
+- If a skill is at Legendary level or higher, it is colored light cyan
+- Other skills are colored plain white
