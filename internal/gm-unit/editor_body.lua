@@ -28,7 +28,7 @@ function Editor_Body_Modifier:setPartModifier(indexList, value)
   for _, index in ipairs(indexList) do
     self.target_unit.appearance.bp_modifiers[index] = tonumber(value)
   end
-  
+
   -- Update the unit's portrait
   self.target_unit.flags4.portrait_must_be_refreshed = true
 
@@ -37,7 +37,7 @@ end
 
 function Editor_Body_Modifier:setBodyModifier(modifierIndex, value)
   self.target_unit.appearance.body_modifiers[modifierIndex] = tonumber(value)
-  
+
   -- Update the unit's portrait
   self.target_unit.flags4.portrait_must_be_refreshed = true
 
