@@ -36,8 +36,6 @@ Pets
 ----------------
 
 Run this command after you gift a pet or after you hire a companion who has their own pets following them.
-This should fix pets not joining you during fast travel, potential duplication issues, and gifted pets
-still being part of your party despite being given away.
 
 For companions, this script fixes their pets not being added to your adventurer party,
 preventing their pets from getting lost in fast-travel and being forced to follow you as a separate army.
