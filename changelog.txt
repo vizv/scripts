@@ -54,6 +54,7 @@ Template for new versions:
 ## Fixes
 - `assign-profile`: fix handling of ``unit`` option for setting target unit id
 - `gui/gm-unit`: correctly display skill levels above Legendary+5
+- `gui/gm-unit`: fix errors when editing/randomizing colors and body appearance
 - `quickfort`: fix incorrect handling of stockpiles that are split into multiple separate areas but are given the same label (indicating that they should be part of the same stockpile)
 - `makeown`: set animals to tame and domesticated
 - `gui/sandbox`: spawned citizens can now be useful military squad members
