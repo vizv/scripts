@@ -107,7 +107,7 @@ COMMANDS_BY_IDX = {
     {command='eggs-fertile', help_command='tweak', group='gameplay', mode='tweak', default=true,
         desc='Displays an indicator on fertile eggs.'},
     {command='emigration', group='gameplay', mode='enable'},
-    {command='fast-heat', help_command='tweak', group='gameplay', mode='tweak',
+    {command='fast-heat', help_command='tweak', group='gameplay', mode='tweak', default=true,
         desc='Improves temperature update performance.'},
     {command='fastdwarf', group='gameplay', mode='enable'},
     {command='hermit', group='gameplay', mode='enable'},
