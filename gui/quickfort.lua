@@ -615,7 +615,7 @@ function Quickfort:show_dialog(initial)
         if initial and #self.filter > 0 then
             local choices = file_dialog.subviews.list:getVisibleChoices()
             if #choices == 1 then
-                local selection = choices[1].text
+                local selection = choices[1].id
                 file_dialog:dismiss()
                 self:dialog_cb(selection)
                 return

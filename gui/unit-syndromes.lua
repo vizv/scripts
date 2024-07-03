@@ -31,10 +31,8 @@ local function getEffectCreatureName(effect)
     if effect.caste_str == "DEFAULT" then
         return creature.name[0]
     else
-        -- TODO: Caste seems to be entirely unused.
         local caste = creature.caste[effect.caste[0]]
-
-        return ("%s%s"):format(creature.name[0], (", %s"):format(caste.name[0]))
+        return ("%s%s"):format(creature.name[0], (", %s"):format(caste.caste_name[0]))
     end
 end
 
@@ -199,19 +197,22 @@ local EffectFlagDescription = {
 
         return ("RECIEVED DAMAGE SCALED BY %s%%%s"):format(
             (effect.fraction_mul * 100 / effect.fraction_div * 100) / 100,
-            material and ("vs. %s"):format(material.stone_name)
+            material and ("vs. %s"):format(material.stone_name) or ''
         )
     end,
-    -- TODO: Unfinished, unknown fields from previous script.
     [df.creature_interaction_effect_type.BODY_MAT_INTERACTION] = function(effect)
         return ("%s %s"):format(effect.interaction_name, effect.interaction_id)
     end,
-    -- TODO: Unfinished.
     [df.creature_interaction_effect_type.BODY_APPEARANCE_MODIFIER] = function(effect)
-        return ("TODO"):format(effect.interaction_name, effect.interaction_id)
+        return ("VALUE=%s MODIFIER_TYPE=%s"):format(
+            effect.appearance_modifier_value,
+            df.appearance_modifier_type[effect.appearance_modifier])
     end,
     [df.creature_interaction_effect_type.BP_APPEARANCE_MODIFIER] = function(effect)
-        return ("VALUE=%s CHANGE_TYPE_ENUM=%s%s"):format(effect.value, effect.unk_6c, getEffectTarget(effect.target))
+        return ("VALUE=%s MODIFIER_TYPE=%s CHANGE_TYPE_ENUM=%s"):format(
+            effect.appearance_modifier_value,
+            df.appearance_modifier_type[effect.appearance_modifier],
+            getEffectTarget(effect.target))
     end,
     [df.creature_interaction_effect_type.DISPLAY_NAME] = function(effect)
         return ("SET NAME: %s"):format(effect.name)

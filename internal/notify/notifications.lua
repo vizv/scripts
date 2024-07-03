@@ -153,12 +153,15 @@ local function for_wildlife(fn, reverse)
 end
 
 local function for_wildlife_adv(fn, reverse)
+    local adv_id = dfhack.world.getAdventurer().id
     for_iter(units.active, function(unit)
         return not dfhack.units.isDead(unit) and
             dfhack.units.isActive(unit) and
             not unit.flags1.caged and
             not unit.flags1.chained and
             not dfhack.units.isHidden(unit) and
+            unit.relationship_ids.GroupLeader ~= adv_id and
+            unit.relationship_ids.PetOwner ~= adv_id and
             is_adv_unhidden(unit) and
             unit.animal.population.population_idx >= 0
     end, fn, reverse)
@@ -265,6 +268,51 @@ local function get_stranded_message()
             count == 1 and 'is' or 'are'
         )
     end
+end
+
+local function get_blood()
+    return dfhack.world.getAdventurer().body.blood_count
+end
+
+local function get_max_blood()
+    return dfhack.world.getAdventurer().body.blood_max
+end
+
+local function get_max_breath()
+    local adventurer = dfhack.world.getAdventurer()
+    local toughness = dfhack.units.getPhysicalAttrValue(adventurer, df.physical_attribute_type.TOUGHNESS)
+    local endurance = dfhack.units.getPhysicalAttrValue(adventurer, df.physical_attribute_type.ENDURANCE)
+    local base_ticks = 200
+
+    return math.floor((endurance + toughness) / 4) + base_ticks
+end
+
+local function get_breath()
+    return get_max_breath() - dfhack.world.getAdventurer().counters.suffocation
+end
+
+local function get_bar(fn, text, color)
+    if fn() then
+        local label_text = {}
+        local suffocation_pen = color
+        table.insert(label_text, {text = text, pen = suffocation_pen, width = 14})
+
+        local bar_width = 16
+        local percentage = get_breath() / get_max_breath()
+        local barstop = math.floor((bar_width * percentage) + 0.5)
+        for idx = 0, bar_width-1 do
+            local color = color
+            local char = 219
+            if idx >= barstop then
+                -- offset it to the hollow graphic
+                color = COLOR_DARKGRAY
+                char = 177
+            end
+            table.insert(label_text, { width = 1, tile={ch=char, fg=color}})
+        end
+        return label_text
+    end
+    return nil
 end
 
 -- the order of this list controls the order the notifications will appear in the overlay
@@ -441,6 +489,22 @@ NOTIFICATIONS_BY_IDX = {
         default=true,
         dwarf_fn=curry(injured_units, for_injured, 'injured citizen'),
         on_click=curry(zoom_to_next, for_injured),
+    },
+    {
+        name='suffocation_adv',
+        desc='Shows a suffocation bar when you are drowning or breathless.',
+        default=true,
+        critical=true,
+        adv_fn=curry(get_bar, function() return get_breath() < get_max_breath() end, "Suffocation!", COLOR_LIGHTCYAN),
+        on_click=nil,
+    },
+    {
+        name='bleeding_adv',
+        desc='Shows a bleeding bar when you are losing blood.',
+        default=true,
+        critical=true,
+        adv_fn=curry(get_bar, function() return get_blood() < get_max_blood() end, "Bloodloss!", COLOR_RED),
+        on_click=nil,
     },
 }
 

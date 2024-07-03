@@ -5,6 +5,8 @@ local argparse = require('argparse')
 local repeatutil = require("repeat-util")
 local utils = require('utils')
 
+DEBUG = DEBUG or false
+
 ------------------------------------
 -- state management
 
@@ -91,49 +93,143 @@ local function clamp_timeskip(timeskip)
     return math.min(timeskip, get_next_trigger_year_tick(next_tick)-next_tick)
 end
 
-local function has_caste_flag(unit, flag)
-    if unit.curse.rem_tags1[flag] then return false end
-    if unit.curse.add_tags1[flag] then return true end
-    return dfhack.units.casteFlagSet(unit.race, unit.caste, df.caste_raw_flags[flag])
+local function increment_counter(obj, counter_name, timeskip)
+    if obj[counter_name] <= 0 then return end
+    obj[counter_name] = obj[counter_name] + timeskip
 end
 
+local function decrement_counter(obj, counter_name, timeskip)
+    if obj[counter_name] <= 0 then return end
+    obj[counter_name] = math.max(1, obj[counter_name] - timeskip)
+end
+
+local function adjust_unit_counters(unit, timeskip)
+    local c1 = unit.counters
+    decrement_counter(c1, 'think_counter', timeskip)
+    decrement_counter(c1, 'job_counter', timeskip)
+    decrement_counter(c1, 'swap_counter', timeskip)
+    decrement_counter(c1, 'winded', timeskip)
+    decrement_counter(c1, 'stunned', timeskip)
+    decrement_counter(c1, 'unconscious', timeskip)
+    decrement_counter(c1, 'suffocation', timeskip)
+    decrement_counter(c1, 'webbed', timeskip)
+    decrement_counter(c1, 'soldier_mood_countdown', timeskip)
+    decrement_counter(c1, 'pain', timeskip)
+    decrement_counter(c1, 'nausea', timeskip)
+    decrement_counter(c1, 'dizziness', timeskip)
+    local c2 = unit.counters2
+    decrement_counter(c2, 'paralysis', timeskip)
+    decrement_counter(c2, 'numbness', timeskip)
+    decrement_counter(c2, 'fever', timeskip)
+    decrement_counter(c2, 'exhaustion', timeskip * 3)
+    increment_counter(c2, 'hunger_timer', timeskip)
+    increment_counter(c2, 'thirst_timer', timeskip)
+    local job = unit.job.current_job
+    if job and job.job_type == df.job_type.Rest then
+        decrement_counter(c2, 'sleepiness_timer', timeskip * 200)
+    elseif job and job.job_type == df.job_type.Sleep then
+        decrement_counter(c2, 'sleepiness_timer', timeskip * 19)
+    else
+        increment_counter(c2, 'sleepiness_timer', timeskip)
+    end
+    decrement_counter(c2, 'stomach_content', timeskip * 5)
+    decrement_counter(c2, 'stomach_food', timeskip * 5)
+    decrement_counter(c2, 'vomit_timeout', timeskip)
+    -- stored_fat wanders about based on other state; we can probably leave it alone
+end
+
+-- unit needs appear to be incremented on season ticks, so we don't need to worry about those
 local function adjust_units(timeskip)
     for _, unit in ipairs(df.global.world.units.active) do
         if not dfhack.units.isActive(unit) then goto continue end
-        if unit.sex == df.pronoun_type.she then
-            if unit.pregnancy_timer > 0 then
-                unit.pregnancy_timer = math.max(1, unit.pregnancy_timer - timeskip)
-            end
-        end
+        decrement_counter(unit, 'pregnancy_timer', timeskip)
         dfhack.units.subtractGroupActionTimers(unit, timeskip, df.unit_action_type_group.All)
-        local c2 = unit.counters2
-        if not has_caste_flag(unit, 'NO_EAT') then
-            c2.hunger_timer = c2.hunger_timer + timeskip
-        end
-        if not has_caste_flag(unit, 'NO_DRINK') then
-            c2.thirst_timer = c2.thirst_timer + timeskip
-        end
-        local job = unit.job.current_job
-        if not has_caste_flag(unit, 'NO_SLEEP') then
-            if job and job.job_type == df.job_type.Sleep then
-                c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 19)
-            else
-                c2.sleepiness_timer = c2.sleepiness_timer + timeskip
-            end
-        end
-        if job and job.job_type == df.job_type.Rest then
-            c2.sleepiness_timer = math.max(0, c2.sleepiness_timer - timeskip * 200)
-        end
+        if not dfhack.units.isOwnGroup(unit) then goto continue end
+        adjust_unit_counters(unit, timeskip)
         ::continue::
     end
 end
 
-local function adjust_armies(timeskip)
-    -- TODO
+-- behavior ascertained from in-game observation
+local function adjust_activities(timeskip)
+    for i, act in ipairs(df.global.world.activities.all) do
+        for _, ev in ipairs(act.events) do
+            if df.activity_event_training_sessionst:is_instance(ev) then
+                -- no counters
+            elseif df.activity_event_combat_trainingst:is_instance(ev) then
+                -- has organize_counter at a non-zero value, but it doesn't seem to move
+            elseif df.activity_event_skill_demonstrationst:is_instance(ev) then
+                -- can be negative or positive, but always counts towards 0
+                if ev.organize_counter < 0 then
+                    ev.organize_counter = math.min(-1, ev.organize_counter + timeskip)
+                else
+                    decrement_counter(ev, 'organize_counter', timeskip)
+                end
+                decrement_counter(ev, 'train_countdown', timeskip)
+            elseif df.activity_event_fill_service_orderst:is_instance(ev) then
+                -- no counters
+            elseif df.activity_event_individual_skill_drillst:is_instance(ev) then
+                -- only counts down on season ticks, nothing to do here
+            elseif df.activity_event_sparringst:is_instance(ev) then
+                decrement_counter(ev, 'countdown', timeskip * 2)
+            elseif df.activity_event_ranged_practicest:is_instance(ev) then
+                -- countdown appears to never move from 0
+                decrement_counter(ev, 'countdown', timeskip)
+            elseif df.activity_event_harassmentst:is_instance(ev) then
+                -- TODO: counter behavior not yet analyzed
+                -- print(i)
+            elseif df.activity_event_encounterst:is_instance(ev) then
+                -- TODO: counter behavior not yet analyzed
+                -- print(i)
+            elseif df.activity_event_reunionst:is_instance(ev) then
+                -- TODO: counter behavior not yet analyzed
+                -- print(i)
+            elseif df.activity_event_conversationst:is_instance(ev) then
+                increment_counter(ev, 'pause', timeskip)
+            elseif df.activity_event_guardst:is_instance(ev) then
+                -- no counters
+            elseif df.activity_event_conflictst:is_instance(ev) then
+                increment_counter(ev, 'inactivity_timer', timeskip)
+                increment_counter(ev, 'attack_inactivity_timer', timeskip)
+                increment_counter(ev, 'stop_fort_fights_timer', timeskip)
+            elseif df.activity_event_prayerst:is_instance(ev) then
+                decrement_counter(ev, 'timer', timeskip)
+            elseif df.activity_event_researchst:is_instance(ev) then
+                -- no counters
+            elseif df.activity_event_playst:is_instance(ev) then
+                increment_counter(ev, 'down_time_counter', timeskip)
+            elseif df.activity_event_worshipst:is_instance(ev) then
+                increment_counter(ev, 'down_time_counter', timeskip)
+            elseif df.activity_event_socializest:is_instance(ev) then
+                increment_counter(ev, 'down_time_counter', timeskip)
+            elseif df.activity_event_ponder_topicst:is_instance(ev) then
+                decrement_counter(ev, 'timer', timeskip)
+            elseif df.activity_event_discuss_topicst:is_instance(ev) then
+                decrement_counter(ev, 'timer', timeskip)
+            elseif df.activity_event_teach_topicst:is_instance(ev) then
+                decrement_counter(ev, 'time_left', timeskip)
+            elseif df.activity_event_readst:is_instance(ev) then
+                decrement_counter(ev, 'timer', timeskip)
+            elseif df.activity_event_writest:is_instance(ev) then
+                decrement_counter(ev, 'timer', timeskip)
+            elseif df.activity_event_copy_written_contentst:is_instance(ev) then
+                decrement_counter(ev, 'time_left', timeskip)
+            elseif df.activity_event_make_believest:is_instance(ev) then
+                decrement_counter(ev, 'time_left', timeskip)
+            elseif df.activity_event_play_with_toyst:is_instance(ev) then
+                decrement_counter(ev, 'time_left', timeskip)
+            elseif df.activity_event_performancest:is_instance(ev) then
+                increment_counter(ev, 'current_position', timeskip)
+            elseif df.activity_event_store_objectst:is_instance(ev) then
+                -- TODO: counter behavior not yet analyzed
+                -- print(i)
+            end
+        end
+    end
 end
 
 local function on_tick()
-    local real_fps = math.max(1, df.global.enabler.calculated_fps)
+    local real_fps = math.max(1, dfhack.internal.getUnpausedFps())
     if real_fps >= state.settings.fps then
         timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
         return
@@ -145,18 +241,19 @@ local function on_tick()
     -- add some jitter so we don't fall into a constant pattern
     -- this reduces the risk of repeatedly missing an unknown threshold
     -- also keeps the game from looking robotic at lower frame rates
-    local jitter_category = math.random(1, 10)
-    if jitter_category <= 1 then
+    local jitter_strategy = math.random(1, 10)
+    if jitter_strategy <= 1 then
         timeskip = math.random(0, timeskip)
-    elseif jitter_category <= 3 then
+    elseif jitter_strategy <= 3 then
         timeskip = math.random(math.max(0, timeskip-2), timeskip)
-    elseif jitter_category <= 5 then
+    elseif jitter_strategy <= 5 then
         timeskip = math.random(math.max(0, timeskip-4), timeskip)
     end
 
-    -- no need to let our deficit grow unbounded
+    -- don't let our deficit grow unbounded if we can never catch up
     timeskip_deficit = math.min(desired_timeskip - timeskip, 100.0)
 
+    if DEBUG then print(('timeskip (%d, +%.2f)'):format(timeskip, timeskip_deficit)) end
     if timeskip <= 0 then return end
 
     local desired_calendar_timeskip = (timeskip * state.settings.calendar_rate) + calendar_timeskip_deficit
@@ -166,7 +263,7 @@ local function on_tick()
     df.global.cur_year_tick = df.global.cur_year_tick + calendar_timeskip
 
     adjust_units(timeskip)
-    adjust_armies(timeskip)
+    adjust_activities(timeskip)
 end
 
 ------------------------------------
