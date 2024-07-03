@@ -43,7 +43,8 @@ function SkillProgressOverlay:init()
     self:addviews{
         widgets.Label{
             view_id='annotations',
-            frame={t=0, r=0, w=16},
+            frame={t=0, r=0, w=16, b=0},
+            auto_height=false,
             text='',
             text_pen=COLOR_GRAY,
         },
@@ -59,8 +60,8 @@ function SkillProgressOverlay:init()
             initial_option=true
         },
         widgets.ToggleHotkeyLabel{
-            frame={b=0, l=28, w=25},
-            label='Experience  ',
+            frame={b=0, l=31, w=23},
+            label='Experience:',
             key='CUSTOM_CTRL_E',
             options={
                 {label='No', value=false, pen=COLOR_WHITE},
@@ -72,9 +73,8 @@ function SkillProgressOverlay:init()
     }
 end
 
-function SkillProgressOverlay:preUpdateLayout()
-    local screen_width, screen_height = dfhack.screen.getWindowSize()
-    self.frame.h = screen_height - 20
+function SkillProgressOverlay:preUpdateLayout(parent_rect)
+    self.frame.h = parent_rect.height - 21
 end
 
 function SkillProgressOverlay:onRenderFrame(dc, rect)
@@ -89,7 +89,7 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
     end
 
     local progress_bar_needed = not dfhack.world.isAdventureMode() or not dfhack.screen.inGraphicsMode()
-    self.subviews.toggle_progress.disabled = not progress_bar_needed
+    self.subviews.toggle_progress.visible = progress_bar_needed
     local progress_bar = self.subviews.toggle_progress:getOptionValue() and progress_bar_needed
     local experience = self.subviews.toggle_experience:getOptionValue()
 
@@ -110,10 +110,8 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
             if not progress_bar then
                 table.insert(annotations, NEWLINE)
             end
-            local level_color = COLOR_GRAY
+            local level_color = COLOR_WHITE
             local level_chara = "Lv"
-
-            level_color = COLOR_WHITE
             if skill.rating == df.skill_rating.Legendary then
                 level_color = COLOR_CYAN
             end
@@ -123,20 +121,15 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
             end
 
             if skill.demotion_counter > 0 then
-                level_color = COLOR_YELLOW
-            end
-
-            if skill.rating - skill.demotion_counter < 0 then
-                level_color = COLOR_BROWN
+                level_color = COLOR_LIGHTRED
             end
 
             if skill.rating - skill.demotion_counter >= 100 then
                 level_chara = "L"
             end
 
-            table.insert(annotations, { text=tostring(
-                    level_chara .. skill.rating - skill.demotion_counter
-                ),
+            table.insert(annotations, {
+                text=level_chara .. math.max(0, skill.rating - skill.demotion_counter),
                 width = 7,
                 pen = level_color }
             )
@@ -168,7 +161,7 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
                 if idx == 0 then
                     tex_idx = 0
                 end
-                -- at the beginning, use the right rounded corner
+                -- at the end, use the right rounded corner
                 if idx == margin-1 then
                     tex_idx = 2
                 end
@@ -188,7 +181,6 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
         ::continue::
     end
     self.subviews.annotations:setText(annotations)
-    self.subviews.annotations:updateLayout()
 
     SkillProgressOverlay.super.onRenderFrame(self, dc, rect)
 end
