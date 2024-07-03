@@ -713,15 +713,15 @@ function TextEditorView:onInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_W then
         -- delete one word backward
-        local _, prev_word_end = self.text
+        local curr_word_start = self.text
             :sub(1, self.cursor - 1)
-            :find('.*%s[^%s]')
-        local word_start = prev_word_end or 1
+            :match('.*%s()[^%s]')
+        local word_start = curr_word_start or 1
         self:setText(
             self.text:sub(1, word_start - 1) ..
             self.text:sub(self.cursor)
         )
-        self:setCursor(word_start - 1)
+        self:setCursor(word_start)
         return true
     elseif keys.CUSTOM_CTRL_C then
         self:copy()
