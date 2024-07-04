@@ -294,7 +294,7 @@ end
 local function get_bar(get_fn, get_max_fn, text, color)
     if get_fn() < get_max_fn() then
         local label_text = {}
-        table.insert(label_text, {text=text, pen=color, width=14})
+        table.insert(label_text, {text=text, pen=color, width=6})
 
         local bar_width = 16
         local percentage = get_fn() / get_max_fn()
@@ -494,7 +494,7 @@ NOTIFICATIONS_BY_IDX = {
         desc='Shows a suffocation bar when you are drowning or breathless.',
         default=true,
         critical=true,
-        adv_fn=curry(get_bar, get_breath, get_max_breath, "Suffocation!", COLOR_LIGHTCYAN),
+        adv_fn=curry(get_bar, get_breath, get_max_breath, "Air", COLOR_LIGHTCYAN),
         on_click=nil,
     },
     {
@@ -502,7 +502,7 @@ NOTIFICATIONS_BY_IDX = {
         desc='Shows a bleeding bar when you are losing blood.',
         default=true,
         critical=true,
-        adv_fn=curry(get_bar, get_blood, get_max_blood, "Bloodloss!", COLOR_RED),
+        adv_fn=curry(get_bar, get_blood, get_max_blood, "Blood", COLOR_RED),
         on_click=nil,
     },
 }
