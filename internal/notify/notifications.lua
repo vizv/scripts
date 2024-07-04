@@ -291,24 +291,23 @@ local function get_breath()
     return get_max_breath() - dfhack.world.getAdventurer().counters.suffocation
 end
 
-local function get_bar(fn, text, color)
-    if fn() then
+local function get_bar(get_fn, get_max_fn, text, color)
+    if get_fn() < get_max_fn() then
         local label_text = {}
-        local suffocation_pen = color
-        table.insert(label_text, {text = text, pen = suffocation_pen, width = 14})
+        table.insert(label_text, {text=text, pen=color, width=14})
 
         local bar_width = 16
-        local percentage = get_breath() / get_max_breath()
+        local percentage = get_fn() / get_max_fn()
         local barstop = math.floor((bar_width * percentage) + 0.5)
         for idx = 0, bar_width-1 do
-            local color = color
+            local bar_color = color
             local char = 219
             if idx >= barstop then
                 -- offset it to the hollow graphic
-                color = COLOR_DARKGRAY
+                bar_color = COLOR_DARKGRAY
                 char = 177
             end
-            table.insert(label_text, { width = 1, tile={ch=char, fg=color}})
+            table.insert(label_text, {width=1, tile={ch=char, fg=bar_color}})
         end
         return label_text
     end
@@ -495,7 +494,7 @@ NOTIFICATIONS_BY_IDX = {
         desc='Shows a suffocation bar when you are drowning or breathless.',
         default=true,
         critical=true,
-        adv_fn=curry(get_bar, function() return get_breath() < get_max_breath() end, "Suffocation!", COLOR_LIGHTCYAN),
+        adv_fn=curry(get_bar, get_breath, get_max_breath, "Suffocation!", COLOR_LIGHTCYAN),
         on_click=nil,
     },
     {
@@ -503,7 +502,7 @@ NOTIFICATIONS_BY_IDX = {
         desc='Shows a bleeding bar when you are losing blood.',
         default=true,
         critical=true,
-        adv_fn=curry(get_bar, function() return get_blood() < get_max_blood() end, "Bloodloss!", COLOR_RED),
+        adv_fn=curry(get_bar, get_blood, get_max_blood, "Bloodloss!", COLOR_RED),
         on_click=nil,
     },
 }
