@@ -37,10 +37,6 @@ function WrappedText:update(text, wrap_width)
             keep_original_newlines=true
         }
     )
-
-    -- as cursor always point to "next" char we need invisible last char
-    -- that can not be pass by
-    self.lines[#self.lines] = self.lines[#self.lines] .. NEWLINE
 end
 
 function WrappedText:coordsToIndex(x, y)
@@ -50,9 +46,11 @@ function WrappedText:coordsToIndex(x, y)
         1,
         math.min(y, #self.lines)
     )
+
+    local line_bonus_length = normalized_y == #self.lines and 1 or 0
     local normalized_x = math.max(
         1,
-        math.min(x, #self.lines[normalized_y])
+        math.min(x, #self.lines[normalized_y] + line_bonus_length)
     )
 
     for i=1, normalized_y - 1 do
@@ -64,14 +62,16 @@ end
 
 function WrappedText:indexToCoords(index)
     local offset = index
+
     for y, line in ipairs(self.lines) do
-        if offset <= #line then
+        local line_bonus_length = y == #self.lines and 1 or 0
+        if offset <= #line + line_bonus_length then
             return offset, y
         end
         offset = offset - #line
     end
 
-    return #self.lines[#self.lines], #self.lines
+    return #self.lines[#self.lines] + 1, #self.lines
 end
 
 TextEditor = defclass(TextEditor, widgets.Widget)
