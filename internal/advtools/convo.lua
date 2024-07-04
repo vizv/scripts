@@ -64,8 +64,8 @@ end
 -- Helper function to create new dialog choices, returns the created choice
 local function new_choice(choice_type, title, keywords)
     local choice = df.adventure_conversation_choice_infost:new()
-    choice.cc = df.talk_choice:new()
-    choice.cc.type = choice_type
+    choice.choice = df.talk_choice:new()
+    choice.choice.type = choice_type
     local text = df.new("string")
     text.value = title
     choice.title.text:insert("#", text)
@@ -84,7 +84,7 @@ local function addWhereaboutsChoice(race, name, target_id, heard_of)
     local choice = new_choice(df.talk_choice_type.AskWhereabouts, title, dfhack.TranslateName(name):split())
     -- insert before the last choice, which is usually "back"
     adventure.conversation.conv_choice_info:insert(#adventure.conversation.conv_choice_info-1, choice)
-    choice.cc.invocation_target_hfid = target_id
+    choice.choice.invocation_target_hfid = target_id
 end
 
 local function addHistFigWhereaboutsChoice(profile)
