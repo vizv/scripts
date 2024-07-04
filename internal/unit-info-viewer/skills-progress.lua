@@ -45,27 +45,32 @@ function SkillProgressOverlay:init()
             text='',
             text_pen=COLOR_GRAY,
         },
-        widgets.ToggleHotkeyLabel{
-            frame={b=0, l=2, w=25},
-            label='Progress Bar',
-            key='CUSTOM_CTRL_B',
-            options={
-                {label='No', value=false, pen=COLOR_WHITE},
-                {label='Yes', value=true, pen=COLOR_YELLOW},
+        widgets.BannerPanel{
+            frame={b=0, l=1, h=1},
+            subviews={
+                widgets.ToggleHotkeyLabel{
+                    frame={l=1, w=25},
+                    label='Progress Bar:',
+                    key='CUSTOM_CTRL_B',
+                    options={
+                        {label='No', value=false, pen=COLOR_WHITE},
+                        {label='Yes', value=true, pen=COLOR_YELLOW},
+                    },
+                    view_id='toggle_progress',
+                    initial_option=true
+                },
+                widgets.ToggleHotkeyLabel{
+                    frame={l=29, w=23},
+                    label='Experience:',
+                    key='CUSTOM_CTRL_E',
+                    options={
+                        {label='No', value=false, pen=COLOR_WHITE},
+                        {label='Yes', value=true, pen=COLOR_YELLOW},
+                    },
+                    view_id='toggle_experience',
+                    initial_option=true
+                },
             },
-            view_id='toggle_progress',
-            initial_option=true
-        },
-        widgets.ToggleHotkeyLabel{
-            frame={b=0, l=31, w=23},
-            label='Experience:',
-            key='CUSTOM_CTRL_E',
-            options={
-                {label='No', value=false, pen=COLOR_WHITE},
-                {label='Yes', value=true, pen=COLOR_YELLOW},
-            },
-            view_id='toggle_experience',
-            initial_option=true
         },
     }
 end
