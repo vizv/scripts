@@ -515,12 +515,26 @@ function TextEditorView:onInput(keys)
         end
     end
 
-    if keys.SELECT then
-        -- handle enter
-        self:insert(NEWLINE)
+    if self:onMouseInput(keys) then
         return true
+    elseif self:onCursorInput(keys) then
+        return true
+    elseif self:onTextManipulationInput(keys) then
+        return true
+    elseif keys.CUSTOM_CTRL_C then
+        self:copy()
+        return true
+    elseif keys.CUSTOM_CTRL_X then
+        self:cut()
+        return true
+    elseif keys.CUSTOM_CTRL_V then
+        self:paste()
+        return true
+    end
+end
 
-    elseif keys._MOUSE_L then
+function TextEditorView:onMouseInput(keys)
+    if keys._MOUSE_L then
         local mouse_x, mouse_y = self:getMousePos()
         if mouse_x and mouse_y then
 
@@ -575,30 +589,11 @@ function TextEditorView:onInput(keys)
 
             return true
         end
+    end
+end
 
-    elseif keys._STRING then
-        if keys._STRING == 0 then
-            -- handle backspace
-            if (self:hasSelection()) then
-                self:eraseSelection()
-            else
-                self:setSelection(
-                    self.cursor - 1,
-                    self.cursor - 1
-                )
-                self:eraseSelection()
-            end
-        else
-            if (self:hasSelection()) then
-                self:eraseSelection()
-            end
-
-            local cv = string.char(keys._STRING)
-            self:insert(cv)
-        end
-
-        return true
-    elseif keys.KEYBOARD_CURSOR_LEFT then
+function TextEditorView:onCursorInput(keys)
+    if keys.KEYBOARD_CURSOR_LEFT then
         self:setCursor(self.cursor - 1)
         return true
     elseif keys.KEYBOARD_CURSOR_RIGHT then
@@ -635,10 +630,6 @@ function TextEditorView:onInput(keys)
         local word_end = self:wordEndOffset()
         self:setCursor(word_end)
         return true
-    elseif keys.CUSTOM_CTRL_A then
-        -- select all
-        self:setSelection(1, #self.text)
-        return true
     elseif keys.CUSTOM_CTRL_H then
         -- line start
         self:setCursor(
@@ -650,6 +641,41 @@ function TextEditorView:onInput(keys)
         self:setCursor(
             self:lineEndOffset()
         )
+        return true
+    end
+end
+
+function TextEditorView:onTextManipulationInput(keys)
+    if keys.SELECT then
+        -- handle enter
+        self:insert(NEWLINE)
+        return true
+
+    elseif keys._STRING then
+        if keys._STRING == 0 then
+            -- handle backspace
+            if (self:hasSelection()) then
+                self:eraseSelection()
+            else
+                self:setSelection(
+                    self.cursor - 1,
+                    self.cursor - 1
+                )
+                self:eraseSelection()
+            end
+        else
+            if (self:hasSelection()) then
+                self:eraseSelection()
+            end
+
+            local cv = string.char(keys._STRING)
+            self:insert(cv)
+        end
+
+        return true
+    elseif keys.CUSTOM_CTRL_A then
+        -- select all
+        self:setSelection(1, #self.text)
         return true
     elseif keys.CUSTOM_CTRL_U then
         -- delete current line
@@ -701,17 +727,7 @@ function TextEditorView:onInput(keys)
         )
         self:setCursor(word_start)
         return true
-    elseif keys.CUSTOM_CTRL_C then
-        self:copy()
-        return true
-    elseif keys.CUSTOM_CTRL_X then
-        self:cut()
-        return true
-    elseif keys.CUSTOM_CTRL_V then
-        self:paste()
-        return true
     end
-
 end
 
 JOURNAL_PERSIST_KEY = 'journal'
