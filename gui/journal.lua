@@ -91,12 +91,12 @@ TextEditor.ATTRS{
 function TextEditor:init()
     self.render_start_line_y = 1
     self.scrollbar = widgets.Scrollbar{
-        frame={r=0},
+        frame={r=0,t=1},
         on_scroll=self:callback('onScrollbar')
     }
     self.editor = TextEditorView{
         view_id='text_area',
-        frame={l=0,r=1},
+        frame={l=0,r=2,t=0},
         text = self.text,
         text_pen = self.text_pen,
         ignore_keys = self.ignore_keys,
@@ -122,7 +122,8 @@ function TextEditor:init()
 
     self:addviews{
         self.editor,
-        self.scrollbar
+        self.scrollbar,
+        widgets.HelpButton{command="gui/journal", frame={r=0,t=0}}
     }
     self:setFocus(true)
 end
