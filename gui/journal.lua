@@ -5,8 +5,18 @@ local widgets = require 'gui.widgets'
 
 local CLIPBOARD_MODE = {LOCAL = 1, LINE = 2}
 
--- wrapped text are derivate of text,
--- stored as class for performance and readability
+-- This class caches lines of text wrapped to a specified width for performance
+-- and readability. It can convert a given text index to (x, y) coordinates in
+-- the wrapped text and vice versa.
+
+-- Usage:
+-- This class should only be used in the following scenarios.
+--  1. When text or text features need to be rendered
+--     (wrapped {x, y} coordinates are required).
+--  2. When mouse input needs to be converted to the original text position.
+
+-- Using this class in other scenarios may lead to issues with the component's
+-- behavior when the text is wrapped.
 WrappedText = defclass(WrappedText)
 
 WrappedText.ATTRS{
@@ -107,8 +117,8 @@ function TextEditor:init()
     }
 
     self:addviews{
-        self.scrollbar,
-        self.editor
+        self.editor,
+        self.scrollbar
     }
     self:setFocus(true)
 end
@@ -141,6 +151,7 @@ function TextEditor:onScrollbar(scroll_spec)
         #self.editor.wrapped_text.lines - height + 1,
         math.max(1, render_start_line)
     ))
+    self:updateScrollbar()
 end
 
 function TextEditor:updateScrollbar()
@@ -158,8 +169,6 @@ function TextEditor:updateScrollbar()
 end
 
 function TextEditor:renderSubviews(dc)
-    self:updateScrollbar()
-
     self.editor.frame_body.y1 = self.frame_body.y1-(self.render_start_line_y - 1)
     self.editor:render(dc)
     self.scrollbar:render(dc)
@@ -221,7 +230,10 @@ function TextEditorView:recomputeLines()
 end
 
 function TextEditorView:setCursor(cursor_offset)
-    self.cursor = cursor_offset
+    self.cursor = math.max(
+        1,
+        math.min(#self.text + 1, cursor_offset)
+    )
 
     if self.debug then
         print('cursor', self.cursor)
@@ -233,25 +245,6 @@ function TextEditorView:setCursor(cursor_offset)
     if self.on_cursor_change then
         self.on_cursor_change()
     end
-end
-
-function TextEditorView:normalizeCursor(x, y)
-    local lines_count = #self.wrapped_text.lines
-
-    while (x < 1 and y > 1) do
-        y = y - 1
-        x = x + #self.wrapped_text.lines[y]
-    end
-
-    while (x > #self.wrapped_text.lines[y] and y < lines_count) do
-        x = x - #self.wrapped_text.lines[y]
-        y = y + 1
-    end
-
-    x = math.min(x, #self.wrapped_text.lines[y])
-    y = math.min(y, lines_count)
-
-    return math.max(1, x), math.max(1, y)
 end
 
 function TextEditorView:setSelection(from_offset, to_offset)
