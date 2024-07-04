@@ -3,6 +3,8 @@
 
 local gui = require 'gui'
 local widgets = require 'gui.widgets'
+local utils = require 'utils'
+local json = require 'json'
 
 local CLIPBOARD_MODE = {LOCAL = 1, LINE = 2}
 
@@ -771,7 +773,57 @@ function TextEditorView:onTextManipulationInput(keys)
     end
 end
 
+local RESIZE_MIN = {w=32, h=10}
+
 JOURNAL_PERSIST_KEY = 'journal'
+
+journal_config = journal_config or json.open('dfhack-config/journal.json')
+
+JournalWindow = defclass(JournalWindow, widgets.Window)
+JournalWindow.ATTRS {
+    frame_title='DF Journal',
+    resizable=true,
+    resize_min=RESIZE_MIN,
+    frame_inset=0
+}
+
+function JournalWindow:init()
+    local config_frame = copyall(journal_config.data.frame or {})
+    self.frame = self:sanitizeFrame(config_frame)
+end
+
+function JournalWindow:sanitizeFrame(frame)
+    local w, h = dfhack.screen.getWindowSize()
+    local min = RESIZE_MIN
+    if frame.t and h - frame.t - (frame.b or 0) < min.h then
+        frame.t = h - min.h
+        frame.b = 0
+    end
+    if frame.b and h - frame.b - (frame.t or 0) < min.h then
+        frame.b = h - min.h
+        frame.t = 0
+    end
+    if frame.l and w - frame.l - (frame.r or 0) < min.w then
+        frame.l = w - min.w
+        frame.r = 0
+    end
+    if frame.r and w - frame.r - (frame.l or 0) < min.w then
+        frame.r = w - min.w
+        frame.l = 0
+    end
+    return frame
+end
+
+function JournalWindow:postUpdateLayout()
+    self:saveConfig()
+end
+
+function JournalWindow:saveConfig()
+    utils.assign(journal_config.data, {
+        frame = self.frame
+    })
+    journal_config:write()
+end
 
 JournalScreen = defclass(JournalScreen, gui.ZScreen)
 JournalScreen.ATTRS {
