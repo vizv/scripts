@@ -69,18 +69,26 @@ function showNemesisPrompt(advSetUpScreen)
                     name = name .. ' (' .. sym .. ')'
                 end
                 if histFig.name.has_name then
-                    name = name .. dfhack.TranslateName(histFig.name) ..
-                         "\n\"" .. dfhack.TranslateName(histFig.name, true) .. "\""
+                    name = name ..
+                         '\n' .. dfhack.TranslateName(histFig.name) ..
+                         '\n"' .. dfhack.TranslateName(histFig.name, true) .. '"'
                 end
-                name = name .. ' [nemid:'.. nemesis.id ..']'
-                table.insert(choices, { text = name, nemesis = nemesis, search_key = name:lower() })
+                table.insert(choices, { text = name, nemesis = nemesis, search_key = name:lower(), idx = i })
             end
         end
     end
-    dialogs.showListPrompt('unretire-anyone', "Select someone to add to the \"Specific Person\" list:", COLOR_WHITE,
-        choices, function(id, choice)
-            addNemesisToUnretireList(advSetUpScreen, choice.nemesis, i)
-        end, nil, nil, true)
+
+    dialogs.ListBox{
+        frame_title = 'unretire-anyone',
+        text = 'Select someone to add to the \"Specific Person\" list:',
+        text_pen = COLOR_WHITE,
+        choices = choices,
+        on_select = function(id, choice)
+            addNemesisToUnretireList(advSetUpScreen, choice.nemesis, choice.idx)
+        end,
+        with_filter = true,
+        row_height = 3,
+    }:show()
 end
 
 showNemesisPrompt(viewscreen)
