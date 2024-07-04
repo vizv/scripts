@@ -27,6 +27,18 @@ Template for new versions:
 # Future
 
 ## New Tools
+
+## New Features
+
+## Fixes
+
+## Misc Improvements
+
+## Removed
+
+# 50.13-r3
+
+## New Tools
 - `advtools`: collection of useful commands and overlays for adventure mode
 - `advtools`: added an overlay that automatically fixes corrupt throwing/shooting state, preventing save/load crashes
 - `advtools`: advtools party - promotes one of your companions to become a controllable adventurer
