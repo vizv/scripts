@@ -442,25 +442,35 @@ function TextEditorView:charAtCursor()
     return self.text:sub(self.cursor, self.cursor)
 end
 
-function TextEditorView:getMultiLeftClick()
-    local from_last_click_ms = (dfhack.getTickCount() - (self.last_click or 0))
+function TextEditorView:getMultiLeftClick(x, y)
+    if self.last_click then
+        local from_last_click_ms = dfhack.getTickCount() - self.last_click.tick
 
-    if (from_last_click_ms > widgets.DOUBLE_CLICK_MS) then
-        self.clicks_count = 0;
+        if (
+            self.last_click.x ~= x or
+            self.last_click.y ~= y or
+            from_last_click_ms > widgets.DOUBLE_CLICK_MS
+        ) then
+            self.clicks_count = 0;
+        end
     end
 
-    return self.clicks_count
+    return self.clicks_count or 0
 end
 
-function TextEditorView:triggerMultiLeftClick()
-    local clicks_count = self:getMultiLeftClick()
+function TextEditorView:triggerMultiLeftClick(x, y)
+    local clicks_count = self:getMultiLeftClick(x, y)
 
     self.clicks_count = clicks_count + 1
     if (self.clicks_count >= 4) then
         self.clicks_count = 1
     end
 
-    self.last_click = dfhack.getTickCount()
+    self.last_click = {
+        tick=dfhack.getTickCount(),
+        x=x,
+        y=y,
+    }
     return self.clicks_count
 end
 
@@ -538,7 +548,10 @@ function TextEditorView:onMouseInput(keys)
         local mouse_x, mouse_y = self:getMousePos()
         if mouse_x and mouse_y then
 
-            local clicks_count = self:triggerMultiLeftClick()
+            local clicks_count = self:triggerMultiLeftClick(
+                mouse_x + 1,
+                mouse_y + 1
+            )
             if clicks_count >= 3 then
                 self:setSelection(
                     self:lineStartOffset(),
@@ -570,12 +583,13 @@ function TextEditorView:onMouseInput(keys)
         end
 
     elseif keys._MOUSE_L_DOWN then
-        if (self:getMultiLeftClick() > 1) then
-            return true
-        end
 
         local mouse_x, mouse_y = self:getMousePos()
         if mouse_x and mouse_y then
+            if (self:getMultiLeftClick(mouse_x + 1, mouse_y + 1) > 1) then
+                return true
+            end
+
             local offset = self.wrapped_text:coordsToIndex(
                 mouse_x + 1,
                 mouse_y + 1
