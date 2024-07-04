@@ -175,8 +175,8 @@ end
 
 function TextEditor:renderSubviews(dc)
     self.editor.frame_body.y1 = self.frame_body.y1-(self.render_start_line_y - 1)
-    self.editor:render(dc)
-    self.scrollbar:render(dc)
+
+    TextEditor.super.renderSubviews(self, dc)
 end
 
 function TextEditor:onInput(keys)
@@ -200,7 +200,7 @@ TextEditorView.ATTRS{
     text = '',
     text_pen = COLOR_LIGHTCYAN,
     ignore_keys = {'STRING_A096'},
-    select_pen = COLOR_CYAN,
+    pen_selection = COLOR_CYAN,
     on_change = DEFAULT_NIL,
     on_cursor_change = DEFAULT_NIL,
     enable_cursor_blink = true,
@@ -213,6 +213,18 @@ function TextEditorView:init()
     self.clipboard_mode = CLIPBOARD_MODE.LOCAL
     self.render_start_line_y = 1
     self.cursor = #self.text + 1
+
+    self.main_pen = dfhack.pen.parse({
+        fg=self.text_pen,
+        bg=COLOR_RESET,
+        bold=true
+    })
+    self.sel_pen = dfhack.pen.parse({
+        fg=self.text_pen,
+        bg=self.pen_selection,
+        bold=true
+    })
+
     self.wrapped_text = WrappedText{
         text=self.text,
         wrap_width=256
@@ -369,7 +381,7 @@ function TextEditorView:insert(text)
 end
 
 function TextEditorView:onRenderBody(dc)
-    dc:pen({fg=self.text_pen, bg=COLOR_RESET, bold=true})
+    dc:pen(self.main_pen)
 
     local max_width = dc.width
     local new_line = self.debug and NEWLINE or ''
@@ -414,7 +426,7 @@ function TextEditorView:onRenderBody(dc)
             :sub(from_x, to_y == from_y and to_x or nil)
             :gsub(NEWLINE, sel_new_line)
 
-        dc:pen({ fg=self.text_pen, bg=self.select_pen })
+        dc:pen(self.sel_pen)
             :seek(from_x - 1, from_y - 1)
             :string(line)
 
