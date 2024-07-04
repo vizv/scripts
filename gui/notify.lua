@@ -155,6 +155,7 @@ AdvNotifyOverlay.ATTRS{
     desc='Shows list of active notifications in adventure mode.',
     default_pos={x=18,y=-5},
     viewscreens='dungeonmode/Default',
+    overlay_onupdate_max_freq_seconds=1,
     right_offset=13,
 }
 
