@@ -39,15 +39,11 @@ function LegendsManager:init()
     legends.page:insert("#", {new=true, header="Legends", mode=0, index=-1})
     dfhack.screen.show(legends)
 
+    local iframe = gui.get_interface_frame()
     self:addviews{
         widgets.Panel{
-            frame=gui.get_interface_frame(),
-            subviews={
-                widgets.Panel{
-                    view_id='done_mask',
-                    frame={t=1, r=1, w=9, h=3},
-                },
-            },
+            view_id='done_mask',
+            frame={t=iframe.t+1, l=iframe.l+iframe.w-10, w=9, h=3},
         },
     }
 end
