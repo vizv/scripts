@@ -45,11 +45,15 @@ function LegendsManager:init()
             subviews={
                 widgets.Panel{
                     view_id='done_mask',
-                    frame={t=1, r=1, w=9, h=3},
+                    frame={t=1, r=2, w=8, h=3},
                 },
             },
         },
     }
+end
+
+function LegendsManager:isMouseOver()
+    return self.subviews.done_mask:getMouseFramePos()
 end
 
 function LegendsManager:onInput(keys)
