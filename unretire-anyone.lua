@@ -83,7 +83,7 @@ function showNemesisPrompt(advSetUpScreen)
 
     dialogs.ListBox{
         frame_title = 'unretire-anyone',
-        text = 'Select someone to add to the \"Specific Person\" list:',
+        text = 'Select someone to add to the "Specific Person" list:',
         text_pen = COLOR_WHITE,
         choices = choices,
         on_select = function(id, choice)
