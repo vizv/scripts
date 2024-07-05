@@ -72,6 +72,9 @@ function showNemesisPrompt(advSetUpScreen)
                     name = name ..
                          '\n' .. dfhack.TranslateName(histFig.name) ..
                          '\n"' .. dfhack.TranslateName(histFig.name, true) .. '"'
+                else
+                    name = name ..
+                     '\nUnnamed'
                 end
                 table.insert(choices, { text = name, nemesis = nemesis, search_key = name:lower(), idx = i })
             end
