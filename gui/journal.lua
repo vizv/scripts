@@ -1,4 +1,5 @@
 -- Fort journal with a multi-line text editor
+--@ module = true
 
 local gui = require 'gui'
 local widgets = require 'gui.widgets'
@@ -92,6 +93,7 @@ function TextEditor:init()
         on_scroll=self:callback('onScrollbar')
     }
     self.editor = TextEditorView{
+        view_id='text_area',
         frame={l=0,r=1},
         text = self.text,
         text_pen = self.text_pen,
@@ -198,6 +200,7 @@ TextEditorView.ATTRS{
     select_pen = COLOR_CYAN,
     on_change = DEFAULT_NIL,
     on_cursor_change = DEFAULT_NIL,
+    enable_cursor_blink = true,
     debug = false
 }
 
@@ -366,7 +369,8 @@ function TextEditorView:onRenderBody(dc)
         dc:newline()
     end
 
-    local show_focus = not self:hasSelection()
+    local show_focus = self.enable_cursor_blink
+        and not self:hasSelection()
         and self.parent_view.focus
         and gui.blink_visible(530)
 
@@ -749,13 +753,15 @@ JOURNAL_PERSIST_KEY = 'journal'
 JournalScreen = defclass(JournalScreen, gui.ZScreen)
 JournalScreen.ATTRS {
     focus_path='journal',
+    save_on_change=true
 }
 
-function JournalScreen:init()
+function JournalScreen:init(options)
     local content = self:loadContextContent()
 
     self:addviews{
         widgets.Window{
+            view_id='journal_window',
             frame_title='DF Journal',
             frame={w=65, h=45},
             resizable=true,
@@ -763,6 +769,7 @@ function JournalScreen:init()
             frame_inset=0,
             subviews={
                 TextEditor{
+                    view_id='journal_editor',
                     frame={l=1, t=1, b=1, r=0},
                     text=content,
                     on_change=function(text) self:saveContextContent(text) end
@@ -780,7 +787,7 @@ function JournalScreen:loadContextContent()
 end
 
 function JournalScreen:saveContextContent(text)
-    if dfhack.isWorldLoaded() then
+    if self.save_on_change and dfhack.isWorldLoaded() then
         dfhack.persistent.saveSiteData(JOURNAL_PERSIST_KEY, {text={text}})
     end
 end
@@ -788,6 +795,8 @@ end
 function JournalScreen:onDismiss()
     view = nil
 end
+
+view = nil
 
 function main()
     if not dfhack.isMapLoaded() or not dfhack.world.isFortressMode() then
