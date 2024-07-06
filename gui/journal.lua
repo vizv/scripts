@@ -369,10 +369,12 @@ function TextEditorView:onRenderBody(dc)
         dc:newline()
     end
 
-    local show_focus = self.enable_cursor_blink
-        and not self:hasSelection()
-        and self.parent_view.focus
-        and gui.blink_visible(530)
+    local show_focus = not self.enable_cursor_blink
+        or (
+            not self:hasSelection()
+            and self.parent_view.focus
+            and gui.blink_visible(530)
+        )
 
     if (show_focus) then
         local x, y = self.wrapped_text:indexToCoords(self.cursor)
@@ -620,14 +622,18 @@ function TextEditorView:onCursorInput(keys)
     elseif keys.KEYBOARD_CURSOR_UP then
         local x, y = self.wrapped_text:indexToCoords(self.cursor)
         local last_cursor_x = self.last_cursor_x or x
-        local offset = self.wrapped_text:coordsToIndex(last_cursor_x, y - 1)
+        local offset = y > 1 and
+            self.wrapped_text:coordsToIndex(last_cursor_x, y - 1) or
+            1
         self:setCursor(offset)
         self.last_cursor_x = last_cursor_x
         return true
     elseif keys.KEYBOARD_CURSOR_DOWN then
         local x, y = self.wrapped_text:indexToCoords(self.cursor)
         local last_cursor_x = self.last_cursor_x or x
-        local offset = self.wrapped_text:coordsToIndex(last_cursor_x, y + 1)
+        local offset = y < #self.wrapped_text.lines and
+            self.wrapped_text:coordsToIndex(last_cursor_x, y + 1) or
+            #self.text + 1
         self:setCursor(offset)
         self.last_cursor_x = last_cursor_x
         return true
