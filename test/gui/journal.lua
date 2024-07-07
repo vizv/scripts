@@ -915,4 +915,132 @@ function test.line_end()
         'porttitor mi, vitae rutrum eros metus nec libero.',
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit._',
     }, '\n'));
+
+    journal:dismiss()
+end
+
+function test.line_beging()
+    local journal, text_area = arrange_empty_journal({w=70})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    simulate_input_keys('CUSTOM_CTRL_H')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '_0: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    text_area:setCursor(173)
+    journal:onRender()
+
+    simulate_input_keys('CUSTOM_CTRL_H')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '_12: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    text_area:setCursor(1)
+    journal:onRender()
+
+    simulate_input_keys('CUSTOM_CTRL_H')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_0: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    journal:dismiss()
+end
+
+function test.line_delete()
+    local journal, text_area = arrange_empty_journal({w=70})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    text_area:setCursor(65)
+    journal:onRender()
+
+    simulate_input_keys('CUSTOM_CTRL_U')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '_0: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    simulate_input_keys('CUSTOM_CTRL_U')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '_'
+    }, '\n'));
+
+    text_area:setCursor(1)
+    journal:onRender()
+
+    simulate_input_keys('CUSTOM_CTRL_U')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_'
+    }, '\n'));
+
+    simulate_input_keys('CUSTOM_CTRL_U')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_'
+    }, '\n'));
+
+    journal:dismiss()
+end
+
+function test.line_delete_to_end()
+    local journal, text_area = arrange_empty_journal({w=70})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    text_area:setCursor(70)
+    journal:onRender()
+
+    simulate_input_keys('CUSTOM_CTRL_K')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed_',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    simulate_input_keys('CUSTOM_CTRL_K')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed_0: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+    }, '\n'));
+
+    journal:dismiss()
 end
