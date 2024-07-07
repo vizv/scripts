@@ -28,6 +28,41 @@ local function simulate_input_text(text)
     gui_journal.view:onRender()
 end
 
+local function simulate_mouse_click(text_area, x, y)
+    local g_x, g_y = text_area.frame_body:globalXY(x, y)
+    df.global.gps.mouse_x = g_x
+    df.global.gps.mouse_y = g_y
+
+    gui.simulateInput(dfhack.gui.getCurViewscreen(true), {
+        _MOUSE_L=true,
+        _MOUSE_L_DOWN=true,
+    })
+    gui.simulateInput(dfhack.gui.getCurViewscreen(true), '_MOUSE_L_DOWN')
+
+    gui_journal.view:onRender()
+end
+
+local function simulate_mouse_drag(text_area, x_from, y_from, x_to, y_to)
+    local g_x_from, g_y_from = text_area.frame_body:globalXY(x_from, y_from)
+    local g_x_to, g_y_to = text_area.frame_body:globalXY(x_to, y_to)
+
+    df.global.gps.mouse_x = g_x_from
+    df.global.gps.mouse_y = g_y_from
+
+
+    gui.simulateInput(dfhack.gui.getCurViewscreen(true), {
+        _MOUSE_L=true,
+        _MOUSE_L_DOWN=true,
+    })
+    gui.simulateInput(dfhack.gui.getCurViewscreen(true), '_MOUSE_L_DOWN')
+
+    df.global.gps.mouse_x = g_x_to
+    df.global.gps.mouse_y = g_y_to
+    gui.simulateInput(dfhack.gui.getCurViewscreen(true), '_MOUSE_L_DOWN')
+
+    gui_journal.view:onRender()
+end
+
 local function arrange_empty_journal(options)
     options = options or {}
 
@@ -63,6 +98,30 @@ local function read_rendered_text(text_area)
                 break
             else
                 text = text .. string.char(pen.ch)
+            end
+        end
+
+        text = text .. '\n'
+    end
+
+    return text:gsub("\n+$", "")
+end
+
+local function read_selected_text(text_area)
+    local pen = nil
+    local text = ''
+
+    for y=0,text_area.frame_body.height do
+
+        for x=0,text_area.frame_body.width do
+            local g_x, g_y = text_area.frame_body:globalXY(x, y)
+            pen = dfhack.screen.readTile(g_x, g_y)
+
+            local pen_char = string.char(pen.ch)
+            if pen == nil or pen.ch == nil or pen.ch == 0 then
+                break
+            elseif pen.bg == COLOR_CYAN then
+                text = text .. pen_char
             end
         end
 
@@ -1187,3 +1246,120 @@ function test.jump_to_text_begin()
 
     journal:dismiss()
 end
+
+
+--[=====[
+-- Mouse related tests
+--]=====]
+
+function test.mouse_cursor_control()
+    local journal, text_area = arrange_empty_journal({w=70})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    simulate_mouse_click(text_area, 4, 0)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: _orem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    simulate_mouse_click(text_area, 40, 2)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus ne_ libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    simulate_mouse_click(text_area, 49, 2)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero._',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    simulate_mouse_click(text_area, 60, 2)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero._',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    simulate_mouse_click(text_area, 0, 10)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '_0: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    simulate_mouse_click(text_area, 21, 10)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor_sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    simulate_mouse_click(text_area, 63, 10)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit._',
+    }, '\n'));
+
+    journal:dismiss()
+end
+
+--[=====[
+-- Text selection related tests
+--]=====]
+
+function test.select_all()
+    local journal, text_area = arrange_empty_journal({w=70})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit._',
+    }, '\n'));
+
+    simulate_input_keys('CUSTOM_CTRL_A')
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    journal:dismiss()
+end
+
