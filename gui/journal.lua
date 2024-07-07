@@ -733,7 +733,7 @@ function TextEditorView:onTextManipulationInput(keys)
         else
             self:setSelection(
                 self.cursor,
-                self:lineEndOffset() - 1
+                math.max(self:lineEndOffset() - 1, self.cursor)
             )
             self:eraseSelection()
         end
