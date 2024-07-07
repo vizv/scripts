@@ -229,7 +229,11 @@ function TextEditorView:postComputeFrame()
 end
 
 function TextEditorView:recomputeLines()
-    self.wrapped_text:update(self.text, self.frame_body.width)
+    self.wrapped_text:update(
+        self.text,
+        -- something cursor '_' need to be add at the end of a line
+        self.frame_body.width - 1
+    )
 end
 
 function TextEditorView:setCursor(cursor_offset)
@@ -519,7 +523,7 @@ end
 function TextEditorView:wordEndOffset(offset)
     return self.text
         :match(
-            '[%s]*[^%s]-()%s',
+            '%s*[^%s]*()',
             offset or self.cursor
         ) or #self.text + 1
 end
@@ -681,6 +685,10 @@ function TextEditorView:onTextManipulationInput(keys)
             if (self:hasSelection()) then
                 self:eraseSelection()
             else
+                if (self.cursor == 1) then
+                    return true
+                end
+
                 self:setSelection(
                     self.cursor - 1,
                     self.cursor - 1
