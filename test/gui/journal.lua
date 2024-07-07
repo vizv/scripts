@@ -66,16 +66,10 @@ local function read_rendered_text(text_area)
             end
         end
 
-        local g_x, g_y = text_area.frame_body:globalXY(0, y + 1)
-        pen = dfhack.screen.readTile(g_x, g_y)
-        if pen == nil or pen.ch == nil or pen.ch == 0 then
-            break
-        end
-
         text = text .. '\n'
     end
 
-    return text
+    return text:gsub("%s+$", "")
 end
 
 function test.load()
@@ -130,6 +124,63 @@ function test.wrap_text_to_available_width()
     journal:dismiss()
 end
 
+function test.submit_new_line()
+    local journal, text_area = arrange_empty_journal({w=60})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    simulate_input_keys('SELECT')
+    simulate_input_keys('SELECT')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+        '',
+        '_',
+    }, '\n'));
+
+    text_area:setCursor(58)
+    journal:onRender()
+
+    simulate_input_keys('SELECT')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'el',
+        '_t.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+        -- empty end lines are not rendered
+    }, '\n'));
+
+    text_area:setCursor(84)
+    journal:onRender()
+
+    simulate_input_keys('SELECT')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'el',
+        'it.',
+        '112: Sed consectetur,',
+        -- wrapping changed
+        '_urna sit amet aliquet egestas, ante nibh porttitor mi, ',
+        'vitae rutrum eros metus nec libero.',
+        -- empty end lines are not rendered
+    }, '\n'));
+
+    journal:dismiss()
+end
+
 function test.keyboard_arrow_up_navigation()
     local journal, text_area = arrange_empty_journal({w=60})
 
@@ -143,7 +194,7 @@ function test.keyboard_arrow_up_navigation()
 
     simulate_input_text(text)
 
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -157,7 +208,7 @@ function test.keyboard_arrow_up_navigation()
         'est pellentesque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -171,8 +222,8 @@ function test.keyboard_arrow_up_navigation()
         'est pellentesque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -186,7 +237,7 @@ function test.keyboard_arrow_up_navigation()
         'est pellentesque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -200,10 +251,10 @@ function test.keyboard_arrow_up_navigation()
         'est pellentesque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '_0: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -217,8 +268,8 @@ function test.keyboard_arrow_up_navigation()
         'est pellentesque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
         'elit.',
@@ -261,7 +312,7 @@ function test.keyboard_arrow_down_navigation()
         'est pellentesque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -275,7 +326,7 @@ function test.keyboard_arrow_down_navigation()
         'est pellentesque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -289,12 +340,12 @@ function test.keyboard_arrow_down_navigation()
         'est pellentesque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -308,7 +359,7 @@ function test.keyboard_arrow_down_navigation()
         'est pellen_esque ac.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_DOWN=true})
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -322,7 +373,7 @@ function test.keyboard_arrow_down_navigation()
         'est pellentesque ac._',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_UP=true})
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -349,7 +400,7 @@ function test.keyboard_arrow_left_navigation()
 
     simulate_input_text(text)
 
-    simulate_input_keys({KEYBOARD_CURSOR_LEFT=true})
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -360,7 +411,7 @@ function test.keyboard_arrow_left_navigation()
     }, '\n'));
 
     for i=1,6 do
-        simulate_input_keys({KEYBOARD_CURSOR_LEFT=true})
+        simulate_input_keys('KEYBOARD_CURSOR_LEFT')
     end
 
     expect.eq(read_rendered_text(text_area), table.concat({
@@ -371,7 +422,7 @@ function test.keyboard_arrow_left_navigation()
         '_ibero.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_LEFT=true})
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -382,7 +433,7 @@ function test.keyboard_arrow_left_navigation()
     }, '\n'));
 
     for i=1,105 do
-        simulate_input_keys({KEYBOARD_CURSOR_LEFT=true})
+        simulate_input_keys('KEYBOARD_CURSOR_LEFT')
     end
 
     expect.eq(read_rendered_text(text_area), table.concat({
@@ -394,7 +445,7 @@ function test.keyboard_arrow_left_navigation()
     }, '\n'));
 
     for i=1,60 do
-        simulate_input_keys({KEYBOARD_CURSOR_LEFT=true})
+        simulate_input_keys('KEYBOARD_CURSOR_LEFT')
     end
 
     expect.eq(read_rendered_text(text_area), table.concat({
@@ -405,7 +456,7 @@ function test.keyboard_arrow_left_navigation()
         'libero.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_LEFT=true})
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '_0: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -414,6 +465,8 @@ function test.keyboard_arrow_left_navigation()
         'ante nibh porttitor mi, vitae rutrum eros metus nec ',
         'libero.',
     }, '\n'));
+
+    journal:dismiss()
 end
 
 function test.keyboard_arrow_right_navigation()
@@ -428,7 +481,7 @@ function test.keyboard_arrow_right_navigation()
     text_area:setCursor(1)
     journal:onRender()
 
-    simulate_input_keys({KEYBOARD_CURSOR_RIGHT=true})
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '6_: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -439,7 +492,7 @@ function test.keyboard_arrow_right_navigation()
     }, '\n'));
 
     for i=1,53 do
-        simulate_input_keys({KEYBOARD_CURSOR_RIGHT=true})
+        simulate_input_keys('KEYBOARD_CURSOR_RIGHT')
     end
 
     expect.eq(read_rendered_text(text_area), table.concat({
@@ -450,7 +503,7 @@ function test.keyboard_arrow_right_navigation()
         'libero.',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_RIGHT=true})
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -461,7 +514,7 @@ function test.keyboard_arrow_right_navigation()
     }, '\n'));
 
     for i=1,5 do
-        simulate_input_keys({KEYBOARD_CURSOR_RIGHT=true})
+        simulate_input_keys('KEYBOARD_CURSOR_RIGHT')
     end
 
     expect.eq(read_rendered_text(text_area), table.concat({
@@ -473,7 +526,7 @@ function test.keyboard_arrow_right_navigation()
     }, '\n'));
 
     for i=1,113 do
-        simulate_input_keys({KEYBOARD_CURSOR_RIGHT=true})
+        simulate_input_keys('KEYBOARD_CURSOR_RIGHT')
     end
 
     expect.eq(read_rendered_text(text_area), table.concat({
@@ -484,7 +537,7 @@ function test.keyboard_arrow_right_navigation()
         'libero._',
     }, '\n'));
 
-    simulate_input_keys({KEYBOARD_CURSOR_RIGHT=true})
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT')
 
     expect.eq(read_rendered_text(text_area), table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
@@ -493,4 +546,173 @@ function test.keyboard_arrow_right_navigation()
         'ante nibh porttitor mi, vitae rutrum eros metus nec ',
         'libero._',
     }, '\n'));
+
+    journal:dismiss()
+end
+
+function test.fast_rewind_words_right()
+    local journal, text_area = arrange_empty_journal({w=60})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+    }, '\n')
+
+    simulate_input_text(text)
+    text_area:setCursor(1)
+    journal:onRender()
+
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60:_Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem_ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    for i=1,6 do
+        simulate_input_keys('KEYBOARD_CURSOR_RIGHT_FAST')
+    end
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing_',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit._',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112:_Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    for i=1,17 do
+        simulate_input_keys('KEYBOARD_CURSOR_RIGHT_FAST')
+    end
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero._',
+    }, '\n'));
+
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero._',
+    }, '\n'));
+
+    journal:dismiss()
+end
+
+
+function test.fast_rewind_words_left()
+    local journal, text_area = arrange_empty_journal({w=60})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        '_ibero.',
+    }, '\n'));
+
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus _ec ',
+        'libero.',
+    }, '\n'));
+
+    for i=1,8 do
+        simulate_input_keys('KEYBOARD_CURSOR_LEFT_FAST')
+    end
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        '_nte nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet _gestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    for i=1,16 do
+        simulate_input_keys('KEYBOARD_CURSOR_LEFT_FAST')
+    end
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_0: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT_FAST')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_0: Lorem ipsum dolor sit amet, consectetur adipiscing ',
+        'elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ',
+        'ante nibh porttitor mi, vitae rutrum eros metus nec ',
+        'libero.',
+    }, '\n'));
+
+    journal:dismiss()
 end
