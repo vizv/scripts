@@ -112,6 +112,7 @@ local function read_selected_text(text_area)
     local text = ''
 
     for y=0,text_area.frame_body.height do
+        local has_sel = false
 
         for x=0,text_area.frame_body.width do
             local g_x, g_y = text_area.frame_body:globalXY(x, y)
@@ -121,11 +122,13 @@ local function read_selected_text(text_area)
             if pen == nil or pen.ch == nil or pen.ch == 0 then
                 break
             elseif pen.bg == COLOR_CYAN then
+                has_sel = true
                 text = text .. pen_char
             end
         end
-
-        text = text .. '\n'
+        if has_sel then
+            text = text .. '\n'
+        end
     end
 
     return text:gsub("\n+$", "")
@@ -1329,6 +1332,80 @@ function test.mouse_cursor_control()
     journal:dismiss()
 end
 
+function test.mouse_selection_control()
+    local journal, text_area = arrange_empty_journal({w=70})
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    simulate_mouse_drag(text_area, 4, 0, 29, 0)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        'Lorem ipsum dolor sit amet',
+    }, '\n'));
+
+    simulate_mouse_drag(text_area, 0, 0, 29, 0)
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet',
+    }, '\n'));
+
+    simulate_mouse_drag(text_area, 32, 0, 32, 1)
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        'consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit am'
+    }, '\n'));
+
+    simulate_mouse_drag(text_area, 32, 1, 48, 2)
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        'met aliquet egestas, ante nibh ',
+        'porttitor mi, vitae rutrum eros metus nec libero.',
+    }, '\n'));
+
+    simulate_mouse_drag(text_area, 42, 2, 59, 3)
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        'libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
+    }, '\n'));
+
+    simulate_mouse_drag(text_area, 42, 2, 65, 3)
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        'libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
+    }, '\n'));
+
+    simulate_mouse_drag(text_area, 42, 2, 65, 6)
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        'libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
+    }, '\n'));
+
+    simulate_mouse_drag(text_area, 42, 2, 42, 6)
+
+    expect.eq(read_selected_text(text_area), table.concat({
+        'libero.',
+        '60: Lorem ipsum dolor sit amet, consectetur'
+    }, '\n'));
+
+    journal:dismiss()
+end
 --[=====[
 -- Text selection related tests
 --]=====]
