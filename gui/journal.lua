@@ -714,8 +714,8 @@ function TextEditorView:onTextManipulationInput(keys)
         if (self:hasSelection()) then
             -- delete all lines that has selection
             self:setSelection(
-                self:lineStartOffset(),
-                self:lineEndOffset()
+                self:lineStartOffset(self.cursor),
+                self:lineEndOffset(self.sel_end)
             )
             self:eraseSelection()
         else
