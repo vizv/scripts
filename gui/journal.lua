@@ -299,6 +299,8 @@ function TextEditorView:copy()
         end
 
         self:setClipboard(self.text:sub(from, to))
+
+        return from, to
     else
         self.clipboard_mode = CLIPBOARD_MODE.LINE
 
@@ -306,12 +308,21 @@ function TextEditorView:copy()
             self:lineStartOffset(),
             self:lineEndOffset()
         )
+        if curr_line:sub(-1,-1) ~= NEWLINE then
+            curr_line = curr_line .. NEWLINE
+        end
+
         self:setClipboard(curr_line)
+
+        return self:lineStartOffset(), self:lineEndOffset()
     end
 end
 
 function TextEditorView:cut()
-    self:copy()
+    local from, to = self:copy()
+    if not self:hasSelection() then
+        self:setSelection(from, to)
+    end
     self:eraseSelection()
 end
 
@@ -323,7 +334,7 @@ function TextEditorView:paste()
             local origin_offset = self.cursor
             self:setCursor(self:lineStartOffset())
             self:insert(clipboard)
-            self:setCursor(origin_offset)
+            self:setCursor(#clipboard + origin_offset)
         else
             self:eraseSelection()
             self:insert(clipboard)
