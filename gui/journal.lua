@@ -501,7 +501,7 @@ function TextEditorView:currentWordRange()
         :find('.*[%s,."\']')
     local next_word_start, _  = self.text:find('[%s,."\']', self.cursor)
 
-    return prev_word_end + 1 or 1, next_word_start - 1 or #self.text
+    return (prev_word_end or 0) + 1, (next_word_start or #self.text + 1) - 1
 end
 
 function TextEditorView:lineStartOffset(offset)
@@ -562,12 +562,12 @@ function TextEditorView:onMouseInput(keys)
                 mouse_x + 1,
                 mouse_y + 1
             )
-            if clicks_count >= 3 then
+            if clicks_count == 3 then
                 self:setSelection(
                     self:lineStartOffset(),
                     self:lineEndOffset()
                 )
-            elseif clicks_count >= 2 then
+            elseif clicks_count == 2 then
                 local cursor_char = self:charAtCursor()
 
                 local is_white_space = (
@@ -576,13 +576,13 @@ function TextEditorView:onMouseInput(keys)
 
                 local from, to
                 if is_white_space then
-                    from, to =  self:currentSpacesRange()
+                    from, to = self:currentSpacesRange()
                 else
-                    from, to =  self:currentWordRange()
+                    from, to = self:currentWordRange()
                 end
 
                 self:setSelection(from, to)
-            elseif clicks_count == 1 then
+            else
                 self:setCursor(self.wrapped_text:coordsToIndex(
                     mouse_x + 1,
                     mouse_y + 1
@@ -749,9 +749,11 @@ function TextEditorView:onTextManipulationInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_W then
         -- delete one word backward
-        if not self:hasSelection() then
-            local word_start =
-            self:setSelection(self:wordStartOffset(), self.cursor - 1)
+        if not self:hasSelection() and self.cursor ~= 1 then
+            self:setSelection(
+                self:wordStartOffset(),
+                math.max(self.cursor - 1, 1)
+            )
         end
         self:eraseSelection()
         return true
