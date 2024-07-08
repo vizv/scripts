@@ -728,15 +728,12 @@ function TextEditorView:onTextManipulationInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_K then
         -- delete from cursor to end of current line
-        if (self:hasSelection()) then
-            self:eraseSelection()
-        else
-            self:setSelection(
-                self.cursor,
-                math.max(self:lineEndOffset() - 1, self.cursor)
-            )
-            self:eraseSelection()
-        end
+        local line_end = self:lineEndOffset(self.sel_end or self.cursor) - 1
+        self:setSelection(
+            self.cursor,
+            math.max(line_end, self.cursor)
+        )
+        self:eraseSelection()
         return true
     elseif keys.CUSTOM_CTRL_D then
         -- delete char, there is no support for `Delete` key
@@ -752,12 +749,11 @@ function TextEditorView:onTextManipulationInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_W then
         -- delete one word backward
-        local word_start = self:wordStartOffset()
-        self:setText(
-            self.text:sub(1, word_start - 1) ..
-            self.text:sub(self.cursor)
-        )
-        self:setCursor(word_start)
+        if not self:hasSelection() then
+            local word_start =
+            self:setSelection(self:wordStartOffset(), self.cursor - 1)
+        end
+        self:eraseSelection()
         return true
     end
 end
