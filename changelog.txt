@@ -34,8 +34,10 @@ Template for new versions:
 - `full-heal`: fix ``-r --all_citizens`` option combination not resurrecting citizens
 - `open-legends`: don't intercept text bound for vanilla search widgets
 - `gui/unit-info-viewer`: correctly display skill levels when rust is involved
+- `build-now`: fix error when building buildings that (in previous DF versions) required the architecture labor
 
 ## Misc Improvements
+- `build-now`: if `suspendmanager` is running, run an unsuspend cycle immediately before scanning for buildings to build
 
 ## Removed
 
