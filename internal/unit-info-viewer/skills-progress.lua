@@ -110,8 +110,8 @@ function SkillProgressOverlay:onRenderFrame(dc, rect)
                 table.insert(annotations, NEWLINE)
             end
             local level_color = COLOR_WHITE
-            local rating_val = math.max(0, skill.rating - skill.demotion_counter)
-            if skill.demotion_counter > 0 then
+            local rating_val = math.max(0, skill.rating - skill.rusty)
+            if skill.rusty > 0 then
                 level_color = COLOR_LIGHTRED
             elseif skill.rating >= df.skill_rating.Legendary then
                 level_color = COLOR_LIGHTCYAN

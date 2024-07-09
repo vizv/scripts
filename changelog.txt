@@ -33,6 +33,7 @@ Template for new versions:
 ## Fixes
 - `full-heal`: fix ``-r --all_citizens`` option combination not resurrecting citizens
 - `open-legends`: don't intercept text bound for vanilla search widgets
+- `gui/unit-info-viewer`: correctly display skill levels when rust is involved
 
 ## Misc Improvements
 
