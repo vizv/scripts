@@ -14,6 +14,7 @@ tainted = tainted or false
 LegendsManager = defclass(LegendsManager, gui.ZScreen)
 LegendsManager.ATTRS {
     focus_path='open-legends',
+    defocused=true,
     no_autoquit=false,
 }
 
