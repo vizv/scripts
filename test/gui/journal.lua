@@ -81,6 +81,8 @@ local function arrange_empty_journal(options)
     text_area.enable_cursor_blink = false
     text_area:setText('')
 
+    journal:onRender()
+
     return journal, text_area
 end
 
@@ -138,7 +140,7 @@ function test.load()
     local journal, text_area = arrange_empty_journal()
 
     expect.eq('dfhack/lua/journal', dfhack.gui.getCurFocus(true)[1])
-    expect.eq(read_rendered_text(text_area), '')
+    expect.eq(read_rendered_text(text_area), '_')
 
     journal:dismiss()
 end
