@@ -96,7 +96,7 @@ local function read_rendered_text(text_area)
             local g_x, g_y = text_area.frame_body:globalXY(x, y)
             pen = dfhack.screen.readTile(g_x, g_y)
 
-            if pen == nil or pen.ch == nil or pen.ch == 0 then
+            if pen == nil or pen.ch == nil or pen.ch == 0 or pen.fg == 0 then
                 break
             else
                 text = text .. string.char(pen.ch)
