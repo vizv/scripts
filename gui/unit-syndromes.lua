@@ -334,7 +334,7 @@ local function getHostiles()
     local units = {}
 
     for _, unit in pairs(df.global.world.units.active) do
-        if dfhack.units.isDanger(unit) or dfhack.units.isGreatDanger(unit) then
+        if dfhack.units.isDanger(unit) then
             table.insert(units, unit)
         end
     end
