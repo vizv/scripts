@@ -22,7 +22,7 @@ WrappedText = defclass(WrappedText)
 
 WrappedText.ATTRS{
     text = '',
-    wrap_width = 0,
+    wrap_width = DEFAULT_NIL,
 }
 
 function WrappedText:init()
@@ -181,7 +181,7 @@ function TextEditor:onInput(keys)
         return self.scrollbar:onInput(keys)
     end
 
-    return self:inputToSubviews(keys)
+    return TextEditor.super.onInput(self, keys)
 end
 
 
@@ -818,8 +818,6 @@ end
 function JournalScreen:onDismiss()
     view = nil
 end
-
-view = nil
 
 function main()
     if not dfhack.isMapLoaded() or not dfhack.world.isFortressMode() then
