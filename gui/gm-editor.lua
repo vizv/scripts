@@ -53,6 +53,7 @@ end
 function getTypeName(type)
     return tostring(type):gmatch('<type: (.+)>')() or '<unknown type>'
 end
+
 function getTargetFromScreens()
     local my_trg = dfhack.gui.getSelectedUnit(true) or dfhack.gui.getSelectedItem(true)
             or dfhack.gui.getSelectedJob(true) or dfhack.gui.getSelectedBuilding(true)
