@@ -165,7 +165,7 @@ end
 
 -- Gets the range of the unit caste's min, average, and max value for a trait, as defined in the PERSONALITY creature tokens.
 function getUnitCasteTraitRange(unit, trait)
-  local caste = df.creature_raw.find(unit.race).caste[unit.caste]
+  local caste = dfhack.units.getCasteRaw(unit)
   local range = {}
 
   range.min = caste.personality.a[df.personality_facet_type[trait]]
