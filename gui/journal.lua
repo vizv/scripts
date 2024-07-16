@@ -848,7 +848,7 @@ function JournalScreen:init(options)
     local content = self:loadContextContent()
 
     self:addviews{
-        widgets.Window{
+        JournalWindow{
             view_id='journal_window',
             frame_title='DF Journal',
             frame={w=65, h=45},
