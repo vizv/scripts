@@ -72,13 +72,13 @@ local function arrange_empty_journal(options)
 
     local journal_window = journal.subviews.journal_window
 
-    journal_window.frame = {
-        l = 1,
-        t = 1,
-        -- adjust expected size to text_area
-        w = (options.w or 100) + 6,
-        h = (options.h or 50) + 5,
-    }
+    if options.w then
+        journal_window.frame.w = options.w + 6
+    end
+
+    if options.h then
+        journal_window.frame.h = options.w + 5
+    end
 
     journal:updateLayout()
 
@@ -2332,6 +2332,27 @@ function test.cut_and_paste_selected_text()
         'portLr mi, vitae rutrum eros metus nec libero.',
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.tito_',
     }, '\n'));
+
+    journal:dismiss()
+end
+
+function test.restore_size_and_position()
+    local journal, _ = arrange_empty_journal()
+    journal.subviews.journal_window.frame = {
+        l = 13,
+        t = 13,
+        w = 80,
+        h = 23
+    }
+    journal:updateLayout()
+    journal:dismiss()
+
+    journal, _ = arrange_empty_journal()
+
+    expect.eq(journal.subviews.journal_window.frame.l, 13)
+    expect.eq(journal.subviews.journal_window.frame.t, 13)
+    expect.eq(journal.subviews.journal_window.frame.w, 80)
+    expect.eq(journal.subviews.journal_window.frame.h, 23)
 
     journal:dismiss()
 end
