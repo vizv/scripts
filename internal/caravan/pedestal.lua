@@ -288,7 +288,7 @@ function AssignItems:init()
                 },
                 widgets.ToggleHotkeyLabel{
                     view_id='hide_forbidden',
-                    frame={t=2, l=40, w=28},
+                    frame={t=2, l=40, w=30},
                     label='Hide forbidden items:',
                     key='CUSTOM_SHIFT_F',
                     options={
