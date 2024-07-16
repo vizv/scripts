@@ -28,16 +28,18 @@ local function simulate_input_text(text)
     gui_journal.view:onRender()
 end
 
-local function simulate_mouse_click(text_area, x, y)
-    local g_x, g_y = text_area.frame_body:globalXY(x, y)
+local function simulate_mouse_click(element, x, y)
+    local screen = dfhack.gui.getCurViewscreen(true)
+
+    local g_x, g_y = element.frame_body:globalXY(x, y)
     df.global.gps.mouse_x = g_x
     df.global.gps.mouse_y = g_y
 
-    gui.simulateInput(dfhack.gui.getCurViewscreen(true), {
+    gui.simulateInput(screen, {
         _MOUSE_L=true,
         _MOUSE_L_DOWN=true,
     })
-    gui.simulateInput(dfhack.gui.getCurViewscreen(true), '_MOUSE_L_DOWN')
+    gui.simulateInput(screen, '_MOUSE_L_DOWN')
 
     gui_journal.view:onRender()
 end
@@ -72,17 +74,23 @@ local function arrange_empty_journal(options)
 
     local journal_window = journal.subviews.journal_window
 
+    if not options.allow_size_restore then
+        journal_window.frame.w = 50
+        journal_window.frame.h = 50
+    end
+
     if options.w then
         journal_window.frame.w = options.w + 6
     end
 
     if options.h then
-        journal_window.frame.h = options.w + 5
+        journal_window.frame.h = options.h + 4
     end
 
     journal:updateLayout()
 
     local text_area = journal_window.subviews.text_area
+
     text_area.enable_cursor_blink = false
     text_area:setText('')
 
@@ -95,11 +103,12 @@ local function read_rendered_text(text_area)
     local pen = nil
     local text = ''
 
-    for y=0,text_area.frame_body.height do
+    local frame_body = text_area.frame_body
 
-        for x=0,text_area.frame_body.width do
-            local g_x, g_y = text_area.frame_body:globalXY(x, y)
-            pen = dfhack.screen.readTile(g_x, g_y)
+    for y=frame_body.clip_y1,frame_body.clip_y2 do
+
+        for x=frame_body.clip_x1,frame_body.clip_x2 do
+            pen = dfhack.screen.readTile(x, y)
 
             if pen == nil or pen.ch == nil or pen.ch == 0 or pen.fg == 0 then
                 break
@@ -151,7 +160,7 @@ function test.load()
 end
 
 function test.load_input_multiline_text()
-    local journal, text_area = arrange_empty_journal()
+    local journal, text_area = arrange_empty_journal({w=80})
 
     local text = table.concat({
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -2347,12 +2356,116 @@ function test.restore_size_and_position()
     journal:updateLayout()
     journal:dismiss()
 
-    journal, _ = arrange_empty_journal()
+    journal, _ = arrange_empty_journal({allow_size_restore=true})
 
     expect.eq(journal.subviews.journal_window.frame.l, 13)
     expect.eq(journal.subviews.journal_window.frame.t, 13)
     expect.eq(journal.subviews.journal_window.frame.w, 80)
     expect.eq(journal.subviews.journal_window.frame.h, 23)
+
+    journal:dismiss()
+end
+
+function test.scroll_long_text()
+    local journal, text_area = arrange_empty_journal({w=100, h=10})
+    local scrollbar = journal.subviews.text_area_scrollbar
+
+    local text = table.concat({
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex._',
+    }, '\n'))
+
+    simulate_mouse_click(scrollbar, 0, 0)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+    }, '\n'))
+
+    simulate_mouse_click(scrollbar, 0, 0)
+    simulate_mouse_click(scrollbar, 0, 0)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+    }, '\n'))
+
+    simulate_mouse_click(scrollbar, 0, scrollbar.frame_body.height - 2)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex._',
+    }, '\n'))
+
+    simulate_mouse_click(scrollbar, 0, 2)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+    }, '\n'))
 
     journal:dismiss()
 end

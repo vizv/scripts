@@ -91,6 +91,7 @@ TextEditor.ATTRS{
 function TextEditor:init()
     self.render_start_line_y = 1
     self.scrollbar = widgets.Scrollbar{
+        view_id='text_area_scrollbar',
         frame={r=0,t=1},
         on_scroll=self:callback('onScrollbar')
     }
