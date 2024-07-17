@@ -116,7 +116,7 @@ function TextEditor:init()
             if (y >= self.render_start_line_y + self.editor.frame_body.height) then
                 self:setRenderStartLineY(y - self.editor.frame_body.height + 1)
             elseif  (y < self.render_start_line_y) then
-                self:setRenderStartLineY(self.editor.cursor.y)
+                self:setRenderStartLineY(y)
             end
         end
     }

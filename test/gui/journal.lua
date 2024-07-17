@@ -35,6 +35,11 @@ local function simulate_mouse_click(element, x, y)
     df.global.gps.mouse_x = g_x
     df.global.gps.mouse_y = g_y
 
+    if not element.frame_body:inClipGlobalXY(g_x, g_y) then
+        print('--- Click outside provided element area, re-check the test')
+        return
+    end
+
     gui.simulateInput(screen, {
         _MOUSE_L=true,
         _MOUSE_L_DOWN=true,
@@ -2465,6 +2470,115 @@ function test.scroll_long_text()
         'Donec quis lectus ac erat placerat eleifend.',
         'Aenean non orci id erat malesuada pharetra.',
         'Nunc in lectus et metus finibus venenatis.',
+    }, '\n'))
+
+    journal:dismiss()
+end
+
+function test.scroll_follows_cursor()
+    local journal, text_area = arrange_empty_journal({w=100, h=10})
+    local scrollbar = journal.subviews.text_area_scrollbar
+
+    local text = table.concat({
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex._',
+    }, '\n'))
+
+    simulate_mouse_click(text_area, 0, 8)
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_nteger tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+    }, '\n'))
+
+    simulate_input_keys('KEYBOARD_CURSOR_UP_FAST')
+
+    simulate_mouse_click(text_area, 0, 9)
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Nulla ut lacus ut tortor semper consectetur.',
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '_onec quis lectus ac erat placerat eleifend.',
+    }, '\n'))
+
+    simulate_mouse_click(text_area, 44, 10)
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        '_enean non orci id erat malesuada pharetra.',
+    }, '\n'))
+
+    simulate_mouse_click(text_area, 0, 2)
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Nulla ut lacus ut tortor semper consectetur._',
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
     }, '\n'))
 
     journal:dismiss()
