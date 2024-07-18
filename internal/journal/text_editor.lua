@@ -59,6 +59,10 @@ function TextEditor:init()
     self:setFocus(true)
 end
 
+function TextEditor:setCursor(cursor_offset)
+    return self.subviews.text_area:setCursor(cursor_offset)
+end
+
 function TextEditor:getPreferredFocusState()
     return true
 end

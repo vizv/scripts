@@ -79,13 +79,33 @@ function JournalScreen:init(options)
             subviews={
                 text_editor.TextEditor{
                     view_id='journal_editor',
-                    frame={l=1, t=1, b=1, r=0},
+                    frame={l=1, t=1, b=1, r=30},
                     text=content,
-                    on_change=function(text) self:saveContextContent(text) end
-                }
+                    on_change=function(text) self:onTextChange(text) end
+                },
+
+                widgets.List{
+                    view_id='table_of_contents',
+                    frame={r=0, t=2, b=1, w=30},
+                    choices={},
+                    icon_width=2,
+                    on_submit=self:callback('onTableOfContentsSubmit')
+                    -- on_submit=self:callback('onSubmit'),
+                    -- on_submit2=self:callback('onSubmit2'),
+                },
+                -- widgets.Panel{
+                --     view_id='table_of_contents',
+                --     frame={l=1,t=1, b=1, w=30}
+                -- }
             }
-        }
+        },
     }
+
+    self:reloadTableOfContents(content)
+end
+
+function JournalScreen:onTableOfContentsSubmit(ind, choice)
+    self.subviews.journal_editor:setCursor(choice.line_cursor)
 end
 
 function JournalScreen:loadContextContent()
@@ -93,6 +113,34 @@ function JournalScreen:loadContextContent()
         text = {''}
     }
     return site_data.text ~= nil and site_data.text[1] or ''
+end
+
+function JournalScreen:onTextChange(text)
+    self:saveContextContent(text)
+    self:reloadTableOfContents(text)
+end
+
+function JournalScreen:reloadTableOfContents(text)
+    local sections = {}
+
+    local line_cursor = 1
+    for line in text:gmatch("[^\n]*") do
+        local header, section = line:match("^(#+)%s(.+)")
+        if header ~= nil then
+            table.insert(sections, {
+                -- line_cur,
+                -- #header,
+                line_cursor=line_cursor,
+                text=string.rep(" ", #header - 1) .. section,
+                -- cat=cat,
+                -- icon=icon,
+            })
+        end
+
+        line_cursor = line_cursor + #line + 1
+    end
+
+    self.subviews.table_of_contents:setChoices(sections)
 end
 
 function JournalScreen:saveContextContent(text)
