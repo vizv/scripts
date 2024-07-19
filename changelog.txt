@@ -37,6 +37,7 @@ Template for new versions:
 - `build-now`: fix error when building buildings that (in previous DF versions) required the architecture labor
 - `prioritize`: fix incorrect loading of persisted data on some OS types
 - `list-waves`: no longer gets confused by units that leave the map and then return (e.g. squads who go out on raids)
+- `fix/dead-units`: fix error when removing dead units from burrows and the unit with the greatest ID was dead
 
 ## Misc Improvements
 - `build-now`: if `suspendmanager` is running, run an unsuspend cycle immediately before scanning for buildings to build
