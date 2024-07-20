@@ -27,7 +27,7 @@ function TextEditor:init()
     }
     self.editor = TextEditorView{
         view_id='text_area',
-        frame={l=0,r=2,t=0},
+        frame={l=0,r=3,t=0},
         text = self.text,
         text_pen = self.text_pen,
         ignore_keys = self.ignore_keys,
