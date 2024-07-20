@@ -78,7 +78,7 @@ local function arrange_empty_journal(options)
 
     local journal_window = journal.subviews.journal_window
 
-    if not options.allow_size_restore then
+    if not options.allow_layout_restore then
         journal_window.frame= {w = 50, h = 50}
     end
 
@@ -90,13 +90,19 @@ local function arrange_empty_journal(options)
         journal_window.frame.h = options.h + 5
     end
 
-    journal:updateLayout()
 
     local text_area = journal_window.subviews.text_area
 
     text_area.enable_cursor_blink = false
     text_area:setText('')
 
+    if not options.allow_layout_restore then
+        local toc_panel = journal_window.subviews.table_of_contents_panel
+        toc_panel.visible = false
+        toc_panel.frame.w = 20
+    end
+
+    journal:updateLayout()
     journal:onRender()
 
     return journal, text_area, journal_window
@@ -2348,23 +2354,28 @@ function test.cut_and_paste_selected_text()
     journal:dismiss()
 end
 
-function test.restore_size_and_position()
+function test.restore_layout()
     local journal, _ = arrange_empty_journal()
+
     journal.subviews.journal_window.frame = {
         l = 13,
         t = 13,
         w = 80,
         h = 23
     }
+    journal.subviews.table_of_contents_panel.frame.w = 37
+
     journal:updateLayout()
     journal:dismiss()
 
-    journal, _ = arrange_empty_journal({allow_size_restore=true})
+    journal, _ = arrange_empty_journal({allow_layout_restore=true})
 
     expect.eq(journal.subviews.journal_window.frame.l, 13)
     expect.eq(journal.subviews.journal_window.frame.t, 13)
     expect.eq(journal.subviews.journal_window.frame.w, 80)
     expect.eq(journal.subviews.journal_window.frame.h, 23)
+
+    expect.eq(journal.subviews.table_of_contents_panel.frame.w, 37)
 
     journal:dismiss()
 end
@@ -2633,7 +2644,11 @@ function test.generate_table_of_contents()
 end
 
 function test.jump_to_table_of_contents_sections()
-    local journal, text_area = arrange_empty_journal({w=100, h=10})
+    local journal, text_area = arrange_empty_journal({
+        w=100,
+        h=10,
+        allow_layout_restore=false
+    })
 
     local text = table.concat({
         '# Header 1',
@@ -2772,9 +2787,12 @@ function test.jump_to_table_of_contents_sections()
     journal:dismiss()
 end
 
-
 function test.resize_table_of_contents_together()
-    local journal, text_area = arrange_empty_journal({w=100, h=10})
+    local journal, text_area = arrange_empty_journal({
+        w=100,
+        h=10,
+        allow_layout_restore=false
+    })
 
     local text = table.concat({
         '# Header 1',

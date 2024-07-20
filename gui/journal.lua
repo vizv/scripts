@@ -20,13 +20,25 @@ JournalWindow.ATTRS {
     resize_min=RESIZE_MIN,
     frame_inset=0,
     init_text='',
-    on_text_change=DEFAULT_NIL
+    on_text_change=DEFAULT_NIL,
+    on_layout_change=DEFAULT_NIL
 }
 
-function JournalWindow:init()
-    local config_frame = copyall(journal_config.data.frame or {})
-    self.frame = self:sanitizeFrame(config_frame)
+function JournalWindow:loadConfig()
+    local window_frame = copyall(journal_config.data.frame or {})
+    local table_of_contents = copyall(journal_config.data.toc or {
+        width=20,
+        visible=false
+    })
 
+    self.frame = self:sanitizeFrame(window_frame)
+
+    local toc_panel = self.subviews.table_of_contents_panel
+    toc_panel.frame.w = table_of_contents.width
+    toc_panel.visible = table_of_contents.visible
+end
+
+function JournalWindow:init()
     self:addviews({
         widgets.Panel{
             frame={t=1, r=0,h=1},
@@ -51,7 +63,7 @@ function JournalWindow:init()
 
             resize_min={w=20},
             resize_anchors={r=true},
-            frame={l=0, t=3, b=0, w=30},
+            frame={l=0, t=3, b=0, w=20},
             visible=false,
             on_resize_begin=self:callback('onPanelResizeBegin'),
             on_resize_end=self:callback('onPanelResizeEnd'),
@@ -74,7 +86,8 @@ function JournalWindow:init()
         },
     })
 
-    self:reloadTableOfContents(self.content)
+    self:loadConfig()
+    self:reloadTableOfContents(self.init_text)
 end
 
 function JournalWindow:toggleToCVisibililty()
@@ -108,8 +121,14 @@ function JournalWindow:sanitizeFrame(frame)
 end
 
 function JournalWindow:saveConfig()
+    local toc_panel = self.subviews.table_of_contents_panel
+
     utils.assign(journal_config.data, {
-        frame = self.frame
+        frame = self.frame,
+        toc = {
+            width = toc_panel.frame.w,
+            visible = toc_panel.visible
+        }
     })
     journal_config:write()
 end
@@ -120,8 +139,8 @@ end
 
 function JournalWindow:onPanelResizeEnd()
     self.resizing_panels = false
-
     self:esnurePanelsRelSize()
+
     self:updateLayout()
 end
 
@@ -138,11 +157,11 @@ function JournalWindow:esnurePanelsRelSize()
     local toc = self.subviews.table_of_contents_panel
     local editor = self.subviews.journal_editor
 
-    toc.frame.w = toc.visible and math.min(
+    toc.frame.w = math.min(
         math.max(toc.frame.w, toc.resize_min.w),
         self.frame.w - editor.resize_min.w
-    ) or 0
-    editor.frame.l = toc.frame.w + 1
+    )
+    editor.frame.l = toc.visible and (toc.frame.w + 1) or 1
 end
 
 function JournalWindow:preUpdateLayout()
@@ -195,7 +214,7 @@ JournalScreen.ATTRS {
 }
 
 function JournalScreen:init(options)
-    local content = self:loadContextContent()
+    local context = self:loadContext()
 
     self:addviews{
         JournalWindow{
@@ -204,25 +223,27 @@ function JournalScreen:init(options)
             resize_min={w=50, h=20},
             resizable=true,
             frame_inset=0,
-            init_text=content,
-            on_text_change=self:callback('onTextChange')
+            init_text=context.text[1],
+
+            on_text_change=self:callback('onTextChange'),
         },
     }
 end
 
-function JournalScreen:loadContextContent()
-    local site_data = dfhack.persistent.getSiteData(JOURNAL_PERSIST_KEY) or {
-        text = {''}
-    }
-    return site_data.text ~= nil and site_data.text[1] or ''
+function JournalScreen:loadContext()
+    local site_data = dfhack.persistent.getSiteData(JOURNAL_PERSIST_KEY) or {}
+    site_data.text = site_data.text or {''}
+
+    return site_data
 end
 
 function JournalScreen:onTextChange(text)
-    self:saveContextContent(text)
+    self:saveContext(text)
 end
 
-function JournalScreen:saveContextContent(text)
+function JournalScreen:saveContext(text)
     if self.save_on_change and dfhack.isWorldLoaded() then
+        local toc_panel = self.subviews.table_of_contents_panel
         dfhack.persistent.saveSiteData(JOURNAL_PERSIST_KEY, {text={text}})
     end
 end
