@@ -19,7 +19,7 @@ JournalWindow.ATTRS {
     resizable=true,
     resize_min=RESIZE_MIN,
     frame_inset=0,
-    content='',
+    init_text='',
     on_text_change=DEFAULT_NIL
 }
 
@@ -69,7 +69,7 @@ function JournalWindow:init()
             frame={t=3, b=0, l=31, r=0},
             resize_min={w=30, h=10},
             frame_inset={r=1},
-            text=self.content,
+            init_text=self.init_text,
             on_change=function(text) self:onTextChange(text) end
         },
     })
@@ -78,7 +78,10 @@ function JournalWindow:init()
 end
 
 function JournalWindow:toggleToCVisibililty()
-    self.subviews.table_of_contents_panel.visible = not self.subviews.table_of_contents_panel.visible
+    self.subviews.table_of_contents_panel.visible =
+        not self.subviews.table_of_contents_panel.visible
+
+    self:reloadTableOfContents(self.subviews.journal_editor:text())
     self:updateLayout()
 end
 
@@ -146,6 +149,10 @@ function JournalWindow:onTextChange(text)
 end
 
 function JournalWindow:reloadTableOfContents(text)
+    if not self.subviews.table_of_contents_panel.visible then
+        return
+    end
+
     local sections = {}
 
     local line_cursor = 1

@@ -2372,7 +2372,7 @@ end
 
 function test.scroll_long_text()
     local journal, text_area = arrange_empty_journal({w=100, h=10})
-    local scrollbar = journal.subviews.text_area_scrollbar
+    local scrollbar = journal.subviews.scrollbar
 
     local text = table.concat({
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -2578,6 +2578,197 @@ function test.scroll_follows_cursor()
         'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
         '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
         'Donec quis lectus ac erat placerat eleifend.',
+    }, '\n'))
+
+    journal:dismiss()
+end
+
+function test.generate_table_of_contents()
+    local journal, text_area = arrange_empty_journal({w=100, h=10})
+
+    local text = table.concat({
+        '# Header 1',
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+        '# Header 2',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        '## Subheader 1',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '## Subheader 2',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '### Subsubheader 1',
+        '# Header 3',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    expect.eq(journal.subviews.table_of_contents_panel.visible, false)
+
+    simulate_input_keys('CUSTOM_CTRL_T')
+
+    expect.eq(journal.subviews.table_of_contents_panel.visible, true)
+
+    local toc_items = journal.subviews.table_of_contents.choices
+
+    expect.eq(#toc_items, 6)
+
+    local expectChoiceToMatch = function (a, b)
+        expect.eq(a.line_cursor, b.line_cursor)
+        expect.eq(a.text, b.text)
+    end
+
+    expectChoiceToMatch(toc_items[1], {line_cursor=1, text='Header 1'})
+    expectChoiceToMatch(toc_items[2], {line_cursor=114, text='Header 2'})
+    expectChoiceToMatch(toc_items[3], {line_cursor=204, text=' Subheader 1'})
+    expectChoiceToMatch(toc_items[4], {line_cursor=338, text=' Subheader 2'})
+    expectChoiceToMatch(toc_items[5], {line_cursor=485, text='  Subsubheader 1'})
+    expectChoiceToMatch(toc_items[6], {line_cursor=504, text='Header 3'})
+
+    journal:dismiss()
+end
+
+function test.jump_to_table_of_contents_sections()
+    local journal, text_area = arrange_empty_journal({w=100, h=10})
+    local scrollbar = journal.subviews.text_area_scrollbar
+
+    local text = table.concat({
+        '# Header 1',
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+        '# Header 2',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        '## Subheader 1',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '## Subheader 2',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '### Subsubheader 1',
+        '# Header 3',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    simulate_input_keys('CUSTOM_CTRL_T')
+
+    local toc = journal.subviews.table_of_contents
+
+    toc:setSelected(1)
+    toc:submit()
+
+    gui_journal.view:onRender()
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_ Header 1',
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+        '# Header 2',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        '## Subheader 1',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '## Subheader 2',
+    }, '\n'))
+
+    toc:setSelected(2)
+    toc:submit()
+
+    gui_journal.view:onRender()
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_ Header 2',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        '## Subheader 1',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '## Subheader 2',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '### Subsubheader 1',
+    }, '\n'))
+
+    toc:setSelected(3)
+    toc:submit()
+
+    gui_journal.view:onRender()
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_# Subheader 1',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '## Subheader 2',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '### Subsubheader 1',
+        '# Header 3',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+    }, '\n'))
+
+    toc:setSelected(4)
+    toc:submit()
+
+    gui_journal.view:onRender()
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '_# Subheader 2',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '### Subsubheader 1',
+        '# Header 3',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+    }, '\n'))
+
+    toc:setSelected(5)
+    toc:submit()
+
+    gui_journal.view:onRender()
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '## Subheader 2',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '_## Subsubheader 1',
+        '# Header 3',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+    }, '\n'))
+
+    toc:setSelected(6)
+    toc:submit()
+
+    gui_journal.view:onRender()
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '## Subheader 2',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '### Subsubheader 1',
+        '_ Header 3',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
     }, '\n'))
 
     journal:dismiss()

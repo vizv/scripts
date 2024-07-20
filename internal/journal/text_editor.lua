@@ -10,7 +10,7 @@ local CLIPBOARD_MODE = {LOCAL = 1, LINE = 2}
 TextEditor = defclass(TextEditor, widgets.Panel)
 
 TextEditor.ATTRS{
-    text = '',
+    init_text = '',
     text_pen = COLOR_LIGHTCYAN,
     ignore_keys = {'STRING_A096'},
     select_pen = COLOR_CYAN,
@@ -20,51 +20,58 @@ TextEditor.ATTRS{
 
 function TextEditor:init()
     self.render_start_line_y = 1
-    self.scrollbar = widgets.Scrollbar{
-        view_id='text_area_scrollbar',
-        frame={r=0,t=1},
-        on_scroll=self:callback('onScrollbar')
-    }
-    self.editor = TextEditorView{
-        view_id='text_area',
-        frame={l=0,r=2,t=0},
-        text = self.text,
-        text_pen = self.text_pen,
-        ignore_keys = self.ignore_keys,
-        select_pen = self.select_pen,
-        debug = self.debug,
-
-        on_change = function (val)
-            self:updateLayout()
-            if self.on_change then
-                self.on_change(val)
-            end
-        end,
-
-        on_cursor_change = function ()
-            local x, y = self.editor.wrapped_text:indexToCoords(self.editor.cursor)
-            if (y >= self.render_start_line_y + self.editor.frame_body.height) then
-                self:setRenderStartLineY(y - self.editor.frame_body.height + 1)
-            elseif  (y < self.render_start_line_y) then
-                self:setRenderStartLineY(y)
-            end
-        end
-    }
 
     self:addviews{
-        self.editor,
-        self.scrollbar,
+        TextEditorView{
+            view_id='text_area',
+            frame={l=0,r=2,t=0},
+            text = self.init_text,
+            text_pen = self.text_pen,
+            ignore_keys = self.ignore_keys,
+            select_pen = self.select_pen,
+            debug = self.debug,
+
+            on_change = function (val)
+                self:updateLayout()
+                if self.on_change then
+                    self.on_change(val)
+                end
+            end,
+            on_cursor_change = self:callback('onCursorChanged')
+        },
+        widgets.Scrollbar{
+            view_id='scrollbar',
+            frame={r=0,t=1},
+            on_scroll=self:callback('onScrollbar')
+        },
         widgets.HelpButton{command="gui/journal", frame={r=0,t=0}}
     }
     self:setFocus(true)
 end
 
+function TextEditor:text()
+    return self.subviews.text_area.text
+end
+
+function TextEditor:onCursorChanged(text)
+    local x, y = self.subviews.text_area.wrapped_text:indexToCoords(
+        self.subviews.text_area.cursor
+    )
+    if y >= self.render_start_line_y + self.subviews.text_area.frame_body.height then
+        self:updateScrollbar(
+            y - self.subviews.text_area.frame_body.height + 1
+        )
+    elseif  (y < self.render_start_line_y) then
+        self:updateScrollbar(y)
+    end
+end
+
 function TextEditor:scrollToCursor(cursor_offset)
-    if self.scrollbar.visible then
+    if self.subviews.scrollbar.visible then
         local _, cursor_liny_y = self.subviews.text_area.wrapped_text:indexToCoords(
             cursor_offset
         )
-        self:setRenderStartLineY(cursor_liny_y)
+        self:updateScrollbar(cursor_liny_y)
     end
 end
 
@@ -77,11 +84,11 @@ function TextEditor:getPreferredFocusState()
 end
 
 function TextEditor:postUpdateLayout()
-    self:updateScrollbar()
+    self:updateScrollbar(self.render_start_line_y)
 end
 
 function TextEditor:onScrollbar(scroll_spec)
-    local height = self.editor.frame_body.height
+    local height = self.subviews.text_area.frame_body.height
 
     local render_start_line = self.render_start_line_y
     if scroll_spec == 'down_large' then
@@ -96,46 +103,46 @@ function TextEditor:onScrollbar(scroll_spec)
         render_start_line = tonumber(scroll_spec)
     end
 
-    self:setRenderStartLineY(math.min(
-        #self.editor.wrapped_text.lines - height + 1,
-        math.max(1, render_start_line)
-    ))
-    self:updateScrollbar()
+    self:updateScrollbar(render_start_line)
 end
 
-function TextEditor:updateScrollbar()
-    local lines_count = #self.editor.wrapped_text.lines
+function TextEditor:updateScrollbar(scrollbar_current_y)
+    local lines_count = #self.subviews.text_area.wrapped_text.lines
+    -- local render_start_line_y = scrollbar_current_y
 
-    self.scrollbar:update(
-        self.render_start_line_y,
+    local render_start_line_y = (math.min(
+        #self.subviews.text_area.wrapped_text.lines - self.subviews.text_area.frame_body.height + 1,
+        math.max(1, scrollbar_current_y)
+    ))
+
+    self.subviews.scrollbar:update(
+        render_start_line_y,
         self.frame_body.height,
         lines_count
     )
 
     if (self.frame_body.height >= lines_count) then
-        self:setRenderStartLineY(1)
+        render_start_line_y = 1
     end
+
+    self.render_start_line_y = render_start_line_y
+    self.subviews.text_area:setRenderStartLineY(self.render_start_line_y)
 end
 
 function TextEditor:renderSubviews(dc)
-    self.editor.frame_body.y1 = self.frame_body.y1-(self.render_start_line_y - 1)
+    self.subviews.text_area.frame_body.y1 = self.frame_body.y1-(self.render_start_line_y - 1)
 
     TextEditor.super.renderSubviews(self, dc)
 end
 
 function TextEditor:onInput(keys)
-    if (self.scrollbar.is_dragging) then
-        return self.scrollbar:onInput(keys)
+    if (self.subviews.scrollbar.is_dragging) then
+        return self.subviews.scrollbar:onInput(keys)
     end
 
     return TextEditor.super.onInput(self, keys)
 end
 
-
-function TextEditor:setRenderStartLineY(render_start_line_y)
-    self.render_start_line_y = render_start_line_y
-    self.editor:setRenderStartLineY(render_start_line_y)
-end
 
 
 TextEditorView = defclass(TextEditorView, widgets.Widget)
