@@ -7,7 +7,7 @@ local wrapped_text = reqscript('internal/journal/wrapped_text')
 
 local CLIPBOARD_MODE = {LOCAL = 1, LINE = 2}
 
-TextEditor = defclass(TextEditor, widgets.Widget)
+TextEditor = defclass(TextEditor, widgets.Panel)
 
 TextEditor.ATTRS{
     text = '',
@@ -57,6 +57,13 @@ function TextEditor:init()
         widgets.HelpButton{command="gui/journal", frame={r=0,t=0}}
     }
     self:setFocus(true)
+end
+
+function TextEditor:scrollToCursor(cursor_offset)
+    local _, cursor_liny_y = self.subviews.text_area.wrapped_text:indexToCoords(
+        cursor_offset
+    )
+    self:setRenderStartLineY(cursor_liny_y)
 end
 
 function TextEditor:setCursor(cursor_offset)

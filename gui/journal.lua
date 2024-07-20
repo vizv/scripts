@@ -18,12 +18,47 @@ JournalWindow.ATTRS {
     frame_title='DF Journal',
     resizable=true,
     resize_min=RESIZE_MIN,
-    frame_inset=0
+    frame_inset=0,
+    content=''
 }
 
 function JournalWindow:init()
     local config_frame = copyall(journal_config.data.frame or {})
     self.frame = self:sanitizeFrame(config_frame)
+
+    self:addviews({
+        widgets.Panel{
+            view_id='table_of_contents_panel',
+            frame_title='Table of contents',
+            frame_style = gui.FRAME_INTERIOR,
+
+            resizable=true,
+
+            frame_background = gui.CLEAR_PEN,
+
+            resize_min={w=20},
+            resize_anchors={r=true},
+            frame={l=0, t=1, b=1, w=30},
+            on_resize_begin=self:callback('onPanelResizeBegin'),
+            on_resize_end=self:callback('onPanelResizeEnd'),
+            subviews={
+                widgets.List{
+                    frame={l=1,t=1},
+                    view_id='table_of_contents',
+                    choices={},
+                    on_submit=self:callback('onTableOfContentsSubmit')
+                },
+            }
+        },
+        text_editor.TextEditor{
+            view_id='journal_editor',
+            frame={t=2, b=1, l=31, r=0},
+            resize_min={w=30, h=10},
+            frame_inset={r=1},
+            text=self.content,
+            on_change=function(text) self:onTextChange(text) end
+        },
+    })
 end
 
 function JournalWindow:sanitizeFrame(frame)
@@ -59,6 +94,40 @@ function JournalWindow:saveConfig()
     journal_config:write()
 end
 
+function JournalWindow:onPanelResizeBegin()
+    self.resizing_panels = true
+end
+
+function JournalWindow:onPanelResizeEnd()
+    self.resizing_panels = false
+end
+
+function JournalWindow:esnurePanelsRelSize()
+    self.subviews.table_of_contents_panel.frame.w = math.min(
+        self.subviews.table_of_contents_panel.frame.w,
+        self.frame.w - self.subviews.journal_editor.resize_min.w
+    )
+    self.subviews.journal_editor.frame.l = self.subviews.table_of_contents_panel.frame.w + 1
+end
+
+function JournalWindow:preUpdateLayout()
+    self:esnurePanelsRelSize()
+end
+
+function JournalWindow:onRenderBody(painter)
+    if self.resizing_panels then
+        self:esnurePanelsRelSize()
+        self:updateLayout()
+    end
+
+    return JournalWindow.super.onRenderBody(self, painter)
+end
+
+function JournalWindow:onTableOfContentsSubmit(ind, choice)
+    self.subviews.journal_editor:setCursor(choice.line_cursor)
+    self.subviews.journal_editor:scrollToCursor(choice.line_cursor)
+end
+
 JournalScreen = defclass(JournalScreen, gui.ZScreen)
 JournalScreen.ATTRS {
     focus_path='journal',
@@ -71,41 +140,15 @@ function JournalScreen:init(options)
     self:addviews{
         JournalWindow{
             view_id='journal_window',
-            frame_title='DF Journal',
             frame={w=65, h=45},
             resizable=true,
-            resize_min={w=32, h=10},
+            resize_min={w=50, h=20},
             frame_inset=0,
-            subviews={
-                text_editor.TextEditor{
-                    view_id='journal_editor',
-                    frame={l=1, t=1, b=1, r=30},
-                    text=content,
-                    on_change=function(text) self:onTextChange(text) end
-                },
-
-                widgets.List{
-                    view_id='table_of_contents',
-                    frame={r=0, t=2, b=1, w=30},
-                    choices={},
-                    icon_width=2,
-                    on_submit=self:callback('onTableOfContentsSubmit')
-                    -- on_submit=self:callback('onSubmit'),
-                    -- on_submit2=self:callback('onSubmit2'),
-                },
-                -- widgets.Panel{
-                --     view_id='table_of_contents',
-                --     frame={l=1,t=1, b=1, w=30}
-                -- }
-            }
+            content=content
         },
     }
 
     self:reloadTableOfContents(content)
-end
-
-function JournalScreen:onTableOfContentsSubmit(ind, choice)
-    self.subviews.journal_editor:setCursor(choice.line_cursor)
 end
 
 function JournalScreen:loadContextContent()
@@ -128,12 +171,8 @@ function JournalScreen:reloadTableOfContents(text)
         local header, section = line:match("^(#+)%s(.+)")
         if header ~= nil then
             table.insert(sections, {
-                -- line_cur,
-                -- #header,
                 line_cursor=line_cursor,
                 text=string.rep(" ", #header - 1) .. section,
-                -- cat=cat,
-                -- icon=icon,
             })
         end
 
