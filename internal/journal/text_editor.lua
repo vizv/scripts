@@ -60,10 +60,12 @@ function TextEditor:init()
 end
 
 function TextEditor:scrollToCursor(cursor_offset)
-    local _, cursor_liny_y = self.subviews.text_area.wrapped_text:indexToCoords(
-        cursor_offset
-    )
-    self:setRenderStartLineY(cursor_liny_y)
+    if self.scrollbar.visible then
+        local _, cursor_liny_y = self.subviews.text_area.wrapped_text:indexToCoords(
+            cursor_offset
+        )
+        self:setRenderStartLineY(cursor_liny_y)
+    end
 end
 
 function TextEditor:setCursor(cursor_offset)

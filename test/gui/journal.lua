@@ -80,16 +80,15 @@ local function arrange_empty_journal(options)
     local journal_window = journal.subviews.journal_window
 
     if not options.allow_size_restore then
-        journal_window.frame.w = 50
-        journal_window.frame.h = 50
+        journal_window.frame= {w = 50, h = 50}
     end
 
     if options.w then
-        journal_window.frame.w = options.w + 6
+        journal_window.frame.w = options.w + 7
     end
 
     if options.h then
-        journal_window.frame.h = options.h + 4
+        journal_window.frame.h = options.h + 5
     end
 
     journal:updateLayout()
@@ -101,7 +100,7 @@ local function arrange_empty_journal(options)
 
     journal:onRender()
 
-    return journal, text_area
+    return journal, text_area, journal_window
 end
 
 local function read_rendered_text(text_area)
@@ -165,7 +164,7 @@ function test.load()
 end
 
 function test.load_input_multiline_text()
-    local journal, text_area = arrange_empty_journal({w=80})
+    local journal, text_area, journal_window = arrange_empty_journal({w=80})
 
     local text = table.concat({
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
