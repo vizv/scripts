@@ -20,7 +20,6 @@ TextEditor.ATTRS{
 
 function TextEditor:init()
     self.render_start_line_y = 1
-
     self:addviews{
         TextEditorView{
             view_id='text_area',
@@ -49,7 +48,7 @@ function TextEditor:init()
     self:setFocus(true)
 end
 
-function TextEditor:text()
+function TextEditor:getText()
     return self.subviews.text_area.text
 end
 

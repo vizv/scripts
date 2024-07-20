@@ -49,13 +49,12 @@ local function simulate_mouse_click(element, x, y)
     gui_journal.view:onRender()
 end
 
-local function simulate_mouse_drag(text_area, x_from, y_from, x_to, y_to)
-    local g_x_from, g_y_from = text_area.frame_body:globalXY(x_from, y_from)
-    local g_x_to, g_y_to = text_area.frame_body:globalXY(x_to, y_to)
+local function simulate_mouse_drag(element, x_from, y_from, x_to, y_to)
+    local g_x_from, g_y_from = element.frame_body:globalXY(x_from, y_from)
+    local g_x_to, g_y_to = element.frame_body:globalXY(x_to, y_to)
 
     df.global.gps.mouse_x = g_x_from
     df.global.gps.mouse_y = g_y_from
-
 
     gui.simulateInput(dfhack.gui.getCurViewscreen(true), {
         _MOUSE_L=true,
@@ -2635,7 +2634,6 @@ end
 
 function test.jump_to_table_of_contents_sections()
     local journal, text_area = arrange_empty_journal({w=100, h=10})
-    local scrollbar = journal.subviews.text_area_scrollbar
 
     local text = table.concat({
         '# Header 1',
@@ -2770,6 +2768,33 @@ function test.jump_to_table_of_contents_sections()
         'Aenean non orci id erat malesuada pharetra.',
         'Nunc in lectus et metus finibus venenatis.',
     }, '\n'))
+
+    journal:dismiss()
+end
+
+
+function test.resize_table_of_contents_together()
+    local journal, text_area = arrange_empty_journal({w=100, h=10})
+
+    local text = table.concat({
+        '# Header 1',
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    expect.eq(text_area.frame_body.width, 101)
+
+    simulate_input_keys('CUSTOM_CTRL_T')
+
+    expect.eq(text_area.frame_body.width, 81)
+
+    local toc_panel = journal.subviews.table_of_contents_panel
+    -- simulate mouse drag resize of toc panel
+    simulate_mouse_drag(toc_panel, toc_panel.frame_body.width, 1, toc_panel.frame_body.width + 10, 1)
+
+    expect.eq(text_area.frame_body.width, 71)
 
     journal:dismiss()
 end

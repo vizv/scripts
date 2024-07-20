@@ -81,7 +81,7 @@ function JournalWindow:toggleToCVisibililty()
     self.subviews.table_of_contents_panel.visible =
         not self.subviews.table_of_contents_panel.visible
 
-    self:reloadTableOfContents(self.subviews.journal_editor:text())
+    self:reloadTableOfContents(self.subviews.journal_editor:getText())
     self:updateLayout()
 end
 
@@ -120,6 +120,18 @@ end
 
 function JournalWindow:onPanelResizeEnd()
     self.resizing_panels = false
+
+    self:esnurePanelsRelSize()
+    self:updateLayout()
+end
+
+function JournalWindow:onRenderBody(painter)
+    if self.resizing_panels then
+        self:esnurePanelsRelSize()
+        self:updateLayout()
+    end
+
+    return JournalWindow.super.onRenderBody(painter)
 end
 
 function JournalWindow:esnurePanelsRelSize()
@@ -192,7 +204,7 @@ function JournalScreen:init(options)
             resize_min={w=50, h=20},
             resizable=true,
             frame_inset=0,
-            content=content,
+            init_text=content,
             on_text_change=self:callback('onTextChange')
         },
     }
