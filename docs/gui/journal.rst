@@ -46,6 +46,7 @@ Supported Features
   - replace selected text, if available
   - If no text is selected, paste text in the cursor position
 - Scrolling behaviour for long text build-in
+- Table of contests (:kbd:`Ctrl` + :kbd:`T`), with headers line prefixed by `#`, e.g. `# Fort history`, `## Year 1`
 
 Usage
 -----
