@@ -183,6 +183,51 @@ function test.load_input_multiline_text()
     journal:dismiss()
 end
 
+function test.handle_numpad_numbers_as_text()
+    local journal, text_area, journal_window = arrange_empty_journal({w=80})
+
+    local text = table.concat({
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n')
+    simulate_input_text(text)
+
+    simulate_input_keys({
+        STANDARDSCROLL_LEFT      = true,
+        KEYBOARD_CURSOR_LEFT     = true,
+        _STRING                  = 52,
+        STRING_A052              = true,
+    })
+
+    expect.eq(read_rendered_text(text_area), text .. '4_')
+
+    simulate_input_keys({
+        STRING_A054              = true,
+        STANDARDSCROLL_RIGHT     = true,
+        KEYBOARD_CURSOR_RIGHT    = true,
+        _STRING                  = 54,
+    })
+    expect.eq(read_rendered_text(text_area), text .. '46_')
+
+    simulate_input_keys({
+        KEYBOARD_CURSOR_DOWN     = true,
+        STRING_A050              = true,
+        _STRING                  = 50,
+        STANDARDSCROLL_DOWN      = true,
+    })
+
+    expect.eq(read_rendered_text(text_area), text .. '462_')
+
+    simulate_input_keys({
+        KEYBOARD_CURSOR_UP       = true,
+        STRING_A056              = true,
+        STANDARDSCROLL_UP        = true,
+        _STRING                  = 56,
+    })
+
+    expect.eq(read_rendered_text(text_area), text .. '4628_')
+    journal:dismiss()
+end
+
 function test.wrap_text_to_available_width()
     local journal, text_area = arrange_empty_journal({w=55})
 

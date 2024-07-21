@@ -513,9 +513,9 @@ function TextEditorView:onInput(keys)
 
     if self:onMouseInput(keys) then
         return true
-    elseif self:onCursorInput(keys) then
-        return true
     elseif self:onTextManipulationInput(keys) then
+        return true
+    elseif self:onCursorInput(keys) then
         return true
     elseif keys.CUSTOM_CTRL_C then
         self:copy()
