@@ -35,6 +35,7 @@ Supported Features
 - Jump to Beginning/End: Quickly move the cursor to the beginning or end of the text using :kbd:`Shift` + :kbd:`Up` and :kbd:`Shift` + :kbd:`Down`.
 - Select Word/Line: Use double click to select current word, or triple click to select current line
 - Select All: Select entire text by :kbd:`Ctrl` + :kbd:`A`
+- Undo/Redo: Undo/Redo changes by :kbd:`Ctrl` + :kbd:`Z` / :kbd:`Ctrl` + :kbd:`Y`
 - Clipboard Operations: Perform OS clipboard cut, copy, and paste operations on selected text, allowing you to paste the copied content into other applications.
 - Copy Text: Use :kbd:`Ctrl` + :kbd:`C` to copy selected text.
   - copy selected text, if available

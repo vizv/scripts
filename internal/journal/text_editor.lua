@@ -6,6 +6,83 @@ local widgets = require 'gui.widgets'
 local wrapped_text = reqscript('internal/journal/wrapped_text')
 
 local CLIPBOARD_MODE = {LOCAL = 1, LINE = 2}
+local HISTORY_ENTRY = {
+    TEXT_BLOCK = 1,
+    WHITESPACE_BLOCK = 2,
+    BACKSPACE = 2,
+    DELETE = 3,
+    OTHER = 4
+}
+
+TextEditorHistory = defclass(TextEditorHistory)
+
+TextEditorHistory.ATTRS{
+    history_size = 25,
+}
+
+function TextEditorHistory:init()
+    self.past = {}
+    self.future = {}
+end
+
+function TextEditorHistory:store(history_entry_type, text, cursor)
+    local last_entry = self.past[#self.past]
+
+    if not last_entry or history_entry_type == HISTORY_ENTRY.OTHER or
+        last_entry.entry_type ~= history_entry_type then
+        table.insert(self.past, {
+            entry_type=history_entry_type,
+            text=text,
+            cursor=cursor
+        })
+    end
+
+    self.future = {}
+
+    if #self.past > self.history_size then
+        table.remove(self.past, 1)
+    end
+end
+
+function TextEditorHistory:undo(curr_text, curr_cursor)
+    if #self.past == 0 then
+        return nil
+    end
+
+    local history_entry = table.remove(self.past, #self.past)
+
+    table.insert(self.future, {
+        entry_type=OTHER,
+        text=curr_text,
+        cursor=curr_cursor
+    })
+
+    if #self.future > self.history_size then
+        table.remove(self.future, 1)
+    end
+
+    return history_entry
+end
+
+function TextEditorHistory:redo(curr_text, curr_cursor)
+    if #self.future == 0 then
+        return true
+    end
+
+    local history_entry = table.remove(self.future, #self.future)
+
+    table.insert(self.past, {
+        entry_type=OTHER,
+        text=curr_text,
+        cursor=curr_cursor
+    })
+
+    if #self.past > self.history_size then
+        table.remove(self.past, 1)
+    end
+
+    return history_entry
+end
 
 TextEditor = defclass(TextEditor, widgets.Panel)
 
@@ -154,7 +231,8 @@ TextEditorView.ATTRS{
     on_change = DEFAULT_NIL,
     on_cursor_change = DEFAULT_NIL,
     enable_cursor_blink = true,
-    debug = false
+    debug = false,
+    history_size = 10,
 }
 
 function TextEditorView:init()
@@ -179,6 +257,8 @@ function TextEditorView:init()
         text=self.text,
         wrap_width=256
     }
+
+    self.history = TextEditorHistory{history_size=self.history_size}
 end
 
 function TextEditorView:setRenderStartLineY(render_start_line_y)
@@ -401,7 +481,7 @@ function TextEditorView:onRenderBody(dc)
         local cursor_char = self:charAtCursor()
         local x, y = self.wrapped_text:indexToCoords(self.cursor)
         local debug_msg = string.format(
-            'x: %s y: %s ind: %s #line: %s char: %s',
+            'x: %s y: %s ind: %s #line: %s char: %s hist-: %s hist+: %s',
             x,
             y,
             self.cursor,
@@ -409,7 +489,9 @@ function TextEditorView:onRenderBody(dc)
             (cursor_char == NEWLINE and 'NEWLINE') or
             (cursor_char == ' ' and 'SPACE') or
             (cursor_char == '' and 'nil') or
-            cursor_char
+            cursor_char,
+            #self.history.past,
+            #self.history.future
         )
         local sel_debug_msg = self.sel_end and string.format(
             'sel_end: %s',
@@ -513,6 +595,8 @@ function TextEditorView:onInput(keys)
 
     if self:onMouseInput(keys) then
         return true
+    elseif self:onHistoryInput(keys) then
+        return true
     elseif self:onTextManipulationInput(keys) then
         return true
     elseif self:onCursorInput(keys) then
@@ -522,9 +606,33 @@ function TextEditorView:onInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_X then
         self:cut()
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
         return true
     elseif keys.CUSTOM_CTRL_V then
         self:paste()
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
+        return true
+    end
+end
+
+function TextEditorView:onHistoryInput(keys)
+    if keys.CUSTOM_CTRL_Z then
+        local history_entry = self.history:undo(self.text, self.cursor)
+
+        if history_entry then
+            self:setText(history_entry.text)
+            self:setCursor(history_entry.cursor)
+        end
+
+        return true
+    elseif keys.CUSTOM_CTRL_Y then
+        local history_entry = self.history:redo(self.text, self.cursor)
+
+        if history_entry then
+            self:setText(history_entry.text)
+            self:setCursor(history_entry.cursor)
+        end
+
         return true
     end
 end
@@ -652,12 +760,20 @@ end
 function TextEditorView:onTextManipulationInput(keys)
     if keys.SELECT then
         -- handle enter
+        self.history:store(
+            HISTORY_ENTRY.WHITESPACE_BLOCK,
+            self.text,
+            self.cursor
+        )
         self:insert(NEWLINE)
+
         return true
 
     elseif keys._STRING then
         if keys._STRING == 0 then
             -- handle backspace
+            self.history:store(HISTORY_ENTRY.BACKSPACE, self.text, self.cursor)
+
             if (self:hasSelection()) then
                 self:eraseSelection()
             else
@@ -671,12 +787,19 @@ function TextEditorView:onTextManipulationInput(keys)
                 )
                 self:eraseSelection()
             end
+
         else
+            local cv = string.char(keys._STRING)
+
             if (self:hasSelection()) then
+                self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
                 self:eraseSelection()
+            else
+                local entry_type = cv == ' ' and HISTORY_ENTRY.WHITESPACE_BLOCK
+                    or HISTORY_ENTRY.TEXT_BLOCK
+                self.history:store(entry_type, self.text, self.cursor)
             end
 
-            local cv = string.char(keys._STRING)
             self:insert(cv)
         end
 
@@ -687,6 +810,8 @@ function TextEditorView:onTextManipulationInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_U then
         -- delete current line
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
+
         if (self:hasSelection()) then
             -- delete all lines that has selection
             self:setSelection(
@@ -701,18 +826,24 @@ function TextEditorView:onTextManipulationInput(keys)
             )
             self:eraseSelection()
         end
+
         return true
     elseif keys.CUSTOM_CTRL_K then
         -- delete from cursor to end of current line
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
+
         local line_end = self:lineEndOffset(self.sel_end or self.cursor) - 1
         self:setSelection(
             self.cursor,
             math.max(line_end, self.cursor)
         )
         self:eraseSelection()
+
         return true
     elseif keys.CUSTOM_CTRL_D then
         -- delete char, there is no support for `Delete` key
+        self.history:store(HISTORY_ENTRY.DELETE, self.text, self.cursor)
+
         if (self:hasSelection()) then
             self:eraseSelection()
         else
@@ -725,6 +856,8 @@ function TextEditorView:onTextManipulationInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_W then
         -- delete one word backward
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
+
         if not self:hasSelection() and self.cursor ~= 1 then
             self:setSelection(
                 self:wordStartOffset(),
@@ -732,6 +865,7 @@ function TextEditorView:onTextManipulationInput(keys)
             )
         end
         self:eraseSelection()
+
         return true
     end
 end
