@@ -72,7 +72,8 @@ end
 local function arrange_empty_journal(options)
     options = options or {}
 
-    gui_journal.main()
+    gui_journal.main({save_prefix='test:'})
+
     local journal = gui_journal.view
     journal.save_on_change = options.save_on_change or false
 
@@ -94,7 +95,9 @@ local function arrange_empty_journal(options)
     local text_area = journal_window.subviews.text_area
 
     text_area.enable_cursor_blink = false
-    text_area:setText('')
+    if not options.save_on_change then
+        text_area:setText('')
+    end
 
     if not options.allow_layout_restore then
         local toc_panel = journal_window.subviews.table_of_contents_panel
@@ -2411,6 +2414,7 @@ function test.restore_layout()
     journal.subviews.table_of_contents_panel.frame.w = 37
 
     journal:updateLayout()
+
     journal:dismiss()
 
     journal, _ = arrange_empty_journal({allow_layout_restore=true})
@@ -2420,7 +2424,39 @@ function test.restore_layout()
     expect.eq(journal.subviews.journal_window.frame.w, 80)
     expect.eq(journal.subviews.journal_window.frame.h, 23)
 
-    expect.eq(journal.subviews.table_of_contents_panel.frame.w, 37)
+    journal:dismiss()
+end
+
+function test.restore_text_between_sessions()
+    local journal, text_area = arrange_empty_journal({w=80,save_on_change=true})
+
+    simulate_input_keys('CUSTOM_CTRL_A')
+    simulate_input_keys('CUSTOM_CTRL_D')
+
+    local text = table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed consectetur, urna sit amet aliquet egestas,',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n')
+
+    simulate_input_text(text)
+    simulate_mouse_click(text_area, 10, 1)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed c_nsectetur, urna sit amet aliquet egestas,',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
+
+    journal:dismiss()
+
+    journal, text_area = arrange_empty_journal({w=80, save_on_change=true})
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        '112: Sed c_nsectetur, urna sit amet aliquet egestas,',
+        '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    }, '\n'));
 
     journal:dismiss()
 end

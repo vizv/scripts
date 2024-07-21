@@ -19,8 +19,10 @@ JournalWindow.ATTRS {
     resizable=true,
     resize_min=RESIZE_MIN,
     frame_inset=0,
-    init_text='',
+    init_text=DEFAULT_NIL,
+    init_cursor=1,
     on_text_change=DEFAULT_NIL,
+    on_cursor_change=DEFAULT_NIL,
     on_layout_change=DEFAULT_NIL
 }
 
@@ -82,7 +84,13 @@ function JournalWindow:init()
             resize_min={w=30, h=10},
             frame_inset={r=1},
             init_text=self.init_text,
-            on_change=function(text) self:onTextChange(text) end
+            init_cursor=self.init_cursor,
+            on_text_change=function(text) self:onTextChange(text) end,
+            on_cursor_change=function(cursor)
+                if self.on_cursor_change ~= nil then
+                    self.on_cursor_change(cursor)
+                end
+            end
         },
     })
 
@@ -210,7 +218,8 @@ end
 JournalScreen = defclass(JournalScreen, gui.ZScreen)
 JournalScreen.ATTRS {
     focus_path='journal',
-    save_on_change=true
+    save_on_change=true,
+    save_prefix=''
 }
 
 function JournalScreen:init(options)
@@ -223,16 +232,22 @@ function JournalScreen:init(options)
             resize_min={w=50, h=20},
             resizable=true,
             frame_inset=0,
-            init_text=context.text[1],
 
-            on_text_change=self:callback('onTextChange'),
+            init_text=context.text[1],
+            init_cursor=context.cursor[1],
+
+            on_text_change=self:callback('saveContext'),
+            on_cursor_change=self:callback('saveContext')
         },
     }
 end
 
 function JournalScreen:loadContext()
-    local site_data = dfhack.persistent.getSiteData(JOURNAL_PERSIST_KEY) or {}
+    local site_data = dfhack.persistent.getSiteData(
+        self.save_prefix .. JOURNAL_PERSIST_KEY
+    ) or {}
     site_data.text = site_data.text or {''}
+    site_data.cursor = site_data.cursor or {#site_data.text[1] + 1}
 
     return site_data
 end
@@ -241,10 +256,15 @@ function JournalScreen:onTextChange(text)
     self:saveContext(text)
 end
 
-function JournalScreen:saveContext(text)
+function JournalScreen:saveContext()
     if self.save_on_change and dfhack.isWorldLoaded() then
-        local toc_panel = self.subviews.table_of_contents_panel
-        dfhack.persistent.saveSiteData(JOURNAL_PERSIST_KEY, {text={text}})
+        local text = self.subviews.journal_editor:getText()
+        local cursor = self.subviews.journal_editor:getCursor()
+
+        dfhack.persistent.saveSiteData(
+            self.save_prefix .. JOURNAL_PERSIST_KEY,
+            {text={text}, cursor={cursor}}
+        )
     end
 end
 
@@ -252,12 +272,14 @@ function JournalScreen:onDismiss()
     view = nil
 end
 
-function main()
+function main(options)
     if not dfhack.isMapLoaded() or not dfhack.world.isFortressMode() then
         qerror('journal requires a fortress map to be loaded')
     end
 
-    view = view and view:raise() or JournalScreen{}:show()
+    view = view and view:raise() or JournalScreen{
+        save_prefix=options and options.save_prefix or ''
+    }:show()
 end
 
 if not dfhack_flags.module then

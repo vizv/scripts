@@ -88,32 +88,36 @@ TextEditor = defclass(TextEditor, widgets.Panel)
 
 TextEditor.ATTRS{
     init_text = '',
+    init_cursor = DEFAULT_NIL,
     text_pen = COLOR_LIGHTCYAN,
     ignore_keys = {'STRING_A096'},
     select_pen = COLOR_CYAN,
-    on_change = DEFAULT_NIL,
+    on_text_change = DEFAULT_NIL,
+    on_cursor_change = DEFAULT_NIL,
     debug = false
 }
 
 function TextEditor:init()
     self.render_start_line_y = 1
+
     self:addviews{
         TextEditorView{
             view_id='text_area',
             frame={l=0,r=2,t=0},
             text = self.init_text,
+
             text_pen = self.text_pen,
             ignore_keys = self.ignore_keys,
             select_pen = self.select_pen,
             debug = self.debug,
 
-            on_change = function (val)
+            on_text_change = function (val)
                 self:updateLayout()
-                if self.on_change then
-                    self.on_change(val)
+                if self.on_text_change then
+                    self.on_text_change(val)
                 end
             end,
-            on_cursor_change = self:callback('onCursorChanged')
+            on_cursor_change = self:callback('onCursorChange')
         },
         widgets.Scrollbar{
             view_id='scrollbar',
@@ -129,16 +133,25 @@ function TextEditor:getText()
     return self.subviews.text_area.text
 end
 
-function TextEditor:onCursorChanged(text)
+function TextEditor:getCursor()
+    return self.subviews.text_area.cursor
+end
+
+function TextEditor:onCursorChange(cursor)
     local x, y = self.subviews.text_area.wrapped_text:indexToCoords(
         self.subviews.text_area.cursor
     )
+
     if y >= self.render_start_line_y + self.subviews.text_area.frame_body.height then
         self:updateScrollbar(
             y - self.subviews.text_area.frame_body.height + 1
         )
     elseif  (y < self.render_start_line_y) then
         self:updateScrollbar(y)
+    end
+
+    if self.on_cursor_change then
+        self.on_cursor_change(cursor)
     end
 end
 
@@ -161,6 +174,12 @@ end
 
 function TextEditor:postUpdateLayout()
     self:updateScrollbar(self.render_start_line_y)
+
+    if self.subviews.text_area.cursor == nil then
+        local cursor = self.init_cursor or #self.text + 1
+        self.subviews.text_area:setCursor(cursor)
+        self:scrollToCursor(cursor)
+    end
 end
 
 function TextEditor:onScrollbar(scroll_spec)
@@ -184,7 +203,6 @@ end
 
 function TextEditor:updateScrollbar(scrollbar_current_y)
     local lines_count = #self.subviews.text_area.wrapped_text.lines
-    -- local render_start_line_y = scrollbar_current_y
 
     local render_start_line_y = (math.min(
         #self.subviews.text_area.wrapped_text.lines - self.subviews.text_area.frame_body.height + 1,
@@ -220,7 +238,6 @@ function TextEditor:onInput(keys)
 end
 
 
-
 TextEditorView = defclass(TextEditorView, widgets.Widget)
 
 TextEditorView.ATTRS{
@@ -228,7 +245,7 @@ TextEditorView.ATTRS{
     text_pen = COLOR_LIGHTCYAN,
     ignore_keys = {'STRING_A096'},
     pen_selection = COLOR_CYAN,
-    on_change = DEFAULT_NIL,
+    on_text_change = DEFAULT_NIL,
     on_cursor_change = DEFAULT_NIL,
     enable_cursor_blink = true,
     debug = false,
@@ -240,7 +257,8 @@ function TextEditorView:init()
     self.clipboard = nil
     self.clipboard_mode = CLIPBOARD_MODE.LOCAL
     self.render_start_line_y = 1
-    self.cursor = #self.text + 1
+
+    self.cursor = nil
 
     self.main_pen = dfhack.pen.parse({
         fg=self.text_pen,
@@ -295,7 +313,7 @@ function TextEditorView:setCursor(cursor_offset)
     self.last_cursor_x = nil
 
     if self.on_cursor_change then
-        self.on_cursor_change()
+        self.on_cursor_change(self.cursor)
     end
 end
 
@@ -394,8 +412,8 @@ function TextEditorView:setText(text)
 
     self:recomputeLines()
 
-    if changed and self.on_change then
-        self.on_change(text)
+    if changed and self.on_text_change then
+        self.on_text_change(text)
     end
 end
 
