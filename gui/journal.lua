@@ -82,7 +82,7 @@ function JournalWindow:init()
             view_id='journal_editor',
             frame={t=3, b=0, l=31, r=0},
             resize_min={w=30, h=10},
-            frame_inset={r=1},
+            frame_inset={r=0},
             init_text=self.init_text,
             init_cursor=self.init_cursor,
             on_text_change=function(text) self:onTextChange(text) end,
