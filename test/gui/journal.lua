@@ -28,16 +28,23 @@ local function simulate_input_text(text)
     gui_journal.view:onRender()
 end
 
-local function simulate_mouse_click(text_area, x, y)
-    local g_x, g_y = text_area.frame_body:globalXY(x, y)
+local function simulate_mouse_click(element, x, y)
+    local screen = dfhack.gui.getCurViewscreen(true)
+
+    local g_x, g_y = element.frame_body:globalXY(x, y)
     df.global.gps.mouse_x = g_x
     df.global.gps.mouse_y = g_y
 
-    gui.simulateInput(dfhack.gui.getCurViewscreen(true), {
+    if not element.frame_body:inClipGlobalXY(g_x, g_y) then
+        print('--- Click outside provided element area, re-check the test')
+        return
+    end
+
+    gui.simulateInput(screen, {
         _MOUSE_L=true,
         _MOUSE_L_DOWN=true,
     })
-    gui.simulateInput(dfhack.gui.getCurViewscreen(true), '_MOUSE_L_DOWN')
+    gui.simulateInput(screen, '_MOUSE_L_DOWN')
 
     gui_journal.view:onRender()
 end
@@ -72,12 +79,23 @@ local function arrange_empty_journal(options)
 
     local journal_window = journal.subviews.journal_window
 
-    journal_window.frame.w = options.w or 100
-    journal_window.frame.h = options.h or 50
+    if not options.allow_size_restore then
+        journal_window.frame.w = 50
+        journal_window.frame.h = 50
+    end
+
+    if options.w then
+        journal_window.frame.w = options.w + 7
+    end
+
+    if options.h then
+        journal_window.frame.h = options.h + 4
+    end
 
     journal:updateLayout()
 
     local text_area = journal_window.subviews.text_area
+
     text_area.enable_cursor_blink = false
     text_area:setText('')
 
@@ -90,11 +108,12 @@ local function read_rendered_text(text_area)
     local pen = nil
     local text = ''
 
-    for y=0,text_area.frame_body.height do
+    local frame_body = text_area.frame_body
 
-        for x=0,text_area.frame_body.width do
-            local g_x, g_y = text_area.frame_body:globalXY(x, y)
-            pen = dfhack.screen.readTile(g_x, g_y)
+    for y=frame_body.clip_y1,frame_body.clip_y2 do
+
+        for x=frame_body.clip_x1,frame_body.clip_x2 do
+            pen = dfhack.screen.readTile(x, y)
 
             if pen == nil or pen.ch == nil or pen.ch == 0 or pen.fg == 0 then
                 break
@@ -146,7 +165,7 @@ function test.load()
 end
 
 function test.load_input_multiline_text()
-    local journal, text_area = arrange_empty_journal()
+    local journal, text_area = arrange_empty_journal({w=80})
 
     local text = table.concat({
         'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -161,7 +180,7 @@ function test.load_input_multiline_text()
 end
 
 function test.wrap_text_to_available_width()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -189,7 +208,7 @@ function test.wrap_text_to_available_width()
 end
 
 function test.submit_new_line()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -246,7 +265,7 @@ function test.submit_new_line()
 end
 
 function test.keyboard_arrow_up_navigation()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -350,7 +369,7 @@ function test.keyboard_arrow_up_navigation()
 end
 
 function test.keyboard_arrow_down_navigation()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -455,7 +474,7 @@ function test.keyboard_arrow_down_navigation()
 end
 
 function test.keyboard_arrow_left_navigation()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -534,7 +553,7 @@ function test.keyboard_arrow_left_navigation()
 end
 
 function test.keyboard_arrow_right_navigation()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -615,7 +634,7 @@ function test.keyboard_arrow_right_navigation()
 end
 
 function test.fast_rewind_words_right()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -704,7 +723,7 @@ function test.fast_rewind_words_right()
 end
 
 function test.fast_rewind_words_left()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -781,7 +800,7 @@ function test.fast_rewind_words_left()
 end
 
 function test.handle_backspace()
-    local journal, text_area = arrange_empty_journal({w=60})
+    local journal, text_area = arrange_empty_journal({w=55})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -848,7 +867,7 @@ function test.handle_backspace()
 end
 
 function test.handle_delete()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -925,7 +944,7 @@ function test.handle_delete()
 end
 
 function test.line_end()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -984,7 +1003,7 @@ function test.line_end()
 end
 
 function test.line_beging()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1031,7 +1050,7 @@ function test.line_beging()
 end
 
 function test.line_delete()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1077,7 +1096,7 @@ function test.line_delete()
 end
 
 function test.line_delete_to_end()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1110,7 +1129,7 @@ function test.line_delete_to_end()
 end
 
 function test.delete_last_word()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1186,7 +1205,7 @@ function test.delete_last_word()
 end
 
 function test.jump_to_text_end()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1221,7 +1240,7 @@ function test.jump_to_text_end()
 end
 
 function test.jump_to_text_begin()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1253,7 +1272,7 @@ function test.jump_to_text_begin()
 end
 
 function test.select_all()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1283,7 +1302,7 @@ function test.select_all()
 end
 
 function test.text_key_replace_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1341,7 +1360,7 @@ function test.text_key_replace_selection()
 end
 
 function test.arrows_reset_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1386,7 +1405,7 @@ function test.arrows_reset_selection()
 end
 
 function test.fast_rewind_reset_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1421,7 +1440,7 @@ function test.fast_rewind_reset_selection()
 end
 
 function test.click_reset_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1456,7 +1475,7 @@ function test.click_reset_selection()
 end
 
 function test.line_navigation_reset_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1489,7 +1508,7 @@ function test.line_navigation_reset_selection()
 end
 
 function test.jump_begin_or_end_reset_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1522,7 +1541,7 @@ function test.jump_begin_or_end_reset_selection()
 end
 
 function test.new_line_override_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1559,7 +1578,7 @@ function test.new_line_override_selection()
 end
 
 function test.backspace_delete_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1595,7 +1614,7 @@ function test.backspace_delete_selection()
 end
 
 function test.delete_char_delete_selection()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1631,7 +1650,7 @@ function test.delete_char_delete_selection()
 end
 
 function test.delete_line_delete_selection_lines()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1675,7 +1694,7 @@ function test.delete_line_delete_selection_lines()
 end
 
 function test.delete_line_rest_delete_selection_lines()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1733,7 +1752,7 @@ function test.delete_line_rest_delete_selection_lines()
 end
 
 function test.delete_last_word_delete_selection()
-        local journal, text_area = arrange_empty_journal({w=70})
+        local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1791,7 +1810,7 @@ function test.delete_last_word_delete_selection()
 end
 
 function test.single_mouse_click_set_cursor()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1868,7 +1887,7 @@ function test.single_mouse_click_set_cursor()
 end
 
 function test.double_mouse_click_select_word()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1912,7 +1931,7 @@ function test.double_mouse_click_select_word()
 end
 
 function test.double_mouse_click_select_white_spaces()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = 'Lorem ipsum dolor sit amet,     consectetur elit.'
     simulate_input_text(text)
@@ -1928,7 +1947,7 @@ function test.double_mouse_click_select_white_spaces()
 end
 
 function test.triple_mouse_click_select_line()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -1994,7 +2013,7 @@ function test.triple_mouse_click_select_line()
 end
 
 function test.mouse_selection_control()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -2065,7 +2084,7 @@ function test.mouse_selection_control()
 end
 
 function test.copy_and_paste_text_line()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
@@ -2137,7 +2156,7 @@ function test.copy_and_paste_text_line()
 end
 
 function test.copy_and_paste_selected_text()
-        local journal, text_area = arrange_empty_journal({w=70})
+        local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -2207,7 +2226,7 @@ function test.copy_and_paste_selected_text()
 end
 
 function test.cut_and_paste_text_line()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '112: Sed consectetur, urna sit amet aliquet egestas, ante nibh porttitor mi, vitae rutrum eros metus nec libero.',
@@ -2257,7 +2276,7 @@ function test.cut_and_paste_text_line()
 end
 
 function test.cut_and_paste_selected_text()
-    local journal, text_area = arrange_empty_journal({w=70})
+    local journal, text_area = arrange_empty_journal({w=65})
 
     local text = table.concat({
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -2327,6 +2346,240 @@ function test.cut_and_paste_selected_text()
         'portLr mi, vitae rutrum eros metus nec libero.',
         '60: Lorem ipsum dolor sit amet, consectetur adipiscing elit.tito_',
     }, '\n'));
+
+    journal:dismiss()
+end
+
+function test.restore_size_and_position()
+    local journal, _ = arrange_empty_journal()
+    journal.subviews.journal_window.frame = {
+        l = 13,
+        t = 13,
+        w = 80,
+        h = 23
+    }
+    journal:updateLayout()
+    journal:dismiss()
+
+    journal, _ = arrange_empty_journal({allow_size_restore=true})
+
+    expect.eq(journal.subviews.journal_window.frame.l, 13)
+    expect.eq(journal.subviews.journal_window.frame.t, 13)
+    expect.eq(journal.subviews.journal_window.frame.w, 80)
+    expect.eq(journal.subviews.journal_window.frame.h, 23)
+
+    journal:dismiss()
+end
+
+function test.scroll_long_text()
+    local journal, text_area = arrange_empty_journal({w=100, h=10})
+    local scrollbar = journal.subviews.text_area_scrollbar
+
+    local text = table.concat({
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex._',
+    }, '\n'))
+
+    simulate_mouse_click(scrollbar, 0, 0)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+    }, '\n'))
+
+    simulate_mouse_click(scrollbar, 0, 0)
+    simulate_mouse_click(scrollbar, 0, 0)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+    }, '\n'))
+
+    simulate_mouse_click(scrollbar, 0, scrollbar.frame_body.height - 2)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex._',
+    }, '\n'))
+
+    simulate_mouse_click(scrollbar, 0, 2)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+    }, '\n'))
+
+    journal:dismiss()
+end
+
+function test.scroll_follows_cursor()
+    local journal, text_area = arrange_empty_journal({w=100, h=10})
+    local scrollbar = journal.subviews.text_area_scrollbar
+
+    local text = table.concat({
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+        '18: Vestibulum at ante ut dui hendrerit pellentesque ut eu ex._',
+    }, '\n'))
+
+    simulate_mouse_click(text_area, 0, 8)
+    simulate_input_keys('KEYBOARD_CURSOR_UP')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        '_nteger tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+        'Morbi id mauris dignissim, suscipit metus nec, auctor odio.',
+        'Sed in libero eget velit condimentum lacinia ut quis dui.',
+        'Praesent sollicitudin dui ac mollis lacinia.',
+        'Ut gravida tortor ac accumsan suscipit.',
+    }, '\n'))
+
+    simulate_input_keys('KEYBOARD_CURSOR_UP_FAST')
+
+    simulate_mouse_click(text_area, 0, 9)
+    simulate_input_keys('KEYBOARD_CURSOR_DOWN')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Nulla ut lacus ut tortor semper consectetur.',
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '_onec quis lectus ac erat placerat eleifend.',
+    }, '\n'))
+
+    simulate_mouse_click(text_area, 44, 10)
+    simulate_input_keys('KEYBOARD_CURSOR_RIGHT')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+        '_enean non orci id erat malesuada pharetra.',
+    }, '\n'))
+
+    simulate_mouse_click(text_area, 0, 2)
+    simulate_input_keys('KEYBOARD_CURSOR_LEFT')
+
+    expect.eq(read_rendered_text(text_area), table.concat({
+        'Nulla ut lacus ut tortor semper consectetur._',
+        'Nam scelerisque ligula vitae magna varius, vel porttitor tellus egestas.',
+        'Suspendisse aliquet dolor ac velit maximus, ut tempor lorem tincidunt.',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        'Donec quis lectus ac erat placerat eleifend.',
+    }, '\n'))
 
     journal:dismiss()
 end
