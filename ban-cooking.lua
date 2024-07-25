@@ -139,13 +139,11 @@ funcs.seeds = function()
         for _, m in ipairs(p.material) do
             if m.id == "STRUCTURAL" then
                 if m.flags.EDIBLE_COOKED then
-                    local has_drink = false
                     local has_seed = false
                     for _, s in ipairs(m.reaction_product.id) do
                         has_seed = has_seed or s.value == "SEED_MAT"
-                        has_drink = has_drink or s.value == "DRINK_MAT"
                     end
-                    if has_seed and has_drink then
+                    if has_seed then
                         local matinfo = dfhack.matinfo.find(p.id, m.id)
                         ban_cooking(p.name .. ' ' .. m.id, matinfo.type, matinfo.index, df.item_type.PLANT, -1)
                     end
@@ -157,13 +155,11 @@ funcs.seeds = function()
             local matinfo = dfhack.matinfo.decode(g)
             local m = matinfo.material
             if m.flags.EDIBLE_COOKED then
-                local has_drink = false
                 local has_seed = false
                 for _, s in ipairs(m.reaction_product.id) do
                     has_seed = has_seed or s.value == "SEED_MAT"
-                    has_drink = has_drink or s.value == "DRINK_MAT"
                 end
-                if has_seed and has_drink then
+                if has_seed then
                     ban_cooking(p.name .. ' ' .. m.id, matinfo.type, matinfo.index, df.item_type.PLANT_GROWTH, k)
                 end
             end
