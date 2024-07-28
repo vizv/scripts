@@ -323,12 +323,12 @@ local function tile_props(pos, tt) --Returns is_ground, is_open_air
     elseif occ.building == df.tile_building_occ.Floored then
         return true, false --Lowered bridge, forbidden hatch, etc.
     elseif occ.building == df.tile_building_occ.Dynamic then
-        local bld = dfhack.buildings.findAtTile(pos) --Unforbidden closed hatch, etc.
+        local bld = dfhack.buildings.findAtTile(pos) --Unforbidden hatch, etc.
         return (bld and (bld._type == df.building_hatchst or
             bld._type == df.building_grate_floorst or
             bld._type == df.building_bars_floorst)), false
     end
-    return false, false
+    return false, false --Don't trust it
 end
 
 function Autodump:do_dump(pos)
