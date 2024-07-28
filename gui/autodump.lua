@@ -306,14 +306,50 @@ function Autodump:onRenderFrame(dc, rect)
     end
 end
 
+local function tile_props(pos, tt) --Returns is_ground, is_open_air
+    local shape_attrs = df.tiletype_shape.attrs[df.tiletype.attrs[tt].shape]
+    if shape_attrs.walkable then --TODO: don't dump on statues, etc.?
+        return true, false --Floor, stair, or ramp
+    elseif shape_attrs.basic_shape == df.tiletype_shape_basic.Wall then
+        return false, false --Wall or fortification
+    end
+
+    local _, occ = dfhack.maps.getTileFlags(pos)
+    if occ.building == df.tile_building_occ.None or
+      occ.building == df.tile_building_occ.Planned or
+      occ.building == df.tile_building_occ.Passable or
+      occ.building == df.tile_building_occ.Well then
+        return false, true --Item can fall safely through; any other may delete item projectile
+    elseif occ.building == df.tile_building_occ.Floored then
+        return true, false --Lowered bridge, forbidden hatch, etc.
+    elseif occ.building == df.tile_building_occ.Dynamic then
+        local bld = dfhack.buildings.findAtTile(pos) --Unforbidden closed hatch, etc.
+        return (bld and (bld._type == df.building_hatchst or
+            bld._type == df.building_grate_floorst or
+            bld._type == df.building_bars_floorst)), false
+    end
+    return false, false
+end
+
 function Autodump:do_dump(pos)
     pos = pos or dfhack.gui.getMousePos()
-    if not pos then return end
-    local tileattrs = df.tiletype.attrs[dfhack.maps.getTileType(pos)]
-    local basic_shape = df.tiletype_shape.attrs[tileattrs.shape].basic_shape
-    local on_ground = basic_shape == df.tiletype_shape_basic.Floor or
-            basic_shape == df.tiletype_shape_basic.Stair or
-            basic_shape == df.tiletype_shape_basic.Ramp
+    if not pos then
+        print('No cursor')
+        return
+    end
+
+    local tt = dfhack.maps.getTileType(pos)
+    if not tt then
+        print('No map block')
+        return
+    end
+
+    local on_ground, in_air = tile_props(pos, tt)
+    if not (on_ground or in_air) then
+        print('Dump tile blocked')
+        return
+    end
+
     local items = #self.selected_items.list > 0 and self.selected_items.list or self.dump_items
     local mark_as_forbidden = self.subviews.mark_as_forbidden:getOptionValue()
     print(('teleporting %d items'):format(#items))
@@ -330,7 +366,7 @@ function Autodump:do_dump(pos)
             if mark_as_forbidden then
                 item.flags.forbid = true
             end
-            if not on_ground then
+            if in_air then
                 dfhack.items.makeProjectile(item)
             end
         else
