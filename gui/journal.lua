@@ -13,6 +13,50 @@ JOURNAL_PERSIST_KEY = 'journal'
 
 journal_config = journal_config or json.open('dfhack-config/journal.json')
 
+local TO_THE_RIGHT = string.char(16)
+local TO_THE_LEFT = string.char(17)
+
+function get_shifter_text(state)
+    local ch = state and TO_THE_RIGHT or TO_THE_LEFT
+    return {
+        ' ', NEWLINE,
+        ch, NEWLINE,
+        ch, NEWLINE,
+        ' ', NEWLINE,
+    }
+end
+
+Shifter = defclass(Shifter, widgets.Widget)
+Shifter.ATTRS {
+    frame={l=0, w=1, t=0, b=0},
+    collapsed=false,
+    on_changed=DEFAULT_NIL,
+}
+
+function Shifter:init()
+    self:addviews{
+        widgets.Label{
+            view_id='shifter_label',
+            frame={l=0, r=0, t=0, b=0},
+            text=get_shifter_text(self.collapsed),
+            on_click=function ()
+                self:toggle(not self.collapsed)
+            end
+        }
+    }
+end
+
+function Shifter:toggle(state)
+    self.collapsed = state
+    self.subviews.shifter_label:setText(get_shifter_text(state))
+
+    self:updateLayout()
+
+    if self.on_changed then
+        self.on_changed(self.collapsed)
+    end
+end
+
 JournalWindow = defclass(JournalWindow, widgets.Window)
 JournalWindow.ATTRS {
     frame_title='DF Journal',
@@ -26,63 +70,57 @@ JournalWindow.ATTRS {
     on_layout_change=DEFAULT_NIL
 }
 
-function JournalWindow:loadConfig()
-    local window_frame = copyall(journal_config.data.frame or {})
-    local table_of_contents = copyall(journal_config.data.toc or {
-        width=20,
-        visible=false
-    })
-
-    self.frame = self:sanitizeFrame(window_frame)
-
-    local toc_panel = self.subviews.table_of_contents_panel
-    toc_panel.frame.w = table_of_contents.width
-    toc_panel.visible = table_of_contents.visible
-end
-
 function JournalWindow:init()
+    local frame, toc_visible, toc_width = self.loadConfig()
+
+    self.frame = self:sanitizeFrame(frame)
+
     self:addviews({
         widgets.Panel{
-            frame={t=1, r=0,h=1},
-            subviews={
-                widgets.TextButton{
-                    frame={l=0,w=13},
-                    label='ToC',
-                    key='CUSTOM_CTRL_T',
-                    on_activate=self:callback('toggleToCVisibililty'),
-                    enabled=true,
-                },
-            }
-        },
-        widgets.Panel{
             view_id='table_of_contents_panel',
-            frame_title='Table of contents',
-            frame_style = gui.FRAME_INTERIOR,
+            frame={l=0, w=toc_width, t=1, b=0},
+            visible=toc_visible,
 
+            resize_min={w=25},
             resizable=true,
+            resize_anchors={l=false, t=false, b=true, r=true},
+            frame_style=gui.FRAME_INTERIOR,
+
+            frame_title='Table of contents',
 
             frame_background = gui.CLEAR_PEN,
 
-            resize_min={w=20},
-            resize_anchors={r=true},
-            frame={l=0, t=3, b=0, w=20},
-            visible=false,
             on_resize_begin=self:callback('onPanelResizeBegin'),
             on_resize_end=self:callback('onPanelResizeEnd'),
+
             subviews={
                 widgets.List{
-                    frame={l=1,t=1},
+                    frame={l=1, t=0, r=1, b=0},
                     view_id='table_of_contents',
                     choices={},
                     on_submit=self:callback('onTableOfContentsSubmit')
                 },
             }
         },
+        Shifter{
+            view_id='shifter',
+            frame={l=0, w=1, t=1, b=0},
+            collapsed=not toc_visible,
+            on_changed = function (collapsed)
+                self.subviews.table_of_contents_panel.visible = not collapsed
+                if not colllapsed then
+                    self:reloadTableOfContents(self.init_text)
+                end
+
+                self:ensurePanelsRelSize()
+                self:updateLayout()
+            end,
+        },
         text_editor.TextEditor{
             view_id='journal_editor',
-            frame={t=3, b=0, l=31, r=0},
+            frame={t=1, b=0, l=25, r=0},
             resize_min={w=30, h=10},
-            frame_inset={r=0},
+            frame_inset={l=1,r=0},
             init_text=self.init_text,
             init_cursor=self.init_cursor,
             on_text_change=function(text) self:onTextChange(text) end,
@@ -94,16 +132,7 @@ function JournalWindow:init()
         },
     })
 
-    self:loadConfig()
     self:reloadTableOfContents(self.init_text)
-end
-
-function JournalWindow:toggleToCVisibililty()
-    self.subviews.table_of_contents_panel.visible =
-        not self.subviews.table_of_contents_panel.visible
-
-    self:reloadTableOfContents(self.subviews.journal_editor:getText())
-    self:updateLayout()
 end
 
 function JournalWindow:sanitizeFrame(frame)
@@ -129,16 +158,26 @@ function JournalWindow:sanitizeFrame(frame)
 end
 
 function JournalWindow:saveConfig()
-    local toc_panel = self.subviews.table_of_contents_panel
+    local toc = self.subviews.table_of_contents_panel
 
     utils.assign(journal_config.data, {
         frame = self.frame,
         toc = {
-            width = toc_panel.frame.w,
-            visible = toc_panel.visible
+            width = toc.frame.w,
+            visible = toc.visible
         }
     })
     journal_config:write()
+end
+
+function JournalWindow:loadConfig()
+    local window_frame = copyall(journal_config.data.frame or {})
+    local table_of_contents = copyall(journal_config.data.toc or {
+        width=20,
+        visible=false
+    })
+
+    return window_frame, table_of_contents.visible or false, table_of_contents.width or 25
 end
 
 function JournalWindow:onPanelResizeBegin()
@@ -147,33 +186,33 @@ end
 
 function JournalWindow:onPanelResizeEnd()
     self.resizing_panels = false
-    self:esnurePanelsRelSize()
+    self:ensurePanelsRelSize()
 
     self:updateLayout()
 end
 
 function JournalWindow:onRenderBody(painter)
     if self.resizing_panels then
-        self:esnurePanelsRelSize()
+        self:ensurePanelsRelSize()
         self:updateLayout()
     end
 
-    return JournalWindow.super.onRenderBody(painter)
+    return JournalWindow.super.onRenderBody(self, painter)
 end
 
-function JournalWindow:esnurePanelsRelSize()
-    local toc = self.subviews.table_of_contents_panel
+function JournalWindow:ensurePanelsRelSize()
+    local toc_panel = self.subviews.table_of_contents_panel
     local editor = self.subviews.journal_editor
 
-    toc.frame.w = math.min(
-        math.max(toc.frame.w, toc.resize_min.w),
+    toc_panel.frame.w = math.min(
+        math.max(toc_panel.frame.w, toc_panel.resize_min.w),
         self.frame.w - editor.resize_min.w
     )
-    editor.frame.l = toc.visible and (toc.frame.w + 1) or 1
+    editor.frame.l = toc_panel.visible and toc_panel.frame.w or 1
 end
 
 function JournalWindow:preUpdateLayout()
-    self:esnurePanelsRelSize()
+    self:ensurePanelsRelSize()
 end
 
 function JournalWindow:postUpdateLayout()
