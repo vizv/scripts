@@ -47,8 +47,15 @@ function Shifter:init()
 end
 
 function Shifter:toggle(state)
-    self.collapsed = state
-    self.subviews.shifter_label:setText(get_shifter_text(state))
+    if state == nil then
+        self.collapsed = not self.collapsed
+    else
+        self.collapsed = state
+    end
+
+    self.subviews.shifter_label:setText(
+        get_shifter_text(self.collapsed)
+    )
 
     self:updateLayout()
 
@@ -65,15 +72,17 @@ JournalWindow.ATTRS {
     frame_inset=0,
     init_text=DEFAULT_NIL,
     init_cursor=1,
+    save_layout=true,
+
     on_text_change=DEFAULT_NIL,
     on_cursor_change=DEFAULT_NIL,
     on_layout_change=DEFAULT_NIL
 }
 
 function JournalWindow:init()
-    local frame, toc_visible, toc_width = self.loadConfig()
+    local frame, toc_visible, toc_width = self:loadConfig()
 
-    self.frame = self:sanitizeFrame(frame)
+    self.frame = frame and self:sanitizeFrame(frame) or self.frame
 
     self:addviews({
         widgets.Panel{
@@ -109,7 +118,9 @@ function JournalWindow:init()
             on_changed = function (collapsed)
                 self.subviews.table_of_contents_panel.visible = not collapsed
                 if not colllapsed then
-                    self:reloadTableOfContents(self.init_text)
+                    self:reloadTableOfContents(
+                        self.subviews.journal_editor:getText()
+                    )
                 end
 
                 self:ensurePanelsRelSize()
@@ -135,6 +146,15 @@ function JournalWindow:init()
     self:reloadTableOfContents(self.init_text)
 end
 
+function JournalWindow:onInput(keys)
+    if keys.CUSTOM_CTRL_O then
+        self.subviews.shifter:toggle()
+        return true
+    end
+
+    return JournalWindow.super.onInput(self, keys)
+end
+
 function JournalWindow:sanitizeFrame(frame)
     local w, h = dfhack.screen.getWindowSize()
     local min = RESIZE_MIN
@@ -158,6 +178,10 @@ function JournalWindow:sanitizeFrame(frame)
 end
 
 function JournalWindow:saveConfig()
+    if not self.save_layout then
+        return
+    end
+
     local toc = self.subviews.table_of_contents_panel
 
     utils.assign(journal_config.data, {
@@ -171,6 +195,10 @@ function JournalWindow:saveConfig()
 end
 
 function JournalWindow:loadConfig()
+    if not self.save_layout then
+        return nil, false, 25
+    end
+
     local window_frame = copyall(journal_config.data.frame or {})
     local table_of_contents = copyall(journal_config.data.toc or {
         width=20,
@@ -258,10 +286,11 @@ JournalScreen = defclass(JournalScreen, gui.ZScreen)
 JournalScreen.ATTRS {
     focus_path='journal',
     save_on_change=true,
+    save_layout=true,
     save_prefix=''
 }
 
-function JournalScreen:init(options)
+function JournalScreen:init()
     local context = self:loadContext()
 
     self:addviews{
@@ -271,6 +300,8 @@ function JournalScreen:init(options)
             resize_min={w=50, h=20},
             resizable=true,
             frame_inset=0,
+
+            save_layout=self.save_layout,
 
             init_text=context.text[1],
             init_cursor=context.cursor[1],
@@ -316,8 +347,13 @@ function main(options)
         qerror('journal requires a fortress map to be loaded')
     end
 
+    local save_layout = options and options.save_layout
+    local save_on_change = options and options.save_on_change
+
     view = view and view:raise() or JournalScreen{
-        save_prefix=options and options.save_prefix or ''
+        save_prefix=options and options.save_prefix or '',
+        save_layout=save_layout == nil and true or save_layout,
+        save_on_change=save_on_change == nil and true or save_on_change,
     }:show()
 end
 

@@ -72,11 +72,13 @@ end
 local function arrange_empty_journal(options)
     options = options or {}
 
-    gui_journal.main({save_prefix='test:'})
+    gui_journal.main({
+        save_prefix='test:',
+        save_on_change=options.save_on_change or false,
+        save_layout=options.allow_layout_restore or false
+    })
 
     local journal = gui_journal.view
-    journal.save_on_change = options.save_on_change or false
-
     local journal_window = journal.subviews.journal_window
 
     if not options.allow_layout_restore then
@@ -84,11 +86,11 @@ local function arrange_empty_journal(options)
     end
 
     if options.w then
-        journal_window.frame.w = options.w + 6
+        journal_window.frame.w = options.w + 7
     end
 
     if options.h then
-        journal_window.frame.h = options.h + 5
+        journal_window.frame.h = options.h + 3
     end
 
 
@@ -102,7 +104,7 @@ local function arrange_empty_journal(options)
     if not options.allow_layout_restore then
         local toc_panel = journal_window.subviews.table_of_contents_panel
         toc_panel.visible = false
-        toc_panel.frame.w = 20
+        toc_panel.frame.w = 25
     end
 
     journal:updateLayout()
@@ -2403,7 +2405,7 @@ function test.cut_and_paste_selected_text()
 end
 
 function test.restore_layout()
-    local journal, _ = arrange_empty_journal()
+    local journal, _ = arrange_empty_journal({allow_layout_restore=true})
 
     journal.subviews.journal_window.frame = {
         l = 13,
@@ -2701,7 +2703,7 @@ function test.generate_table_of_contents()
 
     expect.eq(journal.subviews.table_of_contents_panel.visible, false)
 
-    simulate_input_keys('CUSTOM_CTRL_T')
+    simulate_input_keys('CUSTOM_CTRL_O')
 
     expect.eq(journal.subviews.table_of_contents_panel.visible, true)
 
@@ -2753,7 +2755,7 @@ function test.jump_to_table_of_contents_sections()
 
     simulate_input_text(text)
 
-    simulate_input_keys('CUSTOM_CTRL_T')
+    simulate_input_keys('CUSTOM_CTRL_O')
 
     local toc = journal.subviews.table_of_contents
 
@@ -2885,15 +2887,15 @@ function test.resize_table_of_contents_together()
 
     expect.eq(text_area.frame_body.width, 101)
 
-    simulate_input_keys('CUSTOM_CTRL_T')
+    simulate_input_keys('CUSTOM_CTRL_O')
 
-    expect.eq(text_area.frame_body.width, 81)
+    expect.eq(text_area.frame_body.width, 101 - 24)
 
     local toc_panel = journal.subviews.table_of_contents_panel
     -- simulate mouse drag resize of toc panel
     simulate_mouse_drag(toc_panel, toc_panel.frame_body.width, 1, toc_panel.frame_body.width + 10, 1)
 
-    expect.eq(text_area.frame_body.width, 71)
+    expect.eq(text_area.frame_body.width, 101 - 24 - 10)
 
     journal:dismiss()
 end
