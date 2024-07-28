@@ -43,6 +43,7 @@ Template for new versions:
 - `build-now`: if `suspendmanager` is running, run an unsuspend cycle immediately before scanning for buildings to build
 - `list-waves`: now outputs the names of the dwarves in each migration wave
 - `list-waves`: can now display information about specific migration waves (like identifying your starting 7 dwarves)
+- `allneeds`: display counts of fulfillment degrees as a separate column
 
 ## Removed
 
