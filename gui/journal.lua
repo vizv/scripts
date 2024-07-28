@@ -6,70 +6,25 @@ local widgets = require 'gui.widgets'
 local utils = require 'utils'
 local json = require 'json'
 local text_editor = reqscript('internal/journal/text_editor')
+local shifter = reqscript('internal/journal/shifter')
 
 local RESIZE_MIN = {w=32, h=10}
 
 JOURNAL_PERSIST_KEY = 'journal'
 
-journal_config = journal_config or json.open('dfhack-config/journal.json')
-
-local TO_THE_RIGHT = string.char(16)
-local TO_THE_LEFT = string.char(17)
-
-function get_shifter_text(state)
-    local ch = state and TO_THE_RIGHT or TO_THE_LEFT
-    return {
-        ' ', NEWLINE,
-        ch, NEWLINE,
-        ch, NEWLINE,
-        ' ', NEWLINE,
-    }
-end
-
-Shifter = defclass(Shifter, widgets.Widget)
-Shifter.ATTRS {
-    frame={l=0, w=1, t=0, b=0},
-    collapsed=false,
-    on_changed=DEFAULT_NIL,
+local INVISIBLE_FRAME = {
+    frame_pen=gui.CLEAR_PEN,
+    signature_pen=false,
 }
 
-function Shifter:init()
-    self:addviews{
-        widgets.Label{
-            view_id='shifter_label',
-            frame={l=0, r=0, t=0, b=0},
-            text=get_shifter_text(self.collapsed),
-            on_click=function ()
-                self:toggle(not self.collapsed)
-            end
-        }
-    }
-end
-
-function Shifter:toggle(state)
-    if state == nil then
-        self.collapsed = not self.collapsed
-    else
-        self.collapsed = state
-    end
-
-    self.subviews.shifter_label:setText(
-        get_shifter_text(self.collapsed)
-    )
-
-    self:updateLayout()
-
-    if self.on_changed then
-        self.on_changed(self.collapsed)
-    end
-end
+journal_config = journal_config or json.open('dfhack-config/journal.json')
 
 JournalWindow = defclass(JournalWindow, widgets.Window)
 JournalWindow.ATTRS {
     frame_title='DF Journal',
     resizable=true,
     resize_min=RESIZE_MIN,
-    frame_inset=0,
+    frame_inset={l=0,r=0,t=0,b=0},
     init_text=DEFAULT_NIL,
     init_cursor=1,
     save_layout=true,
@@ -87,15 +42,13 @@ function JournalWindow:init()
     self:addviews({
         widgets.Panel{
             view_id='table_of_contents_panel',
-            frame={l=0, w=toc_width, t=1, b=0},
+            frame={l=0, w=toc_width, t=1, b=1},
             visible=toc_visible,
 
-            resize_min={w=25},
+            resize_min={w=20},
             resizable=true,
             resize_anchors={l=false, t=false, b=true, r=true},
-            frame_style=gui.FRAME_INTERIOR,
-
-            frame_title='Table of contents',
+            frame_style=INVISIBLE_FRAME,
 
             frame_background = gui.CLEAR_PEN,
 
@@ -111,12 +64,14 @@ function JournalWindow:init()
                 },
             }
         },
-        Shifter{
+        shifter.Shifter{
             view_id='shifter',
-            frame={l=0, w=1, t=1, b=0},
+            frame={l=0, w=1, t=1, b=2},
             collapsed=not toc_visible,
             on_changed = function (collapsed)
                 self.subviews.table_of_contents_panel.visible = not collapsed
+                self.subviews.table_of_contents_divider.visible = not collapsed
+
                 if not colllapsed then
                     self:reloadTableOfContents(
                         self.subviews.journal_editor:getText()
@@ -127,9 +82,25 @@ function JournalWindow:init()
                 self:updateLayout()
             end,
         },
+        widgets.Divider{
+            frame={l=0,r=0,b=2,h=1},
+            frame_style_l=false,
+            frame_style_r=false,
+            interior_l=true,
+        },
+        widgets.Divider{
+            view_id='table_of_contents_divider',
+
+            frame={l=30,t=0,b=2,w=1},
+            visible=toc_visible,
+
+            interior_b=true,
+            frame_style_t=false,
+            frmae_style=INVISIBLE_FRAME,
+        },
         text_editor.TextEditor{
             view_id='journal_editor',
-            frame={t=1, b=0, l=25, r=0},
+            frame={t=1, b=3, l=25, r=0},
             resize_min={w=30, h=10},
             frame_inset={l=1,r=0},
             init_text=self.init_text,
@@ -141,18 +112,20 @@ function JournalWindow:init()
                 end
             end
         },
+        widgets.Panel{
+            frame={l=0,r=0,b=1,h=1},
+            frame_inset={l=1,r=1,t=0, w=100},
+            subviews={
+                widgets.HotkeyLabel{
+                    key='CUSTOM_CTRL_O',
+                    label='Table of Contents',
+                    on_activate=function() self.subviews.shifter:toggle() end
+                }
+            }
+        }
     })
 
     self:reloadTableOfContents(self.init_text)
-end
-
-function JournalWindow:onInput(keys)
-    if keys.CUSTOM_CTRL_O then
-        self.subviews.shifter:toggle()
-        return true
-    end
-
-    return JournalWindow.super.onInput(self, keys)
 end
 
 function JournalWindow:sanitizeFrame(frame)
@@ -231,12 +204,14 @@ end
 function JournalWindow:ensurePanelsRelSize()
     local toc_panel = self.subviews.table_of_contents_panel
     local editor = self.subviews.journal_editor
+    local divider = self.subviews.table_of_contents_divider
 
     toc_panel.frame.w = math.min(
         math.max(toc_panel.frame.w, toc_panel.resize_min.w),
         self.frame.w - editor.resize_min.w
     )
     editor.frame.l = toc_panel.visible and toc_panel.frame.w or 1
+    divider.frame.l = editor.frame.l - 1
 end
 
 function JournalWindow:preUpdateLayout()
@@ -299,7 +274,6 @@ function JournalScreen:init()
             frame={w=65, h=45},
             resize_min={w=50, h=20},
             resizable=true,
-            frame_inset=0,
 
             save_layout=self.save_layout,
 

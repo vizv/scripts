@@ -90,7 +90,7 @@ local function arrange_empty_journal(options)
     end
 
     if options.h then
-        journal_window.frame.h = options.h + 3
+        journal_window.frame.h = options.h + 6
     end
 
 
