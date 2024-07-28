@@ -103,7 +103,7 @@ function TextEditor:init()
     self:addviews{
         TextEditorView{
             view_id='text_area',
-            frame={l=0,r=2,t=0},
+            frame={l=0,r=3,t=0},
             text = self.init_text,
 
             text_pen = self.text_pen,
