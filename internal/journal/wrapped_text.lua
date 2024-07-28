@@ -68,4 +68,3 @@ function WrappedText:indexToCoords(index)
 
     return #self.lines[#self.lines] + 1, #self.lines
 end
-
