@@ -1,9 +1,9 @@
 -- Empty a bin onto the floor
--- Based on "emptybin" by StoneToad
+-- Based on 'emptybin' by StoneToad
 -- https://gist.github.com/stonetoad/11129025
 -- http://dwarffortresswiki.org/index.php/DF2014_Talk:Bin
 
-local argparse = require("argparse")
+local argparse = require('argparse')
 
 local options, args = {
         help = false,
@@ -15,7 +15,7 @@ local options, args = {
 local function emptyContainer(container)
     local items = dfhack.items.getContainedItems(container)
     if #items > 0 then
-        print("Emptying " .. dfhack.items.getReadableDescription(container))
+        print('Emptying ' .. dfhack.items.getReadableDescription(container))
         local pos = xyz2pos(dfhack.items.getPosition(container))
         for _, item in ipairs(items) do
             local skip_liquid =
@@ -23,12 +23,12 @@ local function emptyContainer(container)
                 item:getType() == df.item_type.DRINK and not options.liquids
             if skip_liquid then
                 print(
-                    "  " ..
+                    '  ' ..
                         dfhack.items.getReadableDescription(item) ..
-                            " was skipped because the liquid flag was not provided"
+                            ' was skipped because the liquid flag was not provided'
                 )
             else
-                print("  " .. dfhack.items.getReadableDescription(item))
+                print('  ' .. dfhack.items.getReadableDescription(item))
                 dfhack.items.moveToGround(item, pos)
                 if options.recursive then
                     emptyContainer(item)
@@ -42,22 +42,22 @@ argparse.processArgsGetopt(
     args,
     {
         {
-            "h",
-            "help",
+            'h',
+            'help',
             handler = function()
                 options.help = true
             end
         },
         {
-            "r",
-            "recursive",
+            'r',
+            'recursive',
             handler = function()
                 options.recursive = true
             end
         },
         {
-            "l",
-            "liquids",
+            'l',
+            'liquids',
             handler = function()
                 options.liquids = true
             end
@@ -97,5 +97,5 @@ elseif viewsheets.open then
         emptyContainer(item)
     end
 else
-    qerror("Please select a container, building, stockpile, or tile with a list of items.")
+    qerror('Please select a container, building, stockpile, or tile with a list of items.')
 end
