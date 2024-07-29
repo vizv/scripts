@@ -339,14 +339,14 @@ function Autodump:do_dump(pos)
     end
 
     local tt = dfhack.maps.getTileType(pos)
-    if not tt or !dfhack.maps.isTileVisible(pos) then
+    if not (tt and dfhack.maps.isTileVisible(pos)) then
         dfhack.printerr('Dump tile not visible! Must be in a revealed area of map.')
         return
     end
 
     local on_ground, in_air = tile_props(pos, tt)
     if not (on_ground or in_air) then
-        dfhack.printerr('Dump tile blocked! Can\'t dump on walls, fortifications, or certain midair buildings.')
+        dfhack.printerr('Dump tile blocked! Can\'t dump on walls, fortifications, or certain mid-air buildings.')
         return
     end
 
