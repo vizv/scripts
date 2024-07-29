@@ -22,4 +22,12 @@ Usage
 
 ::
 
-    empty-bin
+    empty-bin [<options>]
+
+Options
+--------------
+
+``-r|--recursive``
+    Whether to apply the command recursively.
+``-l|--liquids``
+    Include liquids (DRINK and LIQUID_MISC) in the items list to be moved to the ground.
