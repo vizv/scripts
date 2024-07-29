@@ -18,15 +18,9 @@ local function emptyContainer(container)
         print('Emptying ' .. dfhack.items.getReadableDescription(container))
         local pos = xyz2pos(dfhack.items.getPosition(container))
         for _, item in ipairs(items) do
-            local skip_liquid =
-                item:getType() == df.item_type.LIQUID_MISC or
-                item:getType() == df.item_type.DRINK and not options.liquids
+            local skip_liquid = item:getType() == df.item_type.LIQUID_MISC or item:getType() == df.item_type.DRINK and not options.liquids
             if skip_liquid then
-                print(
-                    '  ' ..
-                        dfhack.items.getReadableDescription(item) ..
-                            ' was skipped because the liquid flag was not provided'
-                )
+                print('  ' .. dfhack.items.getReadableDescription(item) .. ' was skipped because the liquid flag was not provided')
             else
                 print('  ' .. dfhack.items.getReadableDescription(item))
                 dfhack.items.moveToGround(item, pos)
@@ -38,32 +32,11 @@ local function emptyContainer(container)
     end
 end
 
-argparse.processArgsGetopt(
-    args,
-    {
-        {
-            'h',
-            'help',
-            handler = function()
-                options.help = true
-            end
-        },
-        {
-            'r',
-            'recursive',
-            handler = function()
-                options.recursive = true
-            end
-        },
-        {
-            'l',
-            'liquids',
-            handler = function()
-                options.liquids = true
-            end
-        }
-    }
-)
+argparse.processArgsGetopt(args,{
+    { 'h', 'help', handler = function() options.help = true end },
+    { 'r', 'recursive', handler = function() options.recursive = true end },
+    { 'l', 'liquids', handler = function() options.liquids = true end }
+    })
 
 if options.help then
     print(dfhack.script_help())
