@@ -308,7 +308,7 @@ end
 
 local function tile_props(pos, tt) --Returns is_ground, is_open_air
     local shape_attrs = df.tiletype_shape.attrs[df.tiletype.attrs[tt].shape]
-    if shape_attrs.walkable then --TODO: don't dump on statues, etc.?
+    if shape_attrs.walkable then
         return true, false --Floor, stair, or ramp
     elseif shape_attrs.basic_shape == df.tiletype_shape_basic.Wall then
         return false, false --Wall or fortification
@@ -334,19 +334,19 @@ end
 function Autodump:do_dump(pos)
     pos = pos or dfhack.gui.getMousePos()
     if not pos then
-        print('No cursor')
+        dfhack.printerr('Please hover mouse cursor over a target tile to dump to!')
         return
     end
 
     local tt = dfhack.maps.getTileType(pos)
-    if not tt then
-        print('No map block')
+    if not tt or !dfhack.maps.isTileVisible(pos) then
+        dfhack.printerr('Dump tile not visible! Must be in a revealed area of map.')
         return
     end
 
     local on_ground, in_air = tile_props(pos, tt)
     if not (on_ground or in_air) then
-        print('Dump tile blocked')
+        dfhack.printerr('Dump tile blocked! Can\'t dump on walls, fortifications, or certain midair buildings.')
         return
     end
 
