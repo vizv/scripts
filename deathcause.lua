@@ -1,5 +1,4 @@
 -- show death cause of a creature
-local guidm = require('gui.dwarfmode')
 
 local DEATH_TYPES = reqscript('gui/unit-info-viewer').DEATH_TYPES
 
@@ -103,8 +102,6 @@ function getDeathEventForHistFig(histfig_id)
             end
         end
     end
-
-    return nil
 end
 
 function displayDeathHistFig(histfig)
