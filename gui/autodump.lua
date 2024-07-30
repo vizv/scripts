@@ -308,10 +308,7 @@ end
 
 function Autodump:do_dump(pos)
     pos = pos or dfhack.gui.getMousePos()
-    if not pos then
-        dfhack.printerr('Please hover mouse cursor over a target tile to dump to!')
-        return
-    end
+    if not pos then return end --Shouldn't happen since button would be disabled
 
     local tt = dfhack.maps.getTileType(pos)
     if not (tt and dfhack.maps.isTileVisible(pos)) then
