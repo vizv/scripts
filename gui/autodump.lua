@@ -308,7 +308,9 @@ end
 
 function Autodump:do_dump(pos)
     pos = pos or dfhack.gui.getMousePos()
-    if not pos then return end --Shouldn't happen since button would be disabled
+    if not pos then --We check this before calling
+        dfhack.printerr('Autodump:do_dump called with bad pos!')
+    end
 
     local tt = dfhack.maps.getTileType(pos)
     if not (tt and dfhack.maps.isTileVisible(pos)) then
