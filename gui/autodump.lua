@@ -306,31 +306,6 @@ function Autodump:onRenderFrame(dc, rect)
     end
 end
 
-local function tile_props(pos, tt) --Returns is_ground, is_open_air
-    local shape_attrs = df.tiletype_shape.attrs[df.tiletype.attrs[tt].shape]
-    if shape_attrs.walkable then
-        return true, false --Floor, stair, or ramp
-    elseif shape_attrs.basic_shape == df.tiletype_shape_basic.Wall then
-        return false, false --Wall or fortification
-    end
-
-    local _, occ = dfhack.maps.getTileFlags(pos)
-    if occ.building == df.tile_building_occ.None or
-      occ.building == df.tile_building_occ.Planned or
-      occ.building == df.tile_building_occ.Passable or
-      occ.building == df.tile_building_occ.Well then
-        return false, true --Item can fall safely through; any other may delete item projectile
-    elseif occ.building == df.tile_building_occ.Floored then
-        return true, false --Lowered bridge, forbidden hatch, etc.
-    elseif occ.building == df.tile_building_occ.Dynamic then
-        local bld = dfhack.buildings.findAtTile(pos) --Unforbidden hatch, etc.
-        return (bld and (bld._type == df.building_hatchst or
-            bld._type == df.building_grate_floorst or
-            bld._type == df.building_bars_floorst)), false
-    end
-    return false, false --Don't trust it
-end
-
 function Autodump:do_dump(pos)
     pos = pos or dfhack.gui.getMousePos()
     if not pos then
@@ -344,9 +319,12 @@ function Autodump:do_dump(pos)
         return
     end
 
-    local on_ground, in_air = tile_props(pos, tt)
-    if not (on_ground or in_air) then
-        dfhack.printerr('Dump tile blocked! Can\'t dump on walls, fortifications, or certain mid-air buildings.')
+    local on_ground
+    local shape_attrs = df.tiletype_shape.attrs[df.tiletype.attrs[tt].shape]
+    if shape_attrs.walkable then
+        on_ground = true --Floor, stair, or ramp
+    elseif shape_attrs.basic_shape == df.tiletype_shape_basic.Wall then
+        dfhack.printerr('Dump tile blocked! Can\'t dump on walls or fortifications.')
         return
     end
 
@@ -366,8 +344,14 @@ function Autodump:do_dump(pos)
             if mark_as_forbidden then
                 item.flags.forbid = true
             end
-            if in_air then
-                dfhack.items.makeProjectile(item)
+            if not on_ground then
+                local proj = dfhack.items.makeProjectile(item)
+                proj.flags.no_impact_destroy = true
+                proj.flags.bouncing = true
+                proj.flags.piercing = true
+                proj.flags.parabolic = true
+                proj.flags.no_adv_pause = true
+                proj.flags.no_collide = true
             end
         else
             print(('Could not move item: %s from (%d, %d, %d)'):format(

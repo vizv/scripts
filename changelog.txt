@@ -38,7 +38,7 @@ Template for new versions:
 - `prioritize`: fix incorrect loading of persisted data on some OS types
 - `list-waves`: no longer gets confused by units that leave the map and then return (e.g. squads who go out on raids)
 - `fix/dead-units`: fix error when removing dead units from burrows and the unit with the greatest ID was dead
-- `gui/autodump`: fix dumping into invalid tiles, creating item projectiles that get destroyed
+- `gui/autodump`: prevent dumping into walls or invalid map area, set proper projectile flags to prevent items from being destroyed
 
 ## Misc Improvements
 - `build-now`: if `suspendmanager` is running, run an unsuspend cycle immediately before scanning for buildings to build

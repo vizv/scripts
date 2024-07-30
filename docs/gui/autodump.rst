@@ -11,9 +11,7 @@ you draw boxes around items on the map, it will act on the selected items
 instead. Double-click anywhere on the map to teleport the items there. Be wary
 (or excited) that if you teleport the items into an unsupported position
 (e.g., mid-air), then they will become projectiles and fall. Items may not be
-teleported into walls or fortifications. They may also not be teleported into
-projectile-blocking mid-air buildings (such as water wheels), as this can
-result in unintended item destruction.
+teleported into walls or fortifications.
 
 There are options to include or exclude forbidden items, items that are
 currently tagged as being used by an active job, and items dropped by traders.
