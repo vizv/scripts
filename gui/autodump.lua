@@ -324,7 +324,7 @@ function Autodump:do_dump(pos)
     if shape_attrs.walkable then
         on_ground = true --Floor, stair, or ramp
     elseif shape_attrs.basic_shape == df.tiletype_shape_basic.Wall then
-        dfhack.printerr('Dump tile blocked! Can\'t dump on walls or fortifications.')
+        dfhack.printerr('Dump tile blocked! Can\'t dump inside walls or fortifications.')
         return
     end
 
@@ -346,12 +346,14 @@ function Autodump:do_dump(pos)
             end
             if not on_ground then
                 local proj = dfhack.items.makeProjectile(item)
-                proj.flags.no_impact_destroy = true
-                proj.flags.bouncing = true
-                proj.flags.piercing = true
-                proj.flags.parabolic = true
-                proj.flags.no_adv_pause = true
-                proj.flags.no_collide = true
+                if proj then
+                    proj.flags.no_impact_destroy = true
+                    proj.flags.bouncing = true
+                    proj.flags.piercing = true
+                    proj.flags.parabolic = true
+                    proj.flags.no_adv_pause = true
+                    proj.flags.no_collide = true
+                end
             end
         else
             print(('Could not move item: %s from (%d, %d, %d)'):format(
