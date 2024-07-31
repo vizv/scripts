@@ -306,7 +306,7 @@ local function getLivestock()
     local units = {}
 
     for _, unit in pairs(df.global.world.units.active) do
-        local caste_flags = unit.caste and df.global.world.raws.creatures.all[unit.race].caste[unit.caste].flags
+        local caste_flags = dfhack.units.getCasteRaw(unit).flags
 
         if dfhack.units.isFortControlled(unit) and caste_flags and (caste_flags.PET or caste_flags.PET_EXOTIC) then
             table.insert(units, unit)
