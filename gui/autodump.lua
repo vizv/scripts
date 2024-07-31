@@ -229,7 +229,7 @@ function Autodump:select_box(bounds)
             for x=bounds.x1,bounds.x2 do
                 local block = dfhack.maps.getTileBlock(xyz2pos(x, y, z))
                 local block_str = tostring(block)
-                if not seen_blocks[block_str] then
+                if block and not seen_blocks[block_str] then
                     seen_blocks[block_str] = true
                     self:select_items_in_block(block, bounds)
                 end
@@ -309,7 +309,7 @@ end
 function Autodump:do_dump(pos)
     pos = pos or dfhack.gui.getMousePos()
     if not pos then --We check this before calling
-        dfhack.printerr('Autodump:do_dump called with bad pos!')
+        qerror('Autodump:do_dump called with bad pos!')
     end
 
     local tt = dfhack.maps.getTileType(pos)
@@ -319,11 +319,12 @@ function Autodump:do_dump(pos)
     end
 
     local on_ground
-    local shape_attrs = df.tiletype_shape.attrs[df.tiletype.attrs[tt].shape]
-    if shape_attrs.walkable then
-        on_ground = true --Floor, stair, or ramp
+    local shape = df.tiletype.attrs[tt].shape
+    local shape_attrs = df.tiletype_shape.attrs[shape]
+    if shape_attrs.walkable or shape == df.tiletype_shape.FORTIFICATION then
+        on_ground = true --Floor, stair, ramp, or fortification
     elseif shape_attrs.basic_shape == df.tiletype_shape_basic.Wall then
-        dfhack.printerr('Dump tile blocked! Can\'t dump inside walls or fortifications.')
+        dfhack.printerr('Dump tile blocked! Can\'t dump inside walls.') --Wall or brook bed
         return
     end
 
