@@ -35,6 +35,7 @@ Template for new versions:
 - `open-legends`: don't intercept text bound for vanilla search widgets
 - `gui/unit-info-viewer`: correctly display skill levels when rust is involved
 - `timestream`: fix dwarves spending too long eating and drinking
+- `locate-ore`: fix sometimes selecting an incorrect tile when there are multiple mineral veins in a single map block
 - `build-now`: fix error when building buildings that (in previous DF versions) required the architecture labor
 - `prioritize`: fix incorrect loading of persisted data on some OS types
 - `list-waves`: no longer gets confused by units that leave the map and then return (e.g. squads who go out on raids)
