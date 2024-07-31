@@ -20,7 +20,7 @@ local function emptyContainer(container)
         for _, item in ipairs(items) do
             local skip_liquid = item:getType() == df.item_type.LIQUID_MISC or item:getType() == df.item_type.DRINK and not options.liquids
             if skip_liquid then
-                print('  ' .. dfhack.items.getReadableDescription(item) .. ' was skipped because the liquid flag was not provided')
+                print('  ' .. dfhack.items.getReadableDescription(item) .. ' was skipped because the --liquids flag was not provided')
             else
                 print('  ' .. dfhack.items.getReadableDescription(item))
                 dfhack.items.moveToGround(item, pos)
