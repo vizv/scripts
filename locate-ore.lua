@@ -129,7 +129,7 @@ end
 
 local function getOreDescription(opts, vein)
     local visible = opts.all and '' or 'visible '
-    local str = ('%5d %stiles of %s ('):format(#vein.positions, visible, tostring(vein.inorganic_id):lower())
+    local str = ('%5d %stile(s) of %s ('):format(#vein.positions, visible, tostring(vein.inorganic_id):lower())
     for _, mat_index in ipairs(vein.metal_ore.mat_index) do
         local metal_raw = df.global.world.raws.inorganics[mat_index]
         str = ('%s%s, '):format(str, string.lower(metal_raw.id))
