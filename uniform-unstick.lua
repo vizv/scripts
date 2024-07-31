@@ -50,7 +50,7 @@ end
 
 local function bodyparts_that_can_wear(unit, item)
     local bodyparts = {}
-    local unitparts = df.creature_raw.find(unit.race).caste[unit.caste].body_info.body_parts
+    local unitparts = dfhack.units.getCasteRaw(unit).body_info.body_parts
 
     if item._type == df.item_helmst then
         for index, part in ipairs(unitparts) do
