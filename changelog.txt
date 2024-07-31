@@ -96,6 +96,7 @@ Template for new versions:
 - `clear-smoke`: properly tag smoke flows for garbage collection to avoid memory leak
 - `warn-stranded`: don't warn for babies carried by mothers who happen to be gathering fruit from trees
 - `prioritize`: also boost priority of already-claimed jobs when boosting priority of a job type so those jobs are not interrupted
+- `ban-cooking`: ban all seed producing items from being cooked when 'seeds' is chosen instead of just brewable seed producing items
 
 ## Misc Improvements
 - `item`: option for ignoring uncollected spider webs when you search for "silk"

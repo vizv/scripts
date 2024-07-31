@@ -50,7 +50,7 @@ function showNemesisPrompt(advSetUpScreen)
                 not histFlags.deity and
                 not histFlags.force
             then
-                local creature = df.creature_raw.find(histFig.race).caste[histFig.caste]
+                local creature = dfhack.units.getCasteRaw(histFig.race, histFig.caste)
                 local name = creature.caste_name[0]
                 if histFig.info and histFig.info.curse then
                     local curse = histFig.info.curse

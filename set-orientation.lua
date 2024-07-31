@@ -155,7 +155,7 @@ function randomiseOrientation(unit, sex)
     return
   end
 
-  local caste = df.creature_raw.find(unit.race).caste[unit.caste]
+  local caste = dfhack.units.getCasteRaw(unit)
 
   -- Build a weighted table for use in the weighted roll function
   local sexname = getSexString(sex)
