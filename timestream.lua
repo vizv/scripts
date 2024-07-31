@@ -138,6 +138,19 @@ local function adjust_unit_counters(unit, timeskip)
     -- stored_fat wanders about based on other state; we can probably leave it alone
 end
 
+-- TODO: the rquired algorithm is not yet fully known. for many job types, the decrement per
+-- tick is <= 1 and depends on unit skills
+local function adjust_job_counter(unit, timeskip)
+    local job = unit.job.current_job
+    if not job then return end
+    local job_type = job.job_type
+    if job_type == df.job_type.Eat or
+        job_type == df.job_type.Drink
+    then
+        decrement_counter(job, 'completion_timer', timeskip)
+    end
+end
+
 -- unit needs appear to be incremented on season ticks, so we don't need to worry about those
 local function adjust_units(timeskip)
     for _, unit in ipairs(df.global.world.units.active) do
@@ -146,6 +159,7 @@ local function adjust_units(timeskip)
         dfhack.units.subtractGroupActionTimers(unit, timeskip, df.unit_action_type_group.All)
         if not dfhack.units.isOwnGroup(unit) then goto continue end
         adjust_unit_counters(unit, timeskip)
+        adjust_job_counter(unit, timeskip)
         ::continue::
     end
 end
