@@ -41,4 +41,3 @@ Examples
     locate-ore hematite
     locate-ore iron
     locate-ore silver --all
-
