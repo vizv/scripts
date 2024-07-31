@@ -21,6 +21,18 @@ Usage
 
     empty-bin [<options>]
 
+Examples
+--------
+
+``empty-bin``
+    Empty the contents of selected containers or all containers in the selected stockpile or building, except containers with liquids, onto the floor.
+
+``empty-bin --liquids``
+    Empty the contents of selected containers or all containers in the selected stockpile or building, including containers with liquids, onto the floor.
+
+``empty-bin --recursive --liquids``
+    Empty the contents of selected containers or all containers in the selected stockpile or building, including containers with liquids and containers contents that are containers, such as a bags of seeds or filled waterskins, onto the floor.
+
 Options
 --------------
 
