@@ -32,6 +32,10 @@ function name_unit(unit)
     unit.name.parts_of_speech.RearCompound = df.part_of_speech.Verb3rdPerson
     unit.name.type = df.language_name_type.Figure
     unit.name.has_name = true
+
+    local hf = df.historical_figure.find(unit.hist_figure_id)
+    if not hf then return end
+    hf.name:assign(unit.name)
 end
 
 local function fix_clothing_ownership(unit)
