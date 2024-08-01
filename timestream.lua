@@ -139,23 +139,21 @@ local function adjust_unit_counters(unit, timeskip)
     -- not materially affect gameplay
 end
 
+-- need to manually adjust job completion_timer values for jobs that are controlled by unit actions
+-- with a timer of 1, which are destroyed immediately after they are created. longer-lived unit
+-- actions are already sufficiently handled by dfhack.units.subtractGroupActionTimers().
+-- this will also decrement timers for jobs with actions that have just expired, but on average, this
+-- should balance out to be correct, since we're losing time when we subtract from the action timers
+-- and cap the value so it never drops below 1.
 local function adjust_job_counter(unit, timeskip)
     local job = unit.job.current_job
     if not job then return end
-    local job_type = job.job_type
-    if job_type == df.job_type.Eat or
-        job_type == df.job_type.DrinkItem or
-        job_type == df.job_type.CollectSand
-    then
-        decrement_counter(job, 'completion_timer', timeskip)
-    elseif job.completion_timer > 1 then
-        -- for these job types, the decrement per tick is 1/11, but the counter on which
-        -- the decrement happens is unknown. it's not cur_year_tick
-        -- therefore, we decrement probabilistically
-        if math.random(11) <= timeskip then
-            decrement_counter(job, 'completion_timer', 1)
+    for _,action in ipairs(unit.actions) do
+        if action.type == df.unit_action_type.Job or action.type == df.unit_action_type.JobRecover then
+            return
         end
     end
+    decrement_counter(job, 'completion_timer', timeskip)
 end
 
 -- unit needs appear to be incremented on season ticks, so we don't need to worry about those
