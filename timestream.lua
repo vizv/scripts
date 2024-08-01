@@ -135,23 +135,31 @@ local function adjust_unit_counters(unit, timeskip)
     decrement_counter(c2, 'stomach_content', timeskip * 5)
     decrement_counter(c2, 'stomach_food', timeskip * 5)
     decrement_counter(c2, 'vomit_timeout', timeskip)
-    -- stored_fat wanders about based on other state; we can probably leave it alone
+    -- stored_fat wanders about based on other state; we can likely leave it alone and
+    -- not materially affect gameplay
 end
 
--- TODO: the rquired algorithm is not yet fully known. for many job types, the decrement per
--- tick is <= 1 and depends on unit skills
 local function adjust_job_counter(unit, timeskip)
     local job = unit.job.current_job
     if not job then return end
     local job_type = job.job_type
     if job_type == df.job_type.Eat or
-        job_type == df.job_type.Drink
+        job_type == df.job_type.DrinkItem or
+        job_type == df.job_type.CollectSand
     then
         decrement_counter(job, 'completion_timer', timeskip)
+    elseif job.completion_timer > 1 then
+        -- for these job types, the decrement per tick is 1/11, but the counter on which
+        -- the decrement happens is unknown. it's not cur_year_tick
+        -- therefore, we decrement probabilistically
+        if math.random(11) <= timeskip then
+            decrement_counter(job, 'completion_timer', 1)
+        end
     end
 end
 
 -- unit needs appear to be incremented on season ticks, so we don't need to worry about those
+-- since the TICK_TRIGGERS check makes sure that we never skip season ticks
 local function adjust_units(timeskip)
     for _, unit in ipairs(df.global.world.units.active) do
         if not dfhack.units.isActive(unit) then goto continue end
@@ -190,14 +198,17 @@ local function adjust_activities(timeskip)
                 -- countdown appears to never move from 0
                 decrement_counter(ev, 'countdown', timeskip)
             elseif df.activity_event_harassmentst:is_instance(ev) then
-                -- TODO: counter behavior not yet analyzed
-                -- print(i)
+                if DEBUG then
+                    print('activity_event_harassmentst ready for analysis at index', i)
+                end
             elseif df.activity_event_encounterst:is_instance(ev) then
-                -- TODO: counter behavior not yet analyzed
-                -- print(i)
+                if DEBUG then
+                    print('activity_event_encounterst ready for analysis at index', i)
+                end
             elseif df.activity_event_reunionst:is_instance(ev) then
-                -- TODO: counter behavior not yet analyzed
-                -- print(i)
+                if DEBUG then
+                    print('activity_event_reunionst ready for analysis at index', i)
+                end
             elseif df.activity_event_conversationst:is_instance(ev) then
                 increment_counter(ev, 'pause', timeskip)
             elseif df.activity_event_guardst:is_instance(ev) then
@@ -235,8 +246,9 @@ local function adjust_activities(timeskip)
             elseif df.activity_event_performancest:is_instance(ev) then
                 increment_counter(ev, 'current_position', timeskip)
             elseif df.activity_event_store_objectst:is_instance(ev) then
-                -- TODO: counter behavior not yet analyzed
-                -- print(i)
+                if DEBUG then
+                    print('activity_event_store_objectst ready for analysis at index', i)
+                end
             end
         end
     end
@@ -275,6 +287,7 @@ local function on_tick()
     calendar_timeskip_deficit = math.max(0, desired_calendar_timeskip - calendar_timeskip)
 
     df.global.cur_year_tick = df.global.cur_year_tick + calendar_timeskip
+    df.global.cur_year_tick_advmode = df.global.cur_year_tick_advmode + calendar_timeskip*144
 
     adjust_units(timeskip)
     adjust_activities(timeskip)
