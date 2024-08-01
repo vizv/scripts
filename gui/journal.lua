@@ -7,6 +7,7 @@ local utils = require 'utils'
 local json = require 'json'
 local text_editor = reqscript('internal/journal/text_editor')
 local shifter = reqscript('internal/journal/shifter')
+local table_of_contents = reqscript('internal/journal/table_of_contents')
 
 local RESIZE_MIN = {w=32, h=10}
 
@@ -40,29 +41,20 @@ function JournalWindow:init()
     self.frame = frame and self:sanitizeFrame(frame) or self.frame
 
     self:addviews({
-        widgets.Panel{
+        table_of_contents.TableOfContents{
             view_id='table_of_contents_panel',
             frame={l=0, w=toc_width, t=0, b=1},
             visible=toc_visible,
+            frame_inset={l=0, t=1, b=1, r=1},
 
             resize_min={w=20},
             resizable=true,
             resize_anchors={l=false, t=false, b=true, r=true},
-            frame_style=INVISIBLE_FRAME,
-
-            frame_background = gui.CLEAR_PEN,
 
             on_resize_begin=self:callback('onPanelResizeBegin'),
             on_resize_end=self:callback('onPanelResizeEnd'),
 
-            subviews={
-                widgets.List{
-                    frame={l=1, t=0, r=1, b=0},
-                    view_id='table_of_contents',
-                    choices={},
-                    on_submit=self:callback('onTableOfContentsSubmit')
-                },
-            }
+            on_submit=self:callback('onTableOfContentsSubmit')
         },
         shifter.Shifter{
             view_id='shifter',
@@ -73,7 +65,7 @@ function JournalWindow:init()
                 self.subviews.table_of_contents_divider.visible = not collapsed
 
                 if not colllapsed then
-                    self:reloadTableOfContents(
+                    self.subviews.table_of_contents_panel:reload(
                         self.subviews.journal_editor:getText()
                     )
                 end
@@ -105,12 +97,8 @@ function JournalWindow:init()
             frame_inset={l=1,r=0},
             init_text=self.init_text,
             init_cursor=self.init_cursor,
-            on_text_change=function(text) self:onTextChange(text) end,
-            on_cursor_change=function(cursor)
-                if self.on_cursor_change ~= nil then
-                    self.on_cursor_change(cursor)
-                end
-            end
+            on_text_change=self:callback('onTextChange'),
+            on_cursor_change=self:callback('onCursorChange'),
         },
         widgets.Panel{
             frame={l=0,r=0,b=1,h=1},
@@ -125,7 +113,19 @@ function JournalWindow:init()
         }
     })
 
-    self:reloadTableOfContents(self.init_text)
+    self.subviews.table_of_contents_panel:reload(self.init_text)
+end
+
+function JournalWindow:onInput(keys)
+    if (keys.A_MOVE_N_DOWN) then
+        print('works N')
+        return false
+    end
+    if (keys.A_MOVE_S_DOWN) then
+        print('works S')
+    end
+
+    return JournalWindow.super.onInput(self, keys)
 end
 
 function JournalWindow:sanitizeFrame(frame)
@@ -222,34 +222,23 @@ function JournalWindow:postUpdateLayout()
     self:saveConfig()
 end
 
-function JournalWindow:onTextChange(text)
-    self:reloadTableOfContents(text)
-    if self.on_text_change ~= nil then
-        self.on_text_change(text)
+function JournalWindow:onCursorChange(cursor)
+    local section_index, cursor_section = self.subviews.table_of_contents_panel:cursorSection(
+        cursor
+    )
+    self.subviews.table_of_contents_panel:setSelectedSection(section_index)
+
+    if self.on_cursor_change ~= nil then
+        self.on_cursor_change(cursor)
     end
 end
 
-function JournalWindow:reloadTableOfContents(text)
-    if not self.subviews.table_of_contents_panel.visible then
-        return
+function JournalWindow:onTextChange(text)
+    self.subviews.table_of_contents_panel:reload(text)
+
+    if self.on_text_change ~= nil then
+        self.on_text_change(text)
     end
-
-    local sections = {}
-
-    local line_cursor = 1
-    for line in text:gmatch("[^\n]*") do
-        local header, section = line:match("^(#+)%s(.+)")
-        if header ~= nil then
-            table.insert(sections, {
-                line_cursor=line_cursor,
-                text=string.rep(" ", #header - 1) .. section,
-            })
-        end
-
-        line_cursor = line_cursor + #line + 1
-    end
-
-    self.subviews.table_of_contents:setChoices(sections)
 end
 
 function JournalWindow:onTableOfContentsSubmit(ind, choice)

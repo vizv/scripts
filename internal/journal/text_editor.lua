@@ -237,7 +237,6 @@ function TextEditor:onInput(keys)
     return TextEditor.super.onInput(self, keys)
 end
 
-
 TextEditorView = defclass(TextEditorView, widgets.Widget)
 
 TextEditorView.ATTRS{
