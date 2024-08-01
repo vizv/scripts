@@ -187,10 +187,12 @@ function JournalWindow:loadConfig()
     end
 
     local window_frame = copyall(journal_config.data.frame or {})
-    local table_of_contents = copyall(journal_config.data.toc or {
-        width=20,
-        visible=false
-    })
+    window_frame.w = window_frame.w or 80
+    window_frame.h = window_frame.h or 50
+
+    local table_of_contents = copyall(journal_config.data.toc or {})
+    table_of_contents.width = table_of_contents.width or 20
+    table_of_contents.visible = table_of_contents.visible or false
 
     return window_frame, table_of_contents.visible or false, table_of_contents.width or 25
 end
