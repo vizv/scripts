@@ -3,6 +3,11 @@
 local gui = require 'gui'
 local widgets = require 'gui.widgets'
 
+local INVISIBLE_FRAME = {
+    frame_pen=gui.CLEAR_PEN,
+    signature_pen=false,
+}
+
 TableOfContents = defclass(TableOfContents, widgets.Panel)
 TableOfContents.ATTRS {
     frame_style=INVISIBLE_FRAME,

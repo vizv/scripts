@@ -13,11 +13,6 @@ local RESIZE_MIN = {w=32, h=10}
 
 JOURNAL_PERSIST_KEY = 'journal'
 
-local INVISIBLE_FRAME = {
-    frame_pen=gui.CLEAR_PEN,
-    signature_pen=false,
-}
-
 journal_config = journal_config or json.open('dfhack-config/journal.json')
 
 JournalWindow = defclass(JournalWindow, widgets.Window)
@@ -88,7 +83,6 @@ function JournalWindow:init()
 
             interior_b=true,
             frame_style_t=false,
-            frmae_style=INVISIBLE_FRAME,
         },
         text_editor.TextEditor{
             view_id='journal_editor',
