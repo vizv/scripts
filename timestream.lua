@@ -279,7 +279,9 @@ local function on_tick()
     -- don't let our deficit grow unbounded if we can never catch up
     timeskip_deficit = math.min(desired_timeskip - timeskip, 100.0)
 
-    if DEBUG then print(('timeskip (%d, +%.2f)'):format(timeskip, timeskip_deficit)) end
+    if DEBUG and (tonumber(DEBUG) or 0) >= 2 then
+        print(('timeskip (%d, +%.2f)'):format(timeskip, timeskip_deficit))
+    end
     if timeskip <= 0 then return end
 
     local desired_calendar_timeskip = (timeskip * state.settings.calendar_rate) + calendar_timeskip_deficit
