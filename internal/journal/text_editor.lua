@@ -750,12 +750,12 @@ function TextEditorView:onCursorInput(keys)
         -- go to text end
         self:setCursor(#self.text + 1)
         return true
-    elseif keys.CUSTOM_CTRL_B or keys.KEYBOARD_CURSOR_LEFT_FAST then
+    elseif keys.CUSTOM_CTRL_B or keys.A_MOVE_W_DOWN then
         -- back one word
         local word_start = self:wordStartOffset()
         self:setCursor(word_start)
         return true
-    elseif keys.CUSTOM_CTRL_F or keys.KEYBOARD_CURSOR_RIGHT_FAST then
+    elseif keys.CUSTOM_CTRL_F or keys.A_MOVE_E_DOWN then
         -- forward one word
         local word_end = self:wordEndOffset()
         self:setCursor(word_end)

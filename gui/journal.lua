@@ -42,7 +42,7 @@ function JournalWindow:init()
     self:addviews({
         widgets.Panel{
             view_id='table_of_contents_panel',
-            frame={l=0, w=toc_width, t=1, b=1},
+            frame={l=0, w=toc_width, t=0, b=1},
             visible=toc_visible,
 
             resize_min={w=20},

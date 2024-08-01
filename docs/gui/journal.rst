@@ -20,7 +20,7 @@ Supported Features
 ------------------
 
 - Cursor Control: Navigate through text using arrow keys (left, right, up, down) for precise cursor placement.
-- Fast Rewind: Use :kbd:`Shift` + :kbd:`Left` / :kbd:`Ctrl` + :kbd:`B` and :kbd:`Shift` + :kbd:`Right` / :kbd:`Ctrl` + :kbd:`F` to move the cursor one word back or forward.
+- Fast Rewind: Use :kbd:`Ctrl` + :kbd:`Left` / :kbd:`Ctrl` + :kbd:`B` and :kbd:`Ctrl` + :kbd:`Right` / :kbd:`Ctrl` + :kbd:`F` to move the cursor one word back or forward.
 - Longest X Position Memory: The cursor remembers the longest x position when moving up or down, making vertical navigation more intuitive.
 - Mouse Control: Use the mouse to position the cursor within the text, providing an alternative to keyboard navigation.
 - New Lines: Easily insert new lines using the :kbd:`Enter` key, supporting multiline text input.
@@ -47,7 +47,7 @@ Supported Features
   - replace selected text, if available
   - If no text is selected, paste text in the cursor position
 - Scrolling behaviour for long text build-in
-- Table of contests (:kbd:`Ctrl` + :kbd:`O`), with headers line prefixed by '#', e.g. '# Fort history', '## Year 1'
+- Table of contents (:kbd:`Ctrl` + :kbd:`O`), with headers line prefixed by '#', e.g. '# Fort history', '## Year 1'
 
 Usage
 -----
