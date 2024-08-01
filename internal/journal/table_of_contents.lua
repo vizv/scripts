@@ -35,7 +35,14 @@ function TableOfContents:cursorSection(cursor)
 end
 
 function TableOfContents:setSelectedSection(section_index)
-    self.subviews.table_of_contents:setSelected(section_index)
+    local curr_sel = self.subviews.table_of_contents:getSelected()
+    if curr_sel ~= section_index then
+        self.subviews.table_of_contents:setSelected(section_index)
+    end
+end
+
+function TableOfContents:submit()
+    return self.subviews.table_of_contents:submit()
 end
 
 function TableOfContents:reload(text)

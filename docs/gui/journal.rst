@@ -48,6 +48,7 @@ Supported Features
   - If no text is selected, paste text in the cursor position
 - Scrolling behaviour for long text build-in
 - Table of contents (:kbd:`Ctrl` + :kbd:`O`), with headers line prefixed by '#', e.g. '# Fort history', '## Year 1'
+- Table of contents navigation: jump to previous/next section by :kbd:`Ctrl` + :kbd:`Up` / :kbd:`Ctrl` + :kbd:`Down`
 
 Usage
 -----

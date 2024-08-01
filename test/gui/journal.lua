@@ -2954,17 +2954,83 @@ function test.table_of_contents_selection_follows_cursor()
     text_area:setCursor(300)
     gui_journal.view:onRender()
 
-    print(read_rendered_text(text_area))
-
     expect.eq(toc:getSelected(), 3)
 
 
     text_area:setCursor(646)
     gui_journal.view:onRender()
 
-    print(read_rendered_text(text_area))
+    expect.eq(toc:getSelected(), 6)
+
+    journal:dismiss()
+end
+
+function test.table_of_contents_keyboard_navigation()
+    local journal, text_area = arrange_empty_journal({
+        w=100,
+        h=50,
+        allow_layout_restore=false
+    })
+
+    local text = table.concat({
+        '# Header 1',
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        'Nulla ut lacus ut tortor semper consectetur.',
+        '# Header 2',
+        'Ut eu orci non nibh hendrerit posuere.',
+        'Sed euismod odio eu fringilla bibendum.',
+        '## Subheader 1',
+        'Etiam dignissim diam nec aliquet facilisis.',
+        'Integer tristique purus at tellus luctus, vel aliquet sapien sollicitudin.',
+        '## Subheader 2',
+        'Fusce ornare est vitae urna feugiat, vel interdum quam vestibulum.',
+        '10: Vivamus id felis scelerisque, lobortis diam ut, mollis nisi.',
+        '### Subsubheader 1',
+        '# Header 3',
+        'Donec quis lectus ac erat placerat eleifend.',
+        'Aenean non orci id erat malesuada pharetra.',
+        'Nunc in lectus et metus finibus venenatis.',
+    }, '\n')
+
+    simulate_input_text(text)
+
+    simulate_input_keys('CUSTOM_CTRL_O')
+
+    local toc = journal.subviews.table_of_contents
+
+    text_area:setCursor(5)
+    gui_journal.view:onRender()
+
+    simulate_input_keys('A_MOVE_N_DOWN')
+
+    expect.eq(toc:getSelected(), 1)
+
+    simulate_input_keys('A_MOVE_N_DOWN')
 
     expect.eq(toc:getSelected(), 6)
+
+    simulate_input_keys('A_MOVE_N_DOWN')
+    simulate_input_keys('A_MOVE_N_DOWN')
+
+    expect.eq(toc:getSelected(), 4)
+
+    simulate_input_keys('A_MOVE_S_DOWN')
+
+    expect.eq(toc:getSelected(), 5)
+
+    simulate_input_keys('A_MOVE_S_DOWN')
+    simulate_input_keys('A_MOVE_S_DOWN')
+    simulate_input_keys('A_MOVE_S_DOWN')
+
+    expect.eq(toc:getSelected(), 2)
+
+
+    text_area:setCursor(250)
+    gui_journal.view:onRender()
+
+    simulate_input_keys('A_MOVE_N_DOWN')
+
+    expect.eq(toc:getSelected(), 3)
 
     journal:dismiss()
 end

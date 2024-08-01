@@ -118,11 +118,31 @@ end
 
 function JournalWindow:onInput(keys)
     if (keys.A_MOVE_N_DOWN) then
-        print('works N')
+        local curr_cursor = self.subviews.journal_editor:getCursor()
+        local section_index, section = self.subviews.table_of_contents_panel:cursorSection(
+            curr_cursor
+        )
+
+        if section.line_cursor == curr_cursor then
+            self.subviews.table_of_contents_panel:setSelectedSection(
+                section_index - 1
+            )
+            self.subviews.table_of_contents_panel:submit()
+        else
+            self:onTableOfContentsSubmit(section_index, section)
+        end
+
         return false
-    end
-    if (keys.A_MOVE_S_DOWN) then
-        print('works S')
+    elseif (keys.A_MOVE_S_DOWN) then
+        local section_index = self.subviews.table_of_contents_panel:cursorSection(
+            self.subviews.journal_editor:getCursor()
+        )
+        self.subviews.table_of_contents_panel:setSelectedSection(
+            section_index + 1
+        )
+        self.subviews.table_of_contents_panel:submit()
+
+        return false
     end
 
     return JournalWindow.super.onInput(self, keys)
@@ -223,7 +243,7 @@ function JournalWindow:postUpdateLayout()
 end
 
 function JournalWindow:onCursorChange(cursor)
-    local section_index, cursor_section = self.subviews.table_of_contents_panel:cursorSection(
+    local section_index = self.subviews.table_of_contents_panel:cursorSection(
         cursor
     )
     self.subviews.table_of_contents_panel:setSelectedSection(section_index)
@@ -241,9 +261,9 @@ function JournalWindow:onTextChange(text)
     end
 end
 
-function JournalWindow:onTableOfContentsSubmit(ind, choice)
-    self.subviews.journal_editor:setCursor(choice.line_cursor)
-    self.subviews.journal_editor:scrollToCursor(choice.line_cursor)
+function JournalWindow:onTableOfContentsSubmit(ind, section)
+    self.subviews.journal_editor:setCursor(section.line_cursor)
+    self.subviews.journal_editor:scrollToCursor(section.line_cursor)
 end
 
 JournalScreen = defclass(JournalScreen, gui.ZScreen)
