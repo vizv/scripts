@@ -139,7 +139,6 @@ local function adjust_unit_counters(unit, timeskip)
     -- not materially affect gameplay
 end
 
--- TODO: for job types that depend on skill, the decrement per tick is <= 1 and depends on unit's skill level
 local function adjust_job_counter(unit, timeskip)
     local job = unit.job.current_job
     if not job then return end
@@ -149,8 +148,13 @@ local function adjust_job_counter(unit, timeskip)
         job_type == df.job_type.CollectSand
     then
         decrement_counter(job, 'completion_timer', timeskip)
-    elseif DEBUG and job.completion_timer > 1 then
-        print(('unhandled job type %s for unit %d'):format(df.job_type[job_type], unit.id))
+    elseif job.completion_timer > 1 then
+        -- for these job types, the decrement per tick is 1/11, but the counter on which
+        -- the decrement happens is unknown. it's not cur_year_tick
+        -- therefore, we decrement probabilistically
+        if math.random(11) <= timeskip then
+            decrement_counter(job, 'completion_timer', 1)
+        end
     end
 end
 
@@ -283,6 +287,7 @@ local function on_tick()
     calendar_timeskip_deficit = math.max(0, desired_calendar_timeskip - calendar_timeskip)
 
     df.global.cur_year_tick = df.global.cur_year_tick + calendar_timeskip
+    df.global.cur_year_tick_advmode = df.global.cur_year_tick_advmode + calendar_timeskip*144
 
     adjust_units(timeskip)
     adjust_activities(timeskip)
