@@ -40,7 +40,7 @@ function JournalWindow:init()
             view_id='table_of_contents_panel',
             frame={l=0, w=toc_width, t=0, b=1},
             visible=toc_visible,
-            frame_inset={l=0, t=1, b=1, r=1},
+            frame_inset={l=1, t=0, b=1, r=1},
 
             resize_min={w=20},
             resizable=true,
@@ -61,7 +61,8 @@ function JournalWindow:init()
 
                 if not colllapsed then
                     self.subviews.table_of_contents_panel:reload(
-                        self.subviews.journal_editor:getText()
+                        self.subviews.journal_editor:getText(),
+                        self.subviews.journal_editor:getCursor()
                     )
                 end
 
@@ -107,39 +108,10 @@ function JournalWindow:init()
         }
     })
 
-    self.subviews.table_of_contents_panel:reload(self.init_text)
-end
-
-function JournalWindow:onInput(keys)
-    if (keys.A_MOVE_N_DOWN) then
-        local curr_cursor = self.subviews.journal_editor:getCursor()
-        local section_index, section = self.subviews.table_of_contents_panel:cursorSection(
-            curr_cursor
-        )
-
-        if section.line_cursor == curr_cursor then
-            self.subviews.table_of_contents_panel:setSelectedSection(
-                section_index - 1
-            )
-            self.subviews.table_of_contents_panel:submit()
-        else
-            self:onTableOfContentsSubmit(section_index, section)
-        end
-
-        return false
-    elseif (keys.A_MOVE_S_DOWN) then
-        local section_index = self.subviews.table_of_contents_panel:cursorSection(
-            self.subviews.journal_editor:getCursor()
-        )
-        self.subviews.table_of_contents_panel:setSelectedSection(
-            section_index + 1
-        )
-        self.subviews.table_of_contents_panel:submit()
-
-        return false
-    end
-
-    return JournalWindow.super.onInput(self, keys)
+    self.subviews.table_of_contents_panel:reload(
+        self.init_text,
+        self.subviews.journal_editor:getCursor() or self.init_cursor
+    )
 end
 
 function JournalWindow:sanitizeFrame(frame)
@@ -239,9 +211,8 @@ function JournalWindow:postUpdateLayout()
 end
 
 function JournalWindow:onCursorChange(cursor)
-    local section_index = self.subviews.table_of_contents_panel:cursorSection(
-        cursor
-    )
+    self.subviews.table_of_contents_panel:setCursor(cursor)
+    local section_index = self.subviews.table_of_contents_panel:currentSection()
     self.subviews.table_of_contents_panel:setSelectedSection(section_index)
 
     if self.on_cursor_change ~= nil then
@@ -250,7 +221,10 @@ function JournalWindow:onCursorChange(cursor)
 end
 
 function JournalWindow:onTextChange(text)
-    self.subviews.table_of_contents_panel:reload(text)
+    self.subviews.table_of_contents_panel:reload(
+        text,
+        self.subviews.journal_editor:getCursor()
+    )
 
     if self.on_text_change ~= nil then
         self.on_text_change(text)

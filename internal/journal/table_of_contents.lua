@@ -12,25 +12,68 @@ TableOfContents = defclass(TableOfContents, widgets.Panel)
 TableOfContents.ATTRS {
     frame_style=INVISIBLE_FRAME,
     frame_background = gui.CLEAR_PEN,
-    on_submit=DEFAULT_NIL
+    on_submit=DEFAULT_NIL,
+    text_cursor=DEFAULT_NIL
 }
 
 function TableOfContents:init()
     self:addviews({
         widgets.List{
-            frame={l=1, t=0, r=1, b=0},
+            frame={l=0, t=0, r=0, b=3},
             view_id='table_of_contents',
             choices={},
             on_submit=self.on_submit
         },
+        widgets.HotkeyLabel{
+            frame={b=0},
+            key='A_MOVE_N_DOWN',
+            label='Previous Section',
+            on_activate=self:callback('previousSection'),
+        },
+        widgets.HotkeyLabel{
+            frame={b=1},
+            key='A_MOVE_S_DOWN',
+            label='Next Section',
+            on_activate=self:callback('nextSection'),
+        }
     })
 end
 
-function TableOfContents:cursorSection(cursor)
+function TableOfContents:previousSection()
+    local section_cursor, section = self:currentSection()
+
+    if section.line_cursor == self.text_cursor then
+        self.subviews.table_of_contents:setSelected(section_cursor - 1)
+    end
+
+    self.subviews.table_of_contents:submit()
+end
+
+function TableOfContents:nextSection()
+    local curr_sel = self.subviews.table_of_contents:getSelected()
+
+    local target_sel = self.text_cursor and
+        self:currentSection() + 1 or curr_sel + 1
+
+    if curr_sel ~= target_sel then
+        self.subviews.table_of_contents:setSelected(target_sel)
+        self.subviews.table_of_contents:submit()
+    end
+end
+
+function TableOfContents:setSelectedSection(section_index)
+    local curr_sel = self.subviews.table_of_contents:getSelected()
+
+    if curr_sel ~= section_index then
+        self.subviews.table_of_contents:setSelected(section_index)
+    end
+end
+
+function TableOfContents:currentSection()
     local section_ind = nil
 
     for ind, choice in ipairs(self.subviews.table_of_contents.choices) do
-        if choice.line_cursor > cursor then
+        if choice.line_cursor > self.text_cursor then
             break
         end
         section_ind = ind
@@ -39,18 +82,11 @@ function TableOfContents:cursorSection(cursor)
     return section_ind, self.subviews.table_of_contents.choices[section_ind]
 end
 
-function TableOfContents:setSelectedSection(section_index)
-    local curr_sel = self.subviews.table_of_contents:getSelected()
-    if curr_sel ~= section_index then
-        self.subviews.table_of_contents:setSelected(section_index)
-    end
+function TableOfContents:setCursor(cursor)
+    self.text_cursor = cursor
 end
 
-function TableOfContents:submit()
-    return self.subviews.table_of_contents:submit()
-end
-
-function TableOfContents:reload(text)
+function TableOfContents:reload(text, cursor)
     if not self.visible then
         return
     end
@@ -70,5 +106,6 @@ function TableOfContents:reload(text)
         line_cursor = line_cursor + #line + 1
     end
 
+    self.text_cursor = cursor
     self.subviews.table_of_contents:setChoices(sections)
 end
