@@ -34,15 +34,22 @@ Template for new versions:
 - `full-heal`: fix ``-r --all_citizens`` option combination not resurrecting citizens
 - `open-legends`: don't intercept text bound for vanilla search widgets
 - `gui/unit-info-viewer`: correctly display skill levels when rust is involved
+- `timestream`: fix dwarves spending too long eating and drinking
+- `locate-ore`: fix sometimes selecting an incorrect tile when there are multiple mineral veins in a single map block
+- `gui/settings-manager`: fix position of "settings restored" message on embark when the player has no saved embark profiles
 - `build-now`: fix error when building buildings that (in previous DF versions) required the architecture labor
 - `prioritize`: fix incorrect loading of persisted data on some OS types
 - `list-waves`: no longer gets confused by units that leave the map and then return (e.g. squads who go out on raids)
 - `fix/dead-units`: fix error when removing dead units from burrows and the unit with the greatest ID was dead
+- `makeown`: ensure names given to adopted units (or units created with `gui/sandbox`) are respected later in legends mode
+- `gui/autodump`: prevent dumping into walls or invalid map area, as well as selecting in unallocated blocks
+- `gui/autodump`: set proper projectile flags to prevent items from being destroyed
 
 ## Misc Improvements
 - `build-now`: if `suspendmanager` is running, run an unsuspend cycle immediately before scanning for buildings to build
 - `list-waves`: now outputs the names of the dwarves in each migration wave
 - `list-waves`: can now display information about specific migration waves (like identifying your starting 7 dwarves)
+- `allneeds`: display counts of fulfillment degrees as a separate column
 
 ## Removed
 
@@ -93,6 +100,7 @@ Template for new versions:
 - `clear-smoke`: properly tag smoke flows for garbage collection to avoid memory leak
 - `warn-stranded`: don't warn for babies carried by mothers who happen to be gathering fruit from trees
 - `prioritize`: also boost priority of already-claimed jobs when boosting priority of a job type so those jobs are not interrupted
+- `ban-cooking`: ban all seed producing items from being cooked when 'seeds' is chosen instead of just brewable seed producing items
 
 ## Misc Improvements
 - `item`: option for ignoring uncollected spider webs when you search for "silk"

@@ -105,10 +105,8 @@ local function for_moody(fn, reverse)
     end, fn, reverse)
 end
 
-local races = df.global.world.raws.creatures.all
-
 local function is_stealer(unit)
-    local casteFlags = races[unit.race].caste[unit.caste].flags
+    local casteFlags = dfhack.units.getCasteRaw(unit).flags
     if casteFlags.CURIOUS_BEAST_EATER or
         casteFlags.CURIOUS_BEAST_GUZZLER or
         casteFlags.CURIOUS_BEAST_ITEM
@@ -224,7 +222,7 @@ end
 local function summarize_units(for_fn)
     local counts = {}
     for_fn(function(unit)
-        local names = races[unit.race].caste[unit.caste].caste_name
+        local names = dfhack.units.getCasteRaw(unit).caste_name
         local record = ensure_key(counts, names[0], {count=0, plural=names[1]})
         record.count = record.count + 1
     end)

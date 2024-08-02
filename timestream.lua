@@ -135,10 +135,29 @@ local function adjust_unit_counters(unit, timeskip)
     decrement_counter(c2, 'stomach_content', timeskip * 5)
     decrement_counter(c2, 'stomach_food', timeskip * 5)
     decrement_counter(c2, 'vomit_timeout', timeskip)
-    -- stored_fat wanders about based on other state; we can probably leave it alone
+    -- stored_fat wanders about based on other state; we can likely leave it alone and
+    -- not materially affect gameplay
+end
+
+-- need to manually adjust job completion_timer values for jobs that are controlled by unit actions
+-- with a timer of 1, which are destroyed immediately after they are created. longer-lived unit
+-- actions are already sufficiently handled by dfhack.units.subtractGroupActionTimers().
+-- this will also decrement timers for jobs with actions that have just expired, but on average, this
+-- should balance out to be correct, since we're losing time when we subtract from the action timers
+-- and cap the value so it never drops below 1.
+local function adjust_job_counter(unit, timeskip)
+    local job = unit.job.current_job
+    if not job then return end
+    for _,action in ipairs(unit.actions) do
+        if action.type == df.unit_action_type.Job or action.type == df.unit_action_type.JobRecover then
+            return
+        end
+    end
+    decrement_counter(job, 'completion_timer', timeskip)
 end
 
 -- unit needs appear to be incremented on season ticks, so we don't need to worry about those
+-- since the TICK_TRIGGERS check makes sure that we never skip season ticks
 local function adjust_units(timeskip)
     for _, unit in ipairs(df.global.world.units.active) do
         if not dfhack.units.isActive(unit) then goto continue end
@@ -146,6 +165,7 @@ local function adjust_units(timeskip)
         dfhack.units.subtractGroupActionTimers(unit, timeskip, df.unit_action_type_group.All)
         if not dfhack.units.isOwnGroup(unit) then goto continue end
         adjust_unit_counters(unit, timeskip)
+        adjust_job_counter(unit, timeskip)
         ::continue::
     end
 end
@@ -176,14 +196,17 @@ local function adjust_activities(timeskip)
                 -- countdown appears to never move from 0
                 decrement_counter(ev, 'countdown', timeskip)
             elseif df.activity_event_harassmentst:is_instance(ev) then
-                -- TODO: counter behavior not yet analyzed
-                -- print(i)
+                if DEBUG then
+                    print('activity_event_harassmentst ready for analysis at index', i)
+                end
             elseif df.activity_event_encounterst:is_instance(ev) then
-                -- TODO: counter behavior not yet analyzed
-                -- print(i)
+                if DEBUG then
+                    print('activity_event_encounterst ready for analysis at index', i)
+                end
             elseif df.activity_event_reunionst:is_instance(ev) then
-                -- TODO: counter behavior not yet analyzed
-                -- print(i)
+                if DEBUG then
+                    print('activity_event_reunionst ready for analysis at index', i)
+                end
             elseif df.activity_event_conversationst:is_instance(ev) then
                 increment_counter(ev, 'pause', timeskip)
             elseif df.activity_event_guardst:is_instance(ev) then
@@ -221,8 +244,9 @@ local function adjust_activities(timeskip)
             elseif df.activity_event_performancest:is_instance(ev) then
                 increment_counter(ev, 'current_position', timeskip)
             elseif df.activity_event_store_objectst:is_instance(ev) then
-                -- TODO: counter behavior not yet analyzed
-                -- print(i)
+                if DEBUG then
+                    print('activity_event_store_objectst ready for analysis at index', i)
+                end
             end
         end
     end
@@ -253,7 +277,9 @@ local function on_tick()
     -- don't let our deficit grow unbounded if we can never catch up
     timeskip_deficit = math.min(desired_timeskip - timeskip, 100.0)
 
-    if DEBUG then print(('timeskip (%d, +%.2f)'):format(timeskip, timeskip_deficit)) end
+    if DEBUG and (tonumber(DEBUG) or 0) >= 2 then
+        print(('timeskip (%d, +%.2f)'):format(timeskip, timeskip_deficit))
+    end
     if timeskip <= 0 then return end
 
     local desired_calendar_timeskip = (timeskip * state.settings.calendar_rate) + calendar_timeskip_deficit
@@ -261,6 +287,7 @@ local function on_tick()
     calendar_timeskip_deficit = math.max(0, desired_calendar_timeskip - calendar_timeskip)
 
     df.global.cur_year_tick = df.global.cur_year_tick + calendar_timeskip
+    df.global.cur_year_tick_advmode = df.global.cur_year_tick_advmode + calendar_timeskip*144
 
     adjust_units(timeskip)
     adjust_activities(timeskip)

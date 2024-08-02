@@ -173,13 +173,13 @@ DifficultyEmbarkNotificationOverlay.ATTRS {
     default_pos={x=75, y=18},
     viewscreens='setupdwarfgame/Default',
     default_enabled=true,
-    frame={w=23, h=3},
+    frame={w=25, h=3},
 }
 
 function DifficultyEmbarkNotificationOverlay:init()
     self:addviews{
         widgets.Panel{
-            frame={t=0, w=25},
+            frame={h=3, b=0, w=25},
             frame_style=gui.FRAME_MEDIUM,
             frame_background=gui.CLEAR_PEN,
             subviews={
@@ -195,6 +195,12 @@ end
 
 function DifficultyEmbarkNotificationOverlay:preUpdateLayout(parent_rect)
     self.frame.w = parent_rect.width - (self.frame.l or (self.default_pos.x - 1))
+end
+
+function DifficultyEmbarkNotificationOverlay:render(dc)
+    local scr = dfhack.gui.getDFViewscreen(true)
+    self.frame.h = #scr.embark_profile == 0 and 11 or 3
+    DifficultyEmbarkNotificationOverlay.super.render(self, dc)
 end
 
 local last_scr_type
