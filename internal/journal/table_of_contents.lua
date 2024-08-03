@@ -3,6 +3,8 @@
 local gui = require 'gui'
 local widgets = require 'gui.widgets'
 
+local df_major_version = tonumber(dfhack.getCompiledDFVersion():match('%d+'))
+
 local INVISIBLE_FRAME = {
     frame_pen=gui.CLEAR_PEN,
     signature_pen=false,
@@ -17,13 +19,23 @@ TableOfContents.ATTRS {
 }
 
 function TableOfContents:init()
-    self:addviews({
+    self:addviews{
         widgets.List{
             frame={l=0, t=0, r=0, b=3},
             view_id='table_of_contents',
             choices={},
             on_submit=self.on_submit
         },
+    }
+
+    if df_major_version < 51 then
+        -- widgets below this line require DF 51
+        -- TODO: remove this check once DF 51 is stable and DFHack is no longer
+        -- releasing new versions for DF 50
+        return
+    end
+
+    self:addviews{
         widgets.HotkeyLabel{
             frame={b=0},
             key='A_MOVE_N_DOWN',
@@ -36,7 +48,7 @@ function TableOfContents:init()
             label='Next Section',
             on_activate=self:callback('nextSection'),
         }
-    })
+    }
 end
 
 function TableOfContents:previousSection()
