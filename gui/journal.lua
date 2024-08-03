@@ -9,7 +9,8 @@ local text_editor = reqscript('internal/journal/text_editor')
 local shifter = reqscript('internal/journal/shifter')
 local table_of_contents = reqscript('internal/journal/table_of_contents')
 
-local RESIZE_MIN = {w=32, h=10}
+local RESIZE_MIN = {w=54, h=20}
+local TOC_RESIZE_MIN = {w=24}
 
 local JOURNAL_PERSIST_KEY = 'journal'
 
@@ -32,8 +33,7 @@ or
 
 ## My section subheading
 
-Those headers will appear here, and you can click on them to jump to them in the text.
-]=]
+Those headers will appear here, and you can click on them to jump to them in the text.]=]
 
 journal_config = journal_config or json.open('dfhack-config/journal.json')
 
@@ -65,7 +65,7 @@ function JournalWindow:init()
             visible=toc_visible,
             frame_inset={l=1, t=0, b=1, r=1},
 
-            resize_min={w=20},
+            resize_min=TOC_RESIZE_MIN,
             resizable=true,
             resize_anchors={l=false, t=false, b=true, r=true},
 
@@ -76,7 +76,7 @@ function JournalWindow:init()
             subviews={
                 widgets.WrappedLabel{
                     view_id='table_of_contents_tutorial',
-                    frame={l=0,t=0,r=0,b=0},
+                    frame={l=0,t=0,r=0,b=3},
                     text_to_wrap=TOC_WELCOME_COPY,
                     visible=false
                 }
@@ -128,8 +128,10 @@ function JournalWindow:init()
             frame_inset={l=1,r=1,t=0, w=100},
             subviews={
                 widgets.HotkeyLabel{
+                    frame={l=0},
                     key='CUSTOM_CTRL_O',
-                    label='Table of Contents',
+                    label='Toggle table of contents',
+                    auto_width=true,
                     on_activate=function() self.subviews.shifter:toggle() end
                 }
             }
@@ -206,11 +208,11 @@ function JournalWindow:loadConfig()
     window_frame.w = window_frame.w or 80
     window_frame.h = window_frame.h or 50
 
-    local table_of_contents = copyall(journal_config.data.toc or {})
-    table_of_contents.width = table_of_contents.width or 20
-    table_of_contents.visible = table_of_contents.visible or false
+    local toc = copyall(journal_config.data.toc or {})
+    toc.width = math.max(toc.width or 25, TOC_RESIZE_MIN.w)
+    toc.visible = toc.visible or false
 
-    return window_frame, table_of_contents.visible, table_of_contents.width or 25
+    return window_frame, toc.visible, toc.width
 end
 
 function JournalWindow:onPanelResizeBegin()
@@ -239,7 +241,7 @@ function JournalWindow:ensurePanelsRelSize()
     local divider = self.subviews.table_of_contents_divider
 
     toc_panel.frame.w = math.min(
-        math.max(toc_panel.frame.w, toc_panel.resize_min.w),
+        math.max(toc_panel.frame.w, TOC_RESIZE_MIN.w),
         self.frame.w - editor.resize_min.w
     )
     editor.frame.l = toc_panel.visible and toc_panel.frame.w or 1
@@ -295,8 +297,6 @@ function JournalScreen:init()
         JournalWindow{
             view_id='journal_window',
             frame={w=65, h=45},
-            resize_min={w=50, h=20},
-            resizable=true,
 
             save_layout=self.save_layout,
 

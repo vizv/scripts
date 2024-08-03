@@ -35,19 +35,43 @@ function TableOfContents:init()
         return
     end
 
+    local function can_prev()
+        local toc = self.subviews.table_of_contents
+        return #toc:getChoices() > 0 and toc:getSelected() > 1
+    end
+    local function can_next()
+        local toc = self.subviews.table_of_contents
+        local num_choices = #toc:getChoices()
+        return num_choices > 0 and toc:getSelected() < num_choices
+    end
+
     self:addviews{
         widgets.HotkeyLabel{
-            frame={b=0},
+            frame={b=1, l=0},
             key='A_MOVE_N_DOWN',
-            label='Previous Section',
+            label='Prev Section',
+            auto_width=true,
             on_activate=self:callback('previousSection'),
+            enabled=can_prev,
+        },
+        widgets.Label{
+            frame={l=5, b=1, w=1},
+            text_pen=function() return can_prev() and COLOR_LIGHTGREEN or COLOR_GREEN end,
+            text=string.char(24),
         },
         widgets.HotkeyLabel{
-            frame={b=1},
+            frame={b=0, l=0},
             key='A_MOVE_S_DOWN',
             label='Next Section',
+            auto_width=true,
             on_activate=self:callback('nextSection'),
-        }
+            enabled=can_next,
+        },
+        widgets.Label{
+            frame={l=5, b=0, w=1},
+            text_pen=function() return can_next() and COLOR_LIGHTGREEN or COLOR_GREEN end,
+            text=string.char(25),
+        },
     }
 end
 
