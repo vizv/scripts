@@ -19,13 +19,9 @@ your fully developed fort appear as energetic as the dwarves in a newly created
 fort, and mature forts are much more fun to play.
 
 Note that whereas your dwarves zip around like you're running at 100 FPS, the
-onscreen FPS counter, if enabled, will still show a lower number. See the
-`Technical details`_ section below if you're interested in what's going on
+vanilla onscreen FPS counter, if enabled, will still show a lower number. See
+the `Technical details`_ section below if you're interested in what's going on
 under the hood.
-
-You can also use this tool to change the in-game calendar speed. Your dwarves
-will be able to get less/more done per season (depending on whether you speed
-up or slow down the calendar).
 
 Usage
 -----
@@ -46,12 +42,7 @@ Examples
     which is usually 100).
 
 ``timestream set fps 50``
-    Tweak the simulation so dwarves move at an apparent 50 frames per second.
-
-``timestream set calendar-rate 0.5``
-    Make the days twice as long and allow dwarves to accomplish twice as much
-    per day (requires that your target FPS is set at least 2x higher than the
-    FPS the game is actually running at).
+    Tweak the simulation so it runs at an apparent 50 frames per second.
 
 ``timestream reset``
     Reset settings to defaults: the vanilla FPS cap with no calendar speed
@@ -65,15 +56,6 @@ Settings
     target FPS *below* your current actual FPS will have no effect. You have
     to set the vanilla FPS cap for that. Set a target FPS of -1 to make no
     adjustment at all to the apparent FPS of the game.
-
-:calendar-rate: Set the calendar rate in relation to the target FPS. A calendar
-    rate factor of 1 means time flows "normally" for the units in the game.
-    Values between 0 and 1 slow the calendar relative to the world, allowing
-    units to get more done per day, and values above 1 speed the calendar
-    relative to the world, causing the days to pass quicker and preventing
-    units from getting as much done per day. The actual fps must be below the
-    configured target ``fps`` setting for the ``calendar-rate`` setting to take
-    effect.
 
 Technical details
 -----------------
@@ -113,11 +95,12 @@ of their advantage.
 Limitations
 -----------
 
-DF does critial game tasks every 10 ticks that must not be skipped, so
-`timestream` cannot advance more than 9 ticks at a time. This means that, with
-the default target of 100 FPS, the game will start showing signs of slowdown if
-the real FPS drops below about 15. The interface will also become less
-responsive to mouse gestures as the real FPS drops.
+DF does critial game tasks every 10 calendar ticks that must not be skipped, so
+`timestream` cannot advance more than 9 ticks at a time. This puts an upper
+limit on how much `timestream` can help. With the default target of 100 FPS,
+the game will start showing signs of slowdown if the real FPS drops below about
+15. The interface will also become less responsive to mouse gestures as the
+real FPS drops.
 
 Finally, not all aspects of the game are perfectly adjusted. For example,
 armies on world map will move at the same (real-time) rate regardless of
