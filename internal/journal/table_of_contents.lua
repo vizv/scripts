@@ -54,6 +54,10 @@ end
 function TableOfContents:previousSection()
     local section_cursor, section = self:currentSection()
 
+    if section == nil then
+        return
+    end
+
     if section.line_cursor == self.text_cursor then
         self.subviews.table_of_contents:setSelected(section_cursor - 1)
     end
@@ -62,10 +66,15 @@ function TableOfContents:previousSection()
 end
 
 function TableOfContents:nextSection()
+    local section_cursor, section = self:currentSection()
+
+    if section == nil then
+        return
+    end
+
     local curr_sel = self.subviews.table_of_contents:getSelected()
 
-    local target_sel = self.text_cursor and
-        self:currentSection() + 1 or curr_sel + 1
+    local target_sel = self.text_cursor and section_cursor + 1 or curr_sel + 1
 
     if curr_sel ~= target_sel then
         self.subviews.table_of_contents:setSelected(target_sel)
