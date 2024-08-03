@@ -24,7 +24,14 @@ Happy digging!
 ]=]
 
 local TOC_WELCOME_COPY =  [=[
-Start a line with # symbols and a space to create header.
+Start a line with # symbols and a space to create a header. For example:
+
+# My section heading
+
+or
+
+## My section subheading
+
 Those headers will appear here, and you can click on them to jump to them in the text.
 ]=]
 
@@ -201,7 +208,7 @@ function JournalWindow:loadConfig()
 
     local table_of_contents = copyall(journal_config.data.toc or {})
     table_of_contents.width = table_of_contents.width or 20
-    table_of_contents.visible = table_of_contents.visible or true
+    table_of_contents.visible = table_of_contents.visible or false
 
     return window_frame, table_of_contents.visible, table_of_contents.width or 25
 end
