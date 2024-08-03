@@ -6,57 +6,166 @@ local widgets = require 'gui.widgets'
 local wrapped_text = reqscript('internal/journal/wrapped_text')
 
 local CLIPBOARD_MODE = {LOCAL = 1, LINE = 2}
+local HISTORY_ENTRY = {
+    TEXT_BLOCK = 1,
+    WHITESPACE_BLOCK = 2,
+    BACKSPACE = 2,
+    DELETE = 3,
+    OTHER = 4
+}
 
-TextEditor = defclass(TextEditor, widgets.Widget)
+TextEditorHistory = defclass(TextEditorHistory)
+
+TextEditorHistory.ATTRS{
+    history_size = 25,
+}
+
+function TextEditorHistory:init()
+    self.past = {}
+    self.future = {}
+end
+
+function TextEditorHistory:store(history_entry_type, text, cursor)
+    local last_entry = self.past[#self.past]
+
+    if not last_entry or history_entry_type == HISTORY_ENTRY.OTHER or
+        last_entry.entry_type ~= history_entry_type then
+        table.insert(self.past, {
+            entry_type=history_entry_type,
+            text=text,
+            cursor=cursor
+        })
+    end
+
+    self.future = {}
+
+    if #self.past > self.history_size then
+        table.remove(self.past, 1)
+    end
+end
+
+function TextEditorHistory:undo(curr_text, curr_cursor)
+    if #self.past == 0 then
+        return nil
+    end
+
+    local history_entry = table.remove(self.past, #self.past)
+
+    table.insert(self.future, {
+        entry_type=OTHER,
+        text=curr_text,
+        cursor=curr_cursor
+    })
+
+    if #self.future > self.history_size then
+        table.remove(self.future, 1)
+    end
+
+    return history_entry
+end
+
+function TextEditorHistory:redo(curr_text, curr_cursor)
+    if #self.future == 0 then
+        return true
+    end
+
+    local history_entry = table.remove(self.future, #self.future)
+
+    table.insert(self.past, {
+        entry_type=OTHER,
+        text=curr_text,
+        cursor=curr_cursor
+    })
+
+    if #self.past > self.history_size then
+        table.remove(self.past, 1)
+    end
+
+    return history_entry
+end
+
+TextEditor = defclass(TextEditor, widgets.Panel)
 
 TextEditor.ATTRS{
-    text = '',
+    init_text = '',
+    init_cursor = DEFAULT_NIL,
     text_pen = COLOR_LIGHTCYAN,
     ignore_keys = {'STRING_A096'},
     select_pen = COLOR_CYAN,
-    on_change = DEFAULT_NIL,
+    on_text_change = DEFAULT_NIL,
+    on_cursor_change = DEFAULT_NIL,
     debug = false
 }
 
 function TextEditor:init()
     self.render_start_line_y = 1
-    self.scrollbar = widgets.Scrollbar{
-        view_id='text_area_scrollbar',
-        frame={r=0,t=1},
-        on_scroll=self:callback('onScrollbar')
-    }
-    self.editor = TextEditorView{
-        view_id='text_area',
-        frame={l=0,r=3,t=0},
-        text = self.text,
-        text_pen = self.text_pen,
-        ignore_keys = self.ignore_keys,
-        select_pen = self.select_pen,
-        debug = self.debug,
-
-        on_change = function (val)
-            self:updateLayout()
-            if self.on_change then
-                self.on_change(val)
-            end
-        end,
-
-        on_cursor_change = function ()
-            local x, y = self.editor.wrapped_text:indexToCoords(self.editor.cursor)
-            if (y >= self.render_start_line_y + self.editor.frame_body.height) then
-                self:setRenderStartLineY(y - self.editor.frame_body.height + 1)
-            elseif  (y < self.render_start_line_y) then
-                self:setRenderStartLineY(y)
-            end
-        end
-    }
 
     self:addviews{
-        self.editor,
-        self.scrollbar,
+        TextEditorView{
+            view_id='text_area',
+            frame={l=0,r=3,t=0},
+            text = self.init_text,
+
+            text_pen = self.text_pen,
+            ignore_keys = self.ignore_keys,
+            select_pen = self.select_pen,
+            debug = self.debug,
+
+            on_text_change = function (val)
+                self:updateLayout()
+                if self.on_text_change then
+                    self.on_text_change(val)
+                end
+            end,
+            on_cursor_change = self:callback('onCursorChange')
+        },
+        widgets.Scrollbar{
+            view_id='scrollbar',
+            frame={r=0,t=1},
+            on_scroll=self:callback('onScrollbar')
+        },
         widgets.HelpButton{command="gui/journal", frame={r=0,t=0}}
     }
     self:setFocus(true)
+end
+
+function TextEditor:getText()
+    return self.subviews.text_area.text
+end
+
+function TextEditor:getCursor()
+    return self.subviews.text_area.cursor
+end
+
+function TextEditor:onCursorChange(cursor)
+    local x, y = self.subviews.text_area.wrapped_text:indexToCoords(
+        self.subviews.text_area.cursor
+    )
+
+    if y >= self.render_start_line_y + self.subviews.text_area.frame_body.height then
+        self:updateScrollbar(
+            y - self.subviews.text_area.frame_body.height + 1
+        )
+    elseif  (y < self.render_start_line_y) then
+        self:updateScrollbar(y)
+    end
+
+    if self.on_cursor_change then
+        self.on_cursor_change(cursor)
+    end
+end
+
+function TextEditor:scrollToCursor(cursor_offset)
+    if self.subviews.scrollbar.visible then
+        local _, cursor_liny_y = self.subviews.text_area.wrapped_text:indexToCoords(
+            cursor_offset
+        )
+        self:updateScrollbar(cursor_liny_y)
+    end
+end
+
+function TextEditor:setCursor(cursor_offset)
+    return self.subviews.text_area:setCursor(cursor_offset)
 end
 
 function TextEditor:getPreferredFocusState()
@@ -64,11 +173,17 @@ function TextEditor:getPreferredFocusState()
 end
 
 function TextEditor:postUpdateLayout()
-    self:updateScrollbar()
+    self:updateScrollbar(self.render_start_line_y)
+
+    if self.subviews.text_area.cursor == nil then
+        local cursor = self.init_cursor or #self.text + 1
+        self.subviews.text_area:setCursor(cursor)
+        self:scrollToCursor(cursor)
+    end
 end
 
 function TextEditor:onScrollbar(scroll_spec)
-    local height = self.editor.frame_body.height
+    local height = self.subviews.text_area.frame_body.height
 
     local render_start_line = self.render_start_line_y
     if scroll_spec == 'down_large' then
@@ -83,47 +198,44 @@ function TextEditor:onScrollbar(scroll_spec)
         render_start_line = tonumber(scroll_spec)
     end
 
-    self:setRenderStartLineY(math.min(
-        #self.editor.wrapped_text.lines - height + 1,
-        math.max(1, render_start_line)
-    ))
-    self:updateScrollbar()
+    self:updateScrollbar(render_start_line)
 end
 
-function TextEditor:updateScrollbar()
-    local lines_count = #self.editor.wrapped_text.lines
+function TextEditor:updateScrollbar(scrollbar_current_y)
+    local lines_count = #self.subviews.text_area.wrapped_text.lines
 
-    self.scrollbar:update(
-        self.render_start_line_y,
+    local render_start_line_y = (math.min(
+        #self.subviews.text_area.wrapped_text.lines - self.subviews.text_area.frame_body.height + 1,
+        math.max(1, scrollbar_current_y)
+    ))
+
+    self.subviews.scrollbar:update(
+        render_start_line_y,
         self.frame_body.height,
         lines_count
     )
 
     if (self.frame_body.height >= lines_count) then
-        self:setRenderStartLineY(1)
+        render_start_line_y = 1
     end
+
+    self.render_start_line_y = render_start_line_y
+    self.subviews.text_area:setRenderStartLineY(self.render_start_line_y)
 end
 
 function TextEditor:renderSubviews(dc)
-    self.editor.frame_body.y1 = self.frame_body.y1-(self.render_start_line_y - 1)
+    self.subviews.text_area.frame_body.y1 = self.frame_body.y1-(self.render_start_line_y - 1)
 
     TextEditor.super.renderSubviews(self, dc)
 end
 
 function TextEditor:onInput(keys)
-    if (self.scrollbar.is_dragging) then
-        return self.scrollbar:onInput(keys)
+    if (self.subviews.scrollbar.is_dragging) then
+        return self.subviews.scrollbar:onInput(keys)
     end
 
     return TextEditor.super.onInput(self, keys)
 end
-
-
-function TextEditor:setRenderStartLineY(render_start_line_y)
-    self.render_start_line_y = render_start_line_y
-    self.editor:setRenderStartLineY(render_start_line_y)
-end
-
 
 TextEditorView = defclass(TextEditorView, widgets.Widget)
 
@@ -132,10 +244,11 @@ TextEditorView.ATTRS{
     text_pen = COLOR_LIGHTCYAN,
     ignore_keys = {'STRING_A096'},
     pen_selection = COLOR_CYAN,
-    on_change = DEFAULT_NIL,
+    on_text_change = DEFAULT_NIL,
     on_cursor_change = DEFAULT_NIL,
     enable_cursor_blink = true,
-    debug = false
+    debug = false,
+    history_size = 10,
 }
 
 function TextEditorView:init()
@@ -143,7 +256,8 @@ function TextEditorView:init()
     self.clipboard = nil
     self.clipboard_mode = CLIPBOARD_MODE.LOCAL
     self.render_start_line_y = 1
-    self.cursor = #self.text + 1
+
+    self.cursor = nil
 
     self.main_pen = dfhack.pen.parse({
         fg=self.text_pen,
@@ -160,6 +274,8 @@ function TextEditorView:init()
         text=self.text,
         wrap_width=256
     }
+
+    self.history = TextEditorHistory{history_size=self.history_size}
 end
 
 function TextEditorView:setRenderStartLineY(render_start_line_y)
@@ -196,7 +312,7 @@ function TextEditorView:setCursor(cursor_offset)
     self.last_cursor_x = nil
 
     if self.on_cursor_change then
-        self.on_cursor_change()
+        self.on_cursor_change(self.cursor)
     end
 end
 
@@ -295,8 +411,8 @@ function TextEditorView:setText(text)
 
     self:recomputeLines()
 
-    if changed and self.on_change then
-        self.on_change(text)
+    if changed and self.on_text_change then
+        self.on_text_change(text)
     end
 end
 
@@ -382,7 +498,7 @@ function TextEditorView:onRenderBody(dc)
         local cursor_char = self:charAtCursor()
         local x, y = self.wrapped_text:indexToCoords(self.cursor)
         local debug_msg = string.format(
-            'x: %s y: %s ind: %s #line: %s char: %s',
+            'x: %s y: %s ind: %s #line: %s char: %s hist-: %s hist+: %s',
             x,
             y,
             self.cursor,
@@ -390,7 +506,9 @@ function TextEditorView:onRenderBody(dc)
             (cursor_char == NEWLINE and 'NEWLINE') or
             (cursor_char == ' ' and 'SPACE') or
             (cursor_char == '' and 'nil') or
-            cursor_char
+            cursor_char,
+            #self.history.past,
+            #self.history.future
         )
         local sel_debug_msg = self.sel_end and string.format(
             'sel_end: %s',
@@ -494,18 +612,44 @@ function TextEditorView:onInput(keys)
 
     if self:onMouseInput(keys) then
         return true
-    elseif self:onCursorInput(keys) then
+    elseif self:onHistoryInput(keys) then
         return true
     elseif self:onTextManipulationInput(keys) then
+        return true
+    elseif self:onCursorInput(keys) then
         return true
     elseif keys.CUSTOM_CTRL_C then
         self:copy()
         return true
     elseif keys.CUSTOM_CTRL_X then
         self:cut()
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
         return true
     elseif keys.CUSTOM_CTRL_V then
         self:paste()
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
+        return true
+    end
+end
+
+function TextEditorView:onHistoryInput(keys)
+    if keys.CUSTOM_CTRL_Z then
+        local history_entry = self.history:undo(self.text, self.cursor)
+
+        if history_entry then
+            self:setText(history_entry.text)
+            self:setCursor(history_entry.cursor)
+        end
+
+        return true
+    elseif keys.CUSTOM_CTRL_Y then
+        local history_entry = self.history:redo(self.text, self.cursor)
+
+        if history_entry then
+            self:setText(history_entry.text)
+            self:setCursor(history_entry.cursor)
+        end
+
         return true
     end
 end
@@ -605,12 +749,12 @@ function TextEditorView:onCursorInput(keys)
         -- go to text end
         self:setCursor(#self.text + 1)
         return true
-    elseif keys.CUSTOM_CTRL_B or keys.KEYBOARD_CURSOR_LEFT_FAST then
+    elseif keys.CUSTOM_CTRL_B or keys.A_MOVE_W_DOWN then
         -- back one word
         local word_start = self:wordStartOffset()
         self:setCursor(word_start)
         return true
-    elseif keys.CUSTOM_CTRL_F or keys.KEYBOARD_CURSOR_RIGHT_FAST then
+    elseif keys.CUSTOM_CTRL_F or keys.A_MOVE_E_DOWN then
         -- forward one word
         local word_end = self:wordEndOffset()
         self:setCursor(word_end)
@@ -633,12 +777,20 @@ end
 function TextEditorView:onTextManipulationInput(keys)
     if keys.SELECT then
         -- handle enter
+        self.history:store(
+            HISTORY_ENTRY.WHITESPACE_BLOCK,
+            self.text,
+            self.cursor
+        )
         self:insert(NEWLINE)
+
         return true
 
     elseif keys._STRING then
         if keys._STRING == 0 then
             -- handle backspace
+            self.history:store(HISTORY_ENTRY.BACKSPACE, self.text, self.cursor)
+
             if (self:hasSelection()) then
                 self:eraseSelection()
             else
@@ -652,12 +804,19 @@ function TextEditorView:onTextManipulationInput(keys)
                 )
                 self:eraseSelection()
             end
+
         else
+            local cv = string.char(keys._STRING)
+
             if (self:hasSelection()) then
+                self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
                 self:eraseSelection()
+            else
+                local entry_type = cv == ' ' and HISTORY_ENTRY.WHITESPACE_BLOCK
+                    or HISTORY_ENTRY.TEXT_BLOCK
+                self.history:store(entry_type, self.text, self.cursor)
             end
 
-            local cv = string.char(keys._STRING)
             self:insert(cv)
         end
 
@@ -668,6 +827,8 @@ function TextEditorView:onTextManipulationInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_U then
         -- delete current line
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
+
         if (self:hasSelection()) then
             -- delete all lines that has selection
             self:setSelection(
@@ -682,18 +843,24 @@ function TextEditorView:onTextManipulationInput(keys)
             )
             self:eraseSelection()
         end
+
         return true
     elseif keys.CUSTOM_CTRL_K then
         -- delete from cursor to end of current line
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
+
         local line_end = self:lineEndOffset(self.sel_end or self.cursor) - 1
         self:setSelection(
             self.cursor,
             math.max(line_end, self.cursor)
         )
         self:eraseSelection()
+
         return true
     elseif keys.CUSTOM_CTRL_D then
         -- delete char, there is no support for `Delete` key
+        self.history:store(HISTORY_ENTRY.DELETE, self.text, self.cursor)
+
         if (self:hasSelection()) then
             self:eraseSelection()
         else
@@ -706,6 +873,8 @@ function TextEditorView:onTextManipulationInput(keys)
         return true
     elseif keys.CUSTOM_CTRL_W then
         -- delete one word backward
+        self.history:store(HISTORY_ENTRY.OTHER, self.text, self.cursor)
+
         if not self:hasSelection() and self.cursor ~= 1 then
             self:setSelection(
                 self:wordStartOffset(),
@@ -713,6 +882,7 @@ function TextEditorView:onTextManipulationInput(keys)
             )
         end
         self:eraseSelection()
+
         return true
     end
 end
