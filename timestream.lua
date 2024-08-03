@@ -60,7 +60,17 @@ end
 
 -- ensure we never skip over cur_year_tick values that match this list
 local TICK_TRIGGERS = {
-    {mod=10, rem={0}}, -- season ticks and (mod=100) crop growth
+    {mod=10, rem={0}},           -- 0: season ticks (and lots of other stuff)
+                                 -- 0 mod 100: crop growth, strange mood, minimap update, rot
+                                 -- 20 mod 100: building updates
+                                 -- 40 mod 100: assign tombs to newly tomb-eligible corpses
+                                 -- 80 mod 100: incarceration updates
+                                 -- 40 mod 1000: remove excess seeds
+    {mod=50, rem={25, 35, 45}},  -- 25: stockpile updates
+                                 -- 35: check bags
+                                 -- 35 mod 100: job auction
+                                 -- 45: stockpile updates
+    {mod=100, rem={99}},         -- 99: new job creation
 }
 
 -- "owed" ticks we would like to skip at the next opportunity
