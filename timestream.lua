@@ -22,16 +22,6 @@ local SETTINGS = {
         end,
         default=function() return df.global.init.fps_cap end,
     },
-    {
-        name='calendar-rate',
-        internal_name='calendar_rate',
-        validate=function(arg)
-            local val = tonumber(arg)
-            if not val or val <= 0 then qerror('calendar-rate must be larger than 0') end
-            return val
-        end,
-        default=1.0,
-    },
 }
 
 local function get_default_state()
@@ -74,7 +64,7 @@ local TICK_TRIGGERS = {
 }
 
 -- "owed" ticks we would like to skip at the next opportunity
-local timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
+local timeskip_deficit = 0.0
 
 local function get_desired_timeskip(real_fps, desired_fps)
     -- minus 1 to account for the current frame
@@ -265,7 +255,7 @@ end
 local function on_tick()
     local real_fps = math.max(1, dfhack.internal.getUnpausedFps())
     if real_fps >= state.settings.fps then
-        timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
+        timeskip_deficit = 0.0
         return
     end
 
@@ -292,12 +282,8 @@ local function on_tick()
     end
     if timeskip <= 0 then return end
 
-    local desired_calendar_timeskip = (timeskip * state.settings.calendar_rate) + calendar_timeskip_deficit
-    local calendar_timeskip = math.max(1, math.floor(desired_calendar_timeskip))
-    calendar_timeskip_deficit = math.max(0, desired_calendar_timeskip - calendar_timeskip)
-
-    df.global.cur_year_tick = df.global.cur_year_tick + calendar_timeskip
-    df.global.cur_year_tick_advmode = df.global.cur_year_tick_advmode + calendar_timeskip*144
+    df.global.cur_year_tick = df.global.cur_year_tick + timeskip
+    df.global.cur_year_tick_advmode = df.global.cur_year_tick_advmode + timeskip*144
 
     adjust_units(timeskip)
     adjust_activities(timeskip)
@@ -307,7 +293,7 @@ end
 -- hook management
 
 local function do_enable()
-    timeskip_deficit, calendar_timeskip_deficit = 0.0, 0.0
+    timeskip_deficit = 0.0
     state.enabled = true
     repeatutil.scheduleEvery(GLOBAL_KEY, 1, 'ticks', on_tick)
 end
