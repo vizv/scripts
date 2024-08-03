@@ -29,28 +29,29 @@ Template for new versions:
 ## New Tools
 
 ## New Features
+- `gui/journal`: new automatic table of contents. add lines that start with "# ", like "# Entry for 502-04-02", to add hyperlinked headers to the table of contents
 
 ## Fixes
 - `full-heal`: fix ``-r --all_citizens`` option combination not resurrecting citizens
-- `open-legends`: don't intercept text bound for vanilla search widgets
+- `open-legends`: don't intercept text bound for vanilla legends mode search widgets
 - `gui/unit-info-viewer`: correctly display skill levels when rust is involved
 - `timestream`: fix dwarves spending too long eating and drinking
-- `timestream`: accelerate job creation in proportion to calendar time advancement
+- `timestream`: fix jobs not being created at a sufficient rate, leading to dwarves standing around doing nothing
 - `locate-ore`: fix sometimes selecting an incorrect tile when there are multiple mineral veins in a single map block
 - `gui/settings-manager`: fix position of "settings restored" message on embark when the player has no saved embark profiles
 - `build-now`: fix error when building buildings that (in previous DF versions) required the architecture labor
-- `prioritize`: fix incorrect loading of persisted data on some OS types
+- `prioritize`: fix incorrect restoring of saved settings on Windows
 - `list-waves`: no longer gets confused by units that leave the map and then return (e.g. squads who go out on raids)
 - `fix/dead-units`: fix error when removing dead units from burrows and the unit with the greatest ID was dead
 - `makeown`: ensure names given to adopted units (or units created with `gui/sandbox`) are respected later in legends mode
-- `gui/autodump`: prevent dumping into walls or invalid map area, as well as selecting in unallocated blocks
-- `gui/autodump`: set proper projectile flags to prevent items from being destroyed
+- `gui/autodump`: prevent dumping into walls or invalid map areas
+- `gui/autodump`: properly turn items into projectiles when they are teleported into mid-air
 
 ## Misc Improvements
 - `build-now`: if `suspendmanager` is running, run an unsuspend cycle immediately before scanning for buildings to build
 - `list-waves`: now outputs the names of the dwarves in each migration wave
-- `list-waves`: can now display information about specific migration waves (like identifying your starting 7 dwarves)
-- `allneeds`: display counts of fulfillment degrees as a separate column
+- `list-waves`: can now display information about specific migration waves (e.g. ``list-waves 0`` to identify your starting 7 dwarves)
+- `allneeds`: display distribution of needs by how severely they are affecting the dwarf
 
 ## Removed
 
