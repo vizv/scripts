@@ -98,6 +98,10 @@ function TableOfContents:setCursor(cursor)
     self.text_cursor = cursor
 end
 
+function TableOfContents:sections()
+    return self.subviews.table_of_contents.choices
+end
+
 function TableOfContents:reload(text, cursor)
     if not self.visible then
         return

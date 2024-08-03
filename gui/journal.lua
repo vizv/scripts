@@ -11,7 +11,22 @@ local table_of_contents = reqscript('internal/journal/table_of_contents')
 
 local RESIZE_MIN = {w=32, h=10}
 
-JOURNAL_PERSIST_KEY = 'journal'
+local JOURNAL_PERSIST_KEY = 'journal'
+
+local JOURNAL_WELCOME_COPY =  [=[
+Welcome to gui/journal, the chronicler's tool for Dwarf Fortress!
+
+Here, you can carve out notes, sketch your grand designs, or record the history of your fortress.
+The text you write here is saved together with your fort.
+
+For guidance on navigation and hotkeys, tap the ? button in the upper right corner.
+Happy digging!
+]=]
+
+local TOC_WELCOME_COPY =  [=[
+Start a line with # symbols and a space to create header.
+Those headers will appear here, and you can click on them to jump to them in the text.
+]=]
 
 journal_config = journal_config or json.open('dfhack-config/journal.json')
 
@@ -24,6 +39,7 @@ JournalWindow.ATTRS {
     init_text=DEFAULT_NIL,
     init_cursor=1,
     save_layout=true,
+    show_tutorial=false,
 
     on_text_change=DEFAULT_NIL,
     on_cursor_change=DEFAULT_NIL,
@@ -35,7 +51,7 @@ function JournalWindow:init()
 
     self.frame = frame and self:sanitizeFrame(frame) or self.frame
 
-    self:addviews({
+    self:addviews{
         table_of_contents.TableOfContents{
             view_id='table_of_contents_panel',
             frame={l=0, w=toc_width, t=0, b=1},
@@ -49,7 +65,15 @@ function JournalWindow:init()
             on_resize_begin=self:callback('onPanelResizeBegin'),
             on_resize_end=self:callback('onPanelResizeEnd'),
 
-            on_submit=self:callback('onTableOfContentsSubmit')
+            on_submit=self:callback('onTableOfContentsSubmit'),
+            subviews={
+                widgets.WrappedLabel{
+                    view_id='table_of_contents_tutorial',
+                    frame={l=0,t=0,r=0,b=0},
+                    text_to_wrap=TOC_WELCOME_COPY,
+                    visible=false
+                }
+            }
         },
         shifter.Shifter{
             view_id='shifter',
@@ -60,10 +84,7 @@ function JournalWindow:init()
                 self.subviews.table_of_contents_divider.visible = not collapsed
 
                 if not colllapsed then
-                    self.subviews.table_of_contents_panel:reload(
-                        self.subviews.journal_editor:getText(),
-                        self.subviews.journal_editor:getCursor()
-                    )
+                    self:reloadTableOfContents()
                 end
 
                 self:ensurePanelsRelSize()
@@ -106,12 +127,28 @@ function JournalWindow:init()
                 }
             }
         }
-    })
+    }
 
+    if self.show_tutorial then
+        self.subviews.journal_editor:addviews{
+            widgets.WrappedLabel{
+                view_id='journal_tutorial',
+                frame={l=0,t=1,r=0,b=0},
+                text_to_wrap=JOURNAL_WELCOME_COPY
+            }
+        }
+    end
+
+    self:reloadTableOfContents()
+end
+
+function JournalWindow:reloadTableOfContents()
     self.subviews.table_of_contents_panel:reload(
-        self.init_text,
+        self.subviews.journal_editor:getText(),
         self.subviews.journal_editor:getCursor() or self.init_cursor
     )
+    self.subviews.table_of_contents_panel.subviews.table_of_contents_tutorial.visible =
+       #self.subviews.table_of_contents_panel:sections() == 0
 end
 
 function JournalWindow:sanitizeFrame(frame)
@@ -164,9 +201,9 @@ function JournalWindow:loadConfig()
 
     local table_of_contents = copyall(journal_config.data.toc or {})
     table_of_contents.width = table_of_contents.width or 20
-    table_of_contents.visible = table_of_contents.visible or false
+    table_of_contents.visible = table_of_contents.visible or true
 
-    return window_frame, table_of_contents.visible or false, table_of_contents.width or 25
+    return window_frame, table_of_contents.visible, table_of_contents.width or 25
 end
 
 function JournalWindow:onPanelResizeBegin()
@@ -221,10 +258,10 @@ function JournalWindow:onCursorChange(cursor)
 end
 
 function JournalWindow:onTextChange(text)
-    self.subviews.table_of_contents_panel:reload(
-        text,
-        self.subviews.journal_editor:getCursor()
-    )
+    if self.show_tutorial then
+        self.subviews.journal_editor.subviews.journal_tutorial.visible = false
+    end
+    self:reloadTableOfContents()
 
     if self.on_text_change ~= nil then
         self.on_text_change(text)
@@ -258,6 +295,7 @@ function JournalScreen:init()
 
             init_text=context.text[1],
             init_cursor=context.cursor[1],
+            show_tutorial=context.show_tutorial or false,
 
             on_text_change=self:callback('saveContext'),
             on_cursor_change=self:callback('saveContext')
@@ -266,10 +304,14 @@ function JournalScreen:init()
 end
 
 function JournalScreen:loadContext()
-    local site_data = dfhack.persistent.getSiteData(
+    local site_data = self.save_on_change and dfhack.persistent.getSiteData(
         self.save_prefix .. JOURNAL_PERSIST_KEY
     ) or {}
-    site_data.text = site_data.text or {''}
+
+    if not site_data.text then
+        site_data.text={''}
+        site_data.show_tutorial = true
+    end
     site_data.cursor = site_data.cursor or {#site_data.text[1] + 1}
 
     return site_data
