@@ -168,6 +168,8 @@ end
 
 function test.load()
     local journal, text_area = arrange_empty_journal()
+    text_area:setText(' ')
+    journal:onRender()
 
     expect.eq('dfhack/lua/journal', dfhack.gui.getCurFocus(true)[1])
     expect.eq(read_rendered_text(text_area), '_')
@@ -3045,5 +3047,24 @@ function test.fast_rewind_reset_selection()
     simulate_input_keys('A_MOVE_E_DOWN')
     expect.eq(read_selected_text(text_area), '')
 
+    journal:dismiss()
+end
+
+function test.show_tutorials_on_first_use()
+    local journal, text_area, journal_window = arrange_empty_journal({w=65})
+    simulate_input_keys('CUSTOM_CTRL_O')
+
+    expect.str_find('Welcome to gui/journal', read_rendered_text(text_area));
+
+    simulate_input_text(' ')
+
+    expect.eq(read_rendered_text(text_area), ' _');
+
+    local toc_panel = journal_window.subviews.table_of_contents_panel
+    expect.str_find('Start a line with\n# symbols', read_rendered_text(toc_panel));
+
+    simulate_input_text('\n# Section 1')
+
+    expect.str_find('Section 1\n', read_rendered_text(toc_panel));
     journal:dismiss()
 end
