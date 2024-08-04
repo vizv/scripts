@@ -5,7 +5,11 @@ local argparse = require('argparse')
 local repeatutil = require("repeat-util")
 local utils = require('utils')
 
-DEBUG = DEBUG or false
+-- set to verbosity level
+-- 1: dev warning messages
+-- 2: timeskip tracing
+-- 3: coverage tracing
+DEBUG = DEBUG or 0
 
 ------------------------------------
 -- state management
@@ -65,6 +69,20 @@ local TICK_TRIGGERS = {
 
 -- "owed" ticks we would like to skip at the next opportunity
 local timeskip_deficit = 0.0
+
+-- coverage record for cur_year_tick % 50 so we can be sure that all items are being scanned
+-- (DF scans 1/50th of items every tick based on cur_year_tick % 50)
+-- we want every section hit at least once every 1000 ticks
+local tick_coverage = {}
+
+-- only throttle due to tick_coverage at most once per season tick to avoid clustering
+local season_tick_throttled = false
+
+local function reset_ephemeral_state()
+    timeskip_deficit = 0.0
+    tick_coverage = {}
+    season_tick_throttled = false
+end
 
 local function get_desired_timeskip(real_fps, desired_fps)
     -- minus 1 to account for the current frame
@@ -196,15 +214,15 @@ local function adjust_activities(timeskip)
                 -- countdown appears to never move from 0
                 decrement_counter(ev, 'countdown', timeskip)
             elseif df.activity_event_harassmentst:is_instance(ev) then
-                if DEBUG then
+                if DEBUG >= 1 then
                     print('activity_event_harassmentst ready for analysis at index', i)
                 end
             elseif df.activity_event_encounterst:is_instance(ev) then
-                if DEBUG then
+                if DEBUG >= 1 then
                     print('activity_event_encounterst ready for analysis at index', i)
                 end
             elseif df.activity_event_reunionst:is_instance(ev) then
-                if DEBUG then
+                if DEBUG >= 1 then
                     print('activity_event_reunionst ready for analysis at index', i)
                 end
             elseif df.activity_event_conversationst:is_instance(ev) then
@@ -244,7 +262,7 @@ local function adjust_activities(timeskip)
             elseif df.activity_event_performancest:is_instance(ev) then
                 increment_counter(ev, 'current_position', timeskip)
             elseif df.activity_event_store_objectst:is_instance(ev) then
-                if DEBUG then
+                if DEBUG >= 1 then
                     print('activity_event_store_objectst ready for analysis at index', i)
                 end
             end
@@ -252,7 +270,44 @@ local function adjust_activities(timeskip)
     end
 end
 
-local function on_tick()
+local function throttle_for_coverage(timeskip)
+    if season_tick_throttled then return timeskip end
+    for val=1,timeskip do
+        local coverage_slot = (df.global.cur_year_tick+val) % 50
+        if not tick_coverage[coverage_slot] then
+            season_tick_throttled = true
+            return val-1
+        end
+    end
+    return timeskip
+end
+
+local function record_coverage()
+    local coverage_slot = (df.global.cur_year_tick+1) % 50
+    if DEBUG >= 3 then
+        print('recording coverage for slot:', coverage_slot, tick_coverage[coverage_slot] and '' or '(newly covered)')
+    end
+    tick_coverage[coverage_slot] = true
+end
+
+local function on_tick_impl()
+    if df.global.cur_year_tick % 10 == 0 then
+        season_tick_throttled = false
+        if df.global.cur_year_tick % 1000 == 0 then
+            if DEBUG >= 1 then
+                if DEBUG >= 3 then
+                    print('checking coverage')
+                end
+                for coverage_slot=0,49 do
+                    if not tick_coverage[coverage_slot] then
+                        print('coverage slot not covered:', coverage_slot)
+                    end
+                end
+            end
+            tick_coverage = {}
+        end
+    end
+
     local real_fps = math.max(1, dfhack.internal.getUnpausedFps())
     if real_fps >= state.settings.fps then
         timeskip_deficit = 0.0
@@ -260,25 +315,14 @@ local function on_tick()
     end
 
     local desired_timeskip = get_desired_timeskip(real_fps, state.settings.fps) + timeskip_deficit
-    local timeskip = math.floor(clamp_timeskip(desired_timeskip))
-
-    -- add some jitter so we don't fall into a constant pattern
-    -- this reduces the risk of repeatedly missing an unknown threshold
-    -- also keeps the game from looking robotic at lower frame rates
-    local jitter_strategy = math.random(1, 10)
-    if jitter_strategy <= 1 then
-        timeskip = math.random(0, timeskip)
-    elseif jitter_strategy <= 3 then
-        timeskip = math.random(math.max(0, timeskip-2), timeskip)
-    elseif jitter_strategy <= 5 then
-        timeskip = math.random(math.max(0, timeskip-4), timeskip)
-    end
+    local timeskip = throttle_for_coverage(clamp_timeskip(math.floor(desired_timeskip)))
 
     -- don't let our deficit grow unbounded if we can never catch up
     timeskip_deficit = math.min(desired_timeskip - timeskip, 100.0)
 
-    if DEBUG and (tonumber(DEBUG) or 0) >= 2 then
-        print(('timeskip (%d, +%.2f)'):format(timeskip, timeskip_deficit))
+    if DEBUG >= 2 then
+        print(('cur_year_tick: %d, timeskip: (%d, +%.2f)'):format(
+            df.global.cur_year_tick, timeskip, timeskip_deficit))
     end
     if timeskip <= 0 then return end
 
@@ -289,11 +333,16 @@ local function on_tick()
     adjust_activities(timeskip)
 end
 
+local function on_tick()
+    on_tick_impl()
+    record_coverage()
+end
+
 ------------------------------------
 -- hook management
 
 local function do_enable()
-    timeskip_deficit = 0.0
+    reset_ephemeral_state()
     state.enabled = true
     repeatutil.scheduleEvery(GLOBAL_KEY, 1, 'ticks', on_tick)
 end
