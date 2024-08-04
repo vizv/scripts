@@ -29,6 +29,16 @@ Template for new versions:
 ## New Tools
 
 ## New Features
+
+## Fixes
+
+## Misc Improvements
+
+## Removed
+
+# 50.13-r4
+
+## New Features
 - `gui/journal`: new automatic table of contents. add lines that start with "# ", like "# Entry for 502-04-02", to add hyperlinked headers to the table of contents
 
 ## Fixes
@@ -52,8 +62,6 @@ Template for new versions:
 - `list-waves`: now outputs the names of the dwarves in each migration wave
 - `list-waves`: can now display information about specific migration waves (e.g. ``list-waves 0`` to identify your starting 7 dwarves)
 - `allneeds`: display distribution of needs by how severely they are affecting the dwarf
-
-## Removed
 
 # 50.13-r3
 
