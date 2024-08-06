@@ -1,5 +1,5 @@
 embark-anyone
-========
+=============
 
 .. dfhack-tool::
     :summary: Allows you to embark as any civilisation, including dead and non-dwarven ones.
