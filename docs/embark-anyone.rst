@@ -15,5 +15,4 @@ Usage
 Note
 -----
 Non-dwarven civs have their own mechanics which can render fortress mode difficult
-to unplayable. Preparing carefully is advised, and cheating in some items may be
-required.
+to unplayable. Preparing carefully is advised, and some crucial items may need to be spawned in.
