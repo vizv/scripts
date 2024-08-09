@@ -3,7 +3,12 @@ embark-anyone
 
 .. dfhack-tool::
     :summary: Allows you to embark as any civilisation, including dead and non-dwarven ones.
-    :tags: embark gameplay armok
+    :tags: embark armok
+
+This script can be ran on the embark screen and presents a list of civilisations that
+are not normally playable to add to the "Select Origin Civ" menu. This includes dead
+civilisations, the normal non-dwarven civilisations, and subterranean animal people.
+
 
 Usage
 -----
