@@ -1,6 +1,5 @@
-local dialogs = require 'gui.dialogs'
-local utils = require 'utils'
-local choices = {}
+local dialogs = require('gui.dialogs')
+local utils = require('utils')
 
 function addCivToEmbarkList(info)
    local viewscreen = dfhack.gui.getDFViewscreen(true)
@@ -13,7 +12,7 @@ end
 
 function embarkAnyone()
    local viewscreen = dfhack.gui.getDFViewscreen(true)
-   local existing_civs = {}
+   local choices, existing_civs = {}, {}
 
    for _,existing_civ in ipairs(viewscreen.start_civ) do
       existing_civs[existing_civ.id] = true
@@ -86,17 +85,17 @@ function embarkAnyone()
          label = label .. "Pop: " .. (pops + nemeses) .. " Sites: " .. sites
       end
 
-      table.insert(choices, {text = label, search_key = label:lower(),
+      table.insert(choices, {text = label,
                              info = {civ = civ, pops = pops, sites = sites,
                                      nemeses = nemeses}})
 
       ::continue::
    end
 
-   if #choices then
+   if #choices > 0 then
       dialogs.ListBox{
          frame_title = 'Embark Anyone',
-         text = 'Select a civilisation to add to the list of origin civs:',
+         text = 'Select a civilization to add to the list of origin civs:',
          text_pen = COLOR_WHITE,
          choices = choices,
          on_select = function(id, choice)
@@ -108,7 +107,7 @@ function embarkAnyone()
    else
       dialogs.MessageBox{
          frame_title = 'Embark Anyone',
-         text = 'No additional civilisations found.'
+         text = 'No additional civilizations found.'
       }:show()
    end
 
