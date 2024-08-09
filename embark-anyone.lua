@@ -92,6 +92,7 @@ function embarkAnyone()
 
       ::continue::
    end
+
    if #choices then
       dialogs.ListBox{
          frame_title = 'Embark Anyone',
@@ -103,6 +104,11 @@ function embarkAnyone()
          end,
          with_filter = true,
          row_height = 4,
+      }:show()
+   else
+      dialogs.MessageBox{
+         frame_title = 'Embark Anyone',
+         text = 'No additional civilisations found.'
       }:show()
    end
 
