@@ -27,6 +27,7 @@ Template for new versions:
 # Future
 
 ## New Tools
+- `embark-anyone`: allows you to embark as any civilisation, including dead, and non-dwarven ones
 
 ## New Features
 
