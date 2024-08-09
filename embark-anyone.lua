@@ -1,4 +1,5 @@
 local dialogs = require 'gui.dialogs'
+local utils = require 'utils'
 local choices = {}
 
 function addCivToEmbarkList(info)
@@ -37,8 +38,8 @@ function embarkAnyone()
       -- Civs keep links to sites they no longer hold, so check owner
       -- We also take the opportunity to count population
       for j, link in ipairs(civ.site_links) do
-         local site = df.global.world.world_data.sites[link.target]
-         if site.civ_id == civ.id then
+         local site = df.world_site.find(link.target)
+         if site ~= nil and site.civ_id == civ.id then
             sites = sites + 1
 
             -- DF stores population info as an array of groups of residents (?).
@@ -49,16 +50,18 @@ function embarkAnyone()
          end
 
          -- Count living nemeses
-         for _, nem in ipairs (civ.nemesis_ids) do
-            if df.global.world.nemesis.all[nem].figure.died_year == -1 then
+         for _, nem_id in ipairs (civ.nemesis_ids) do
+            local nem = df.nemesis_record.find(nem_id)
+            if nem ~= nil and nem.figure.died_year == -1 then
                nemeses = nemeses + 1
             end
          end
 
          -- Count living histfigs
          -- Used for death detection. May be redundant.
-         for _, fig in ipairs (civ.histfig_ids) do
-            if df.global.world.history.figures[fig].died_year == -1 then
+         for _, fig_id in ipairs (civ.histfig_ids) do
+            local fig = df.historical_figure.find(fig_id)
+            if fig ~= nil and fig.died_year == -1 then
                histfigs = histfigs + 1
             end
          end
@@ -89,17 +92,20 @@ function embarkAnyone()
 
       ::continue::
    end
-   dialogs.ListBox{
-      frame_title = 'Embark Anyone',
-      text = 'Select a civilisation to add to the list of origin civs:',
-      text_pen = COLOR_WHITE,
-      choices = choices,
-      on_select = function(id, choice)
-         addCivToEmbarkList(choice.info)
-      end,
-      with_filter = true,
-      row_height = 4,
-   }:show()
+   if #choices then
+      dialogs.ListBox{
+         frame_title = 'Embark Anyone',
+         text = 'Select a civilisation to add to the list of origin civs:',
+         text_pen = COLOR_WHITE,
+         choices = choices,
+         on_select = function(id, choice)
+            addCivToEmbarkList(choice.info)
+         end,
+         with_filter = true,
+         row_height = 4,
+      }:show()
+   end
+
 end
 
 embarkAnyone()
