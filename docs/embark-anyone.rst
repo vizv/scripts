@@ -5,9 +5,9 @@ embark-anyone
     :summary: Allows you to embark as any civilisation, including dead and non-dwarven ones.
     :tags: embark armok
 
-This script can be ran on the embark screen and presents a list of civilisations that
-are not normally playable to add to the "Select Origin Civ" menu. This includes dead
-civilisations, the normal non-dwarven civilisations, and subterranean animal people.
+This script must be run on the embark screen when choosing an origin civilization.
+When run, you can add any civilization, including dead or non-dwarven civilizations,
+to the list of choices.
 
 
 Usage
@@ -20,4 +20,5 @@ Usage
 Note
 -----
 Non-dwarven civs have their own mechanics which can render fortress mode difficult
-to unplayable. Preparing carefully is advised, and some crucial items may need to be spawned in.
+or unplayable. Preparing carefully is advised, and some crucial items may need to be
+spawned in with other DFHack tools (e.g. `gui/create-item`).
