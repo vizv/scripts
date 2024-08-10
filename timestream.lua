@@ -2,6 +2,7 @@
 --@enable = true
 
 local argparse = require('argparse')
+local eventful = require('plugins.eventful')
 local repeatutil = require("repeat-util")
 local utils = require('utils')
 
@@ -68,18 +69,51 @@ local TICK_TRIGGERS = {
 }
 
 -- "owed" ticks we would like to skip at the next opportunity
-local timeskip_deficit = 0.0
+timeskip_deficit = timeskip_deficit or 0.0
+
+-- birthday_triggers is a dense sequence of cur_year_tick values -> next unit birthday
+-- the sequence covers 0 .. greatest unit birthday value
+-- this cache is augmented when new units appear (as per the new unit event) and is cleared and
+-- refreshed from scratch once a year to evict data for units that are no longer active.
+birthday_triggers = birthday_triggers or {}
 
 -- coverage record for cur_year_tick % 50 so we can be sure that all items are being scanned
 -- (DF scans 1/50th of items every tick based on cur_year_tick % 50)
 -- we want every section hit at least once every 1000 ticks
-local tick_coverage = {}
+tick_coverage = tick_coverage or {}
 
 -- only throttle due to tick_coverage at most once per season tick to avoid clustering
-local season_tick_throttled = false
+season_tick_throttled = season_tick_throttled or false
+
+local function register_birthday(unit)
+    local btick = unit.birth_time
+    if btick < 0 then return end
+    for tick=btick,0,-1 do
+        if (birthday_triggers[tick] or math.huge) > btick then
+            birthday_triggers[tick] = btick
+        end
+    end
+end
+
+local function check_new_unit(unit_id)
+    local unit = df.unit.find(unit_id)
+    if not unit then return end
+    print('registering new unit', unit.id, dfhack.units.getReadableName(unit))
+    register_birthday(unit)
+end
+
+local function refresh_birthday_triggers()
+    birthday_triggers = {}
+    for _,unit in ipairs(df.global.world.units.active) do
+        if dfhack.units.isActive(unit) and not dfhack.units.isDead(unit) then
+            register_birthday(unit)
+        end
+    end
+end
 
 local function reset_ephemeral_state()
     timeskip_deficit = 0.0
+    refresh_birthday_triggers()
     tick_coverage = {}
     season_tick_throttled = false
 end
@@ -87,6 +121,30 @@ end
 local function get_desired_timeskip(real_fps, desired_fps)
     -- minus 1 to account for the current frame
     return (desired_fps / real_fps) - 1
+end
+
+local function clamp_coverage(timeskip)
+    if season_tick_throttled then return timeskip end
+    for val=1,timeskip do
+        local coverage_slot = (df.global.cur_year_tick+val) % 50
+        if not tick_coverage[coverage_slot] then
+            season_tick_throttled = true
+            return val-1
+        end
+    end
+    return timeskip
+end
+
+local function record_coverage()
+    local coverage_slot = (df.global.cur_year_tick+1) % 50
+    if DEBUG >= 3 and not tick_coverage[coverage_slot] then
+        print('recording coverage for slot:', coverage_slot)
+    end
+    tick_coverage[coverage_slot] = true
+end
+
+local function get_next_birthday(next_tick)
+    return birthday_triggers[next_tick] or math.huge
 end
 
 local function get_next_trigger_year_tick(next_tick)
@@ -106,9 +164,13 @@ local function get_next_trigger_year_tick(next_tick)
 end
 
 local function clamp_timeskip(timeskip)
+    timeskip = math.floor(timeskip)
     if timeskip <= 0 then return 0 end
     local next_tick = df.global.cur_year_tick + 1
-    return math.min(timeskip, get_next_trigger_year_tick(next_tick)-next_tick)
+    timeskip = math.min(timeskip, get_next_trigger_year_tick(next_tick)-next_tick)
+    timeskip = math.min(timeskip, get_next_birthday(next_tick)-next_tick)
+    timeskip = math.min(timeskip, clamp_coverage(timeskip))
+    return timeskip
 end
 
 local function increment_counter(obj, counter_name, timeskip)
@@ -270,26 +332,6 @@ local function adjust_activities(timeskip)
     end
 end
 
-local function throttle_for_coverage(timeskip)
-    if season_tick_throttled then return timeskip end
-    for val=1,timeskip do
-        local coverage_slot = (df.global.cur_year_tick+val) % 50
-        if not tick_coverage[coverage_slot] then
-            season_tick_throttled = true
-            return val-1
-        end
-    end
-    return timeskip
-end
-
-local function record_coverage()
-    local coverage_slot = (df.global.cur_year_tick+1) % 50
-    if DEBUG >= 3 then
-        print('recording coverage for slot:', coverage_slot, tick_coverage[coverage_slot] and '' or '(newly covered)')
-    end
-    tick_coverage[coverage_slot] = true
-end
-
 local function on_tick_impl()
     if df.global.cur_year_tick % 10 == 0 then
         season_tick_throttled = false
@@ -306,6 +348,9 @@ local function on_tick_impl()
             end
             tick_coverage = {}
         end
+        if df.global.cur_year_tick == 0 then
+            refresh_birthday_triggers()
+        end
     end
 
     local real_fps = math.max(1, dfhack.internal.getUnpausedFps())
@@ -315,7 +360,7 @@ local function on_tick_impl()
     end
 
     local desired_timeskip = get_desired_timeskip(real_fps, state.settings.fps) + timeskip_deficit
-    local timeskip = throttle_for_coverage(clamp_timeskip(math.floor(desired_timeskip)))
+    local timeskip = math.max(0, clamp_timeskip(desired_timeskip))
 
     -- don't let our deficit grow unbounded if we can never catch up
     timeskip_deficit = math.min(desired_timeskip - timeskip, 100.0)
@@ -343,12 +388,15 @@ end
 
 local function do_enable()
     reset_ephemeral_state()
+    eventful.enableEvent(eventful.eventType.UNIT_NEW_ACTIVE, 10)
+    eventful.onUnitNewActive[GLOBAL_KEY] = check_new_unit
     state.enabled = true
     repeatutil.scheduleEvery(GLOBAL_KEY, 1, 'ticks', on_tick)
 end
 
 local function do_disable()
     state.enabled = false
+    eventful.onUnitNewActive[GLOBAL_KEY] = nil
     repeatutil.cancel(GLOBAL_KEY)
 end
 
@@ -384,6 +432,29 @@ local function print_status()
     print('settings:')
     for _,v in ipairs(SETTINGS) do
         print(('  %15s: %s'):format(v.name, state.settings[v.internal_name or v.name]))
+    end
+    if DEBUG < 2 then return end
+    print()
+    print(('cur_year_tick:    %d'):format(df.global.cur_year_tick))
+    print(('timeskip_deficit: %.2f'):format(timeskip_deficit))
+    if DEBUG < 3 then return end
+    print()
+    print('tick coverage:')
+    for coverage_slot=0,49 do
+        print(('  slot %2d: %scovered'):format(coverage_slot, tick_coverage[coverage_slot] and '' or 'NOT '))
+    end
+    print()
+    local bdays, bdays_list = {}, {}
+    for _, next_bday in pairs(birthday_triggers) do
+        if not bdays[next_bday] then
+            bdays[next_bday] = true
+            table.insert(bdays_list, next_bday)
+        end
+    end
+    print(('%d birthdays:'):format(#bdays_list))
+    table.sort(bdays_list)
+    for _,bday in ipairs(bdays_list) do
+        print(('  year tick: %d'):format(bday))
     end
 end
 
