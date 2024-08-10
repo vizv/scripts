@@ -91,6 +91,8 @@ local function register_birthday(unit)
     for tick=btick,0,-1 do
         if (birthday_triggers[tick] or math.huge) > btick then
             birthday_triggers[tick] = btick
+        else
+            break
         end
     end
 end
