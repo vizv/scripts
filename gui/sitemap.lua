@@ -99,6 +99,27 @@ local function zoom_to_next_zone(_, choice)
     data.next_idx = data.next_idx % #data.zones + 1
 end
 
+local function get_unit_disposition_and_pen(unit)
+    local prefix = unit.flags1.caged and 'caged ' or ''
+    if dfhack.units.isDanger(unit) then
+        return prefix..'hostile', COLOR_LIGHTRED
+    end
+    if not dfhack.units.isFortControlled(unit) and dfhack.units.isWildlife(unit) then
+        return prefix..'wildlife', COLOR_GREEN
+    end
+    return prefix..'friendly', COLOR_LIGHTGREEN
+end
+
+local function get_unit_choice_text(unit)
+    local disposition, disposition_pen = get_unit_disposition_and_pen(unit)
+    return {
+        dfhack.units.getReadableName(unit),
+        ' (',
+        {text=disposition, pen=disposition_pen},
+        ')',
+    }
+end
+
 local function get_unit_choices()
     local is_fort = dfhack.world.isFortressMode()
     local choices = {}
@@ -110,7 +131,7 @@ local function get_unit_choices()
             goto continue
         end
         table.insert(choices, {
-            text=dfhack.units.getReadableName(unit),
+            text=get_unit_choice_text(unit),
             data={
                 unit_id=unit.id,
             },

@@ -106,10 +106,6 @@ local function persist_state()
     dfhack.persistent.saveSiteData(GLOBAL_KEY, state)
 end
 
-local function is_agitated(unit)
-    return unit and unit.flags4.agitated_wilderness_creature
-end
-
 local world = df.global.world
 local map_features = world.features.map_features
 local plotinfo = df.global.plotinfo
@@ -237,7 +233,7 @@ end
 local function get_agitated_units()
     local agitators = {}
     for _, unit in ipairs(world.units.active) do
-        if is_unkilled(unit) and is_agitated(unit) then
+        if is_unkilled(unit) and dfhack.units.isAgitated(unit) then
             table.insert(agitators, unit)
         end
     end
@@ -250,7 +246,7 @@ local function check_new_unit(unit_id)
     if new_unit_min_frame_counter >= world.frame_counter then return end
     local unit = df.unit.find(unit_id)
     if not unit or not is_unkilled(unit) then return end
-    if state.features.surface and is_agitated(unit) then
+    if state.features.surface and dfhack.units.isAgitated(unit) then
         on_surface_attack()
         return
     end

@@ -35,6 +35,8 @@ Template for new versions:
 - `timestream`: ensure child growth events (e.g. becoming an adult) are not skipped over
 
 ## Misc Improvements
+- `gui/sitemap`: show whether a unit is friendly, hostile, or wildlife
+- `gui/sitemap`: show whether a unit is caged
 
 ## Removed
 

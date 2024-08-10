@@ -46,7 +46,7 @@ local function for_agitated_creature(fn, reverse)
             dfhack.units.isActive(unit) and
             not unit.flags1.caged and
             not unit.flags1.chained and
-            unit.flags4.agitated_wilderness_creature
+            dfhack.units.isAgitated(unit)
     end, fn, reverse)
 end
 
@@ -61,13 +61,6 @@ local function for_invader(fn, reverse)
     end, fn, reverse)
 end
 
-local function is_likely_hostile(unit)
-    return dfhack.units.isCrazed(unit) or
-        dfhack.units.isOpposedToLife(unit) or
-        dfhack.units.isSemiMegabeast(unit) or
-        dfhack.units.isGreatDanger(unit)
-end
-
 local function for_hostile(fn, reverse)
     for_iter(units.active, function(unit)
         return not dfhack.units.isDead(unit) and
@@ -77,8 +70,8 @@ local function for_hostile(fn, reverse)
             not dfhack.units.isInvader(unit) and
             not dfhack.units.isFortControlled(unit) and
             not dfhack.units.isHidden(unit) and
-            not unit.flags4.agitated_wilderness_creature and
-            is_likely_hostile(unit)
+            not dfhack.units.isAgitated(unit) and
+            dfhack.units.isDanger(unit)
     end, fn, reverse)
 end
 
@@ -119,14 +112,14 @@ local function for_nuisance(fn, reverse)
     for_iter(units.active, function(unit)
         return not dfhack.units.isDead(unit) and
             dfhack.units.isActive(unit) and
+            (is_stealer(unit) or dfhack.units.isMischievous(unit)) and
             not unit.flags1.caged and
             not unit.flags1.chained and
             not dfhack.units.isHidden(unit) and
             not dfhack.units.isFortControlled(unit) and
             not dfhack.units.isInvader(unit) and
-            not unit.flags4.agitated_wilderness_creature and
-            not is_likely_hostile(unit) and
-            (is_stealer(unit) or dfhack.units.isMischievous(unit))
+            not dfhack.units.isAgitated(unit) and
+            not dfhack.units.isDanger(unit)
     end, fn, reverse)
 end
 
@@ -134,19 +127,14 @@ local function for_wildlife(fn, reverse)
     for_iter(units.active, function(unit)
         return not dfhack.units.isDead(unit) and
             dfhack.units.isActive(unit) and
+            dfhack.units.isWildlife(unit) and
             not unit.flags1.caged and
             not unit.flags1.chained and
             not dfhack.units.isHidden(unit) and
-            not dfhack.units.isFortControlled(unit) and
-            not dfhack.units.isInvader(unit) and
-            not unit.flags4.agitated_wilderness_creature and
-            not is_likely_hostile(unit) and
+            not dfhack.units.isDanger(unit) and
             not is_stealer(unit) and
             not dfhack.units.isMischievous(unit) and
-            not dfhack.units.isMerchant(unit) and
-            not dfhack.units.isForest(unit) and
-            not dfhack.units.isVisitor(unit) and
-            unit.animal.population.population_idx >= 0
+            not dfhack.units.isVisitor(unit)
     end, fn, reverse)
 end
 
@@ -155,13 +143,13 @@ local function for_wildlife_adv(fn, reverse)
     for_iter(units.active, function(unit)
         return not dfhack.units.isDead(unit) and
             dfhack.units.isActive(unit) and
+            dfhack.units.isWildlife(unit) and
             not unit.flags1.caged and
             not unit.flags1.chained and
             not dfhack.units.isHidden(unit) and
             unit.relationship_ids.GroupLeader ~= adv_id and
             unit.relationship_ids.PetOwner ~= adv_id and
-            is_adv_unhidden(unit) and
-            unit.animal.population.population_idx >= 0
+            is_adv_unhidden(unit)
     end, fn, reverse)
 end
 
