@@ -153,16 +153,13 @@ function canLeave(unit)
         return false
     end
 
-    return dfhack.units.isCitizen(unit) and
-           dfhack.units.isActive(unit) and
-           not dfhack.units.isOpposedToLife(unit) and
-           not unit.flags1.merchant and
-           not unit.flags1.diplomat and
-           not unit.flags1.chained and
-           dfhack.units.getNoblePositions(unit) == nil and
-           unit.military.squad_id == -1 and
-           not dfhack.units.isBaby(unit) and
-           not dfhack.units.isChild(unit)
+    return dfhack.units.isActive(unit) and
+        dfhack.units.isCitizen(unit) and
+        not dfhack.units.getNoblePositions(unit) and
+        not unit.flags1.chained and
+        unit.military.squad_id == -1 and
+        not dfhack.units.isBaby(unit) and
+        not dfhack.units.isChild(unit)
 end
 
 function checkForDeserters(method,civ_id)
