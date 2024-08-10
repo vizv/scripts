@@ -131,12 +131,9 @@ local function for_wildlife(fn, reverse)
             not unit.flags1.caged and
             not unit.flags1.chained and
             not dfhack.units.isHidden(unit) and
-            not dfhack.units.isFortControlled(unit) and
             not dfhack.units.isDanger(unit) and
             not is_stealer(unit) and
             not dfhack.units.isMischievous(unit) and
-            not dfhack.units.isMerchant(unit) and
-            not dfhack.units.isForest(unit) and
             not dfhack.units.isVisitor(unit)
     end, fn, reverse)
 end
