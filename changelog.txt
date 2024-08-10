@@ -32,6 +32,7 @@ Template for new versions:
 ## New Features
 
 ## Fixes
+- `timestream`: ensure child growth events (e.g. becoming an adult) are not skipped over
 
 ## Misc Improvements
 
