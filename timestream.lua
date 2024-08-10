@@ -138,7 +138,7 @@ local function clamp_coverage(timeskip)
 end
 
 local function record_coverage()
-    local coverage_slot = (df.global.cur_year_tick+1) % 50
+    local coverage_slot = df.global.cur_year_tick % 50
     if DEBUG >= 3 and not tick_coverage[coverage_slot] then
         print('recording coverage for slot:', coverage_slot)
     end
@@ -171,8 +171,7 @@ local function clamp_timeskip(timeskip)
     local next_tick = df.global.cur_year_tick + 1
     timeskip = math.min(timeskip, get_next_trigger_year_tick(next_tick)-next_tick)
     timeskip = math.min(timeskip, get_next_birthday(next_tick)-next_tick)
-    timeskip = math.min(timeskip, clamp_coverage(timeskip))
-    return timeskip
+    return clamp_coverage(timeskip)
 end
 
 local function increment_counter(obj, counter_name, timeskip)
@@ -334,7 +333,9 @@ local function adjust_activities(timeskip)
     end
 end
 
-local function on_tick_impl()
+local function on_tick()
+    record_coverage()
+
     if df.global.cur_year_tick % 10 == 0 then
         season_tick_throttled = false
         if df.global.cur_year_tick % 1000 == 0 then
@@ -368,8 +369,8 @@ local function on_tick_impl()
     timeskip_deficit = math.min(desired_timeskip - timeskip, 100.0)
 
     if DEBUG >= 2 then
-        print(('cur_year_tick: %d, timeskip: (%d, +%.2f)'):format(
-            df.global.cur_year_tick, timeskip, timeskip_deficit))
+        print(('cur_year_tick: %d, real_fps: %d, timeskip: (%d, +%.2f)'):format(
+            df.global.cur_year_tick, real_fps, timeskip, timeskip_deficit))
     end
     if timeskip <= 0 then return end
 
@@ -378,11 +379,6 @@ local function on_tick_impl()
 
     adjust_units(timeskip)
     adjust_activities(timeskip)
-end
-
-local function on_tick()
-    on_tick_impl()
-    record_coverage()
 end
 
 ------------------------------------
