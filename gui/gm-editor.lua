@@ -685,7 +685,8 @@ function GmEditorUi:updateTarget(preserve_pos,reindex)
     local t={}
     for k,v in pairs(trg.keys) do
         local size,off=df.sizeof(trg.target:_field(v))
-        table.insert(t,{text={{text=string.format("0x%x,%-4d %-"..trg.kw.."s",off,size,tostring(v))},{gap=2,text=getStringValue(trg,v)}}})
+        local _,base = df.sizeof(trg.target)
+        table.insert(t,{text={{text=string.format("0x%08x, 0x%08x, %-8d  %-"..trg.kw.."s",off,off-base,size,tostring(v))},{gap=2,text=getStringValue(trg,v)}}})
     end
     local last_selected, last_top
     if preserve_pos then
